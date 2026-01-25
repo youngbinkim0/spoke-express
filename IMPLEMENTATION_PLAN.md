@@ -110,8 +110,7 @@ interface UserPreferences {
   preferred_departure_time: string;      // "08:00"
   notification_enabled: boolean;
   notification_minutes_before: number;   // e.g., 30
-  bike_max_distance_miles: number;       // max willing to bike
-  rain_threshold_mm: number;             // precipitation threshold to avoid biking
+  bike_max_distance_miles: number;       // max willing to bike to station
   created_at: string;
   updated_at: string;
 }
@@ -131,10 +130,9 @@ interface TransitStation {
 interface RouteHistory {
   id: number;
   calculated_at: string;
-  route_type: 'transit_only' | 'bike_to_transit';
-  total_duration_minutes: number;
-  weather_score: number;    // 0-100, higher = better for biking
-  was_recommended: boolean;
+  recommended_type: 'transit_only' | 'bike_to_transit';
+  duration_minutes: number;
+  was_bad_weather: boolean;
   details: string;          // JSON blob with full route details
 }
 ```
@@ -142,37 +140,36 @@ interface RouteHistory {
 ### Application Types
 
 ```typescript
-interface ComputedRoute {
+interface TransitLeg {
+  type: 'subway' | 'bus' | 'walk' | 'bike';
+  from: string;              // Station/location name
+  to: string;
+  route_id?: string;         // e.g., "G", "B62"
+  duration_minutes: number;
+  distance_miles?: number;
+}
+
+interface CommuteOption {
   id: string;
   type: 'transit_only' | 'bike_to_transit';
   legs: TransitLeg[];
-  total_duration_minutes: number;
-  total_walking_minutes: number;
-  total_biking_minutes?: number;
+  duration_minutes: number;
   departure_time: Date;
   arrival_time: Date;
-  weather_penalty: number;   // 0-50 points subtracted
-  delay_penalty: number;     // Based on realtime MTA data
-  score: number;             // Final score, higher = better
 }
 
-interface WeatherConditions {
+interface Weather {
   temperature_f: number;
-  feels_like_f: number;
-  precipitation_mm_per_hour: number;
+  conditions: string;        // "Sunny", "Cloudy", "Rain", etc.
   precipitation_type: 'none' | 'rain' | 'snow' | 'mix';
-  precipitation_probability: number;
-  wind_speed_mph: number;
-  visibility_miles: number;
-  conditions: string;
+  precipitation_probability: number;  // 0-1
+  is_bad: boolean;           // Computed: should we avoid biking?
 }
 
-interface CommuteRecommendation {
-  recommended_route: ComputedRoute;
-  alternative_routes: ComputedRoute[];
-  weather: WeatherConditions;
+interface CommuteResponse {
+  options: CommuteOption[];  // All options, ranked (first = recommended)
+  weather: Weather;
   alerts: MTAAlert[];
-  reasoning: string;         // Human-readable explanation
   generated_at: Date;
 }
 ```
@@ -236,80 +233,86 @@ const WEATHER_GOV_API = {
 
 ---
 
-## 5. Core Algorithms
+## 5. Core Algorithm
 
-### Weather-Based Scoring
+### Simple Ranking Logic
+
+**Primary sort: fastest route wins.** If it's raining or snowing, bike option moves to #2.
 
 ```typescript
-function calculateWeatherPenalty(weather: WeatherConditions): number {
-  let penalty = 0;
+interface CommuteOption {
+  type: 'transit_only' | 'bike_to_transit';
+  duration_minutes: number;
+  legs: TransitLeg[];
+}
 
-  // Precipitation penalty (most important)
-  if (weather.precipitation_type === 'snow') {
-    penalty += 40;  // Heavy penalty for snow
-  } else if (weather.precipitation_type === 'rain') {
-    if (weather.precipitation_mm_per_hour > 2.5) {
-      penalty += 30;  // Heavy rain
-    } else {
-      penalty += 15;  // Light rain
+interface Weather {
+  is_bad: boolean;  // rain or snow
+  conditions: string;
+}
+
+function isBadWeather(weather: WeatherConditions): boolean {
+  return weather.precipitation_type === 'rain'
+      || weather.precipitation_type === 'snow'
+      || weather.precipitation_type === 'mix';
+}
+
+function rankRoutes(
+  routes: CommuteOption[],
+  weather: Weather
+): CommuteOption[] {
+  // Step 1: Sort all routes by duration (fastest first)
+  const sorted = [...routes].sort((a, b) =>
+    a.duration_minutes - b.duration_minutes
+  );
+
+  // Step 2: If bad weather and bike option is #1, swap it to #2
+  if (weather.is_bad && sorted[0]?.type === 'bike_to_transit') {
+    // Find the fastest transit-only option
+    const transitIndex = sorted.findIndex(r => r.type === 'transit_only');
+    if (transitIndex > 0) {
+      // Swap: move transit-only to #1, bike to #2
+      const [transit] = sorted.splice(transitIndex, 1);
+      sorted.unshift(transit);
     }
   }
 
-  // Probability of precipitation (next hour)
-  if (weather.precipitation_probability > 0.7) {
-    penalty += 15;
-  } else if (weather.precipitation_probability > 0.4) {
-    penalty += 8;
-  }
-
-  // Temperature penalty
-  if (weather.feels_like_f < 32) {
-    penalty += 20;  // Freezing
-  } else if (weather.feels_like_f < 40) {
-    penalty += 10;  // Cold
-  } else if (weather.feels_like_f > 90) {
-    penalty += 15;  // Very hot
-  }
-
-  // Wind penalty
-  if (weather.wind_speed_mph > 20) {
-    penalty += 10;
-  } else if (weather.wind_speed_mph > 15) {
-    penalty += 5;
-  }
-
-  return Math.min(50, penalty);  // Cap at 50 points
+  return sorted;
 }
 ```
 
-### Route Scoring
+### Example Output
+
+**Good weather (sunny, 65°F):**
+```
+1. 🚲 Bike + G train     → 28 min  ← recommended
+2. 🚇 Walk + G train     → 35 min
+3. 🚇 Walk + A/C train   → 38 min
+```
+
+**Bad weather (raining):**
+```
+1. 🚇 Walk + G train     → 35 min  ← recommended
+2. 🚲 Bike + G train     → 28 min  (not recommended: rain)
+3. 🚇 Walk + A/C train   → 38 min
+```
+
+### Weather Check
 
 ```typescript
-function scoreRoute(
-  route: ComputedRoute,
-  weather: WeatherConditions,
-  alerts: MTAAlert[]
-): number {
-  let score = 100;  // Start with perfect score
-
-  // 1. Duration penalty (1 point per minute over 30)
-  score -= Math.max(0, route.total_duration_minutes - 30);
-
-  // 2. Weather penalty for bike routes
-  if (route.type === 'bike_to_transit') {
-    score -= calculateWeatherPenalty(weather);
+// Simple check - is it currently raining/snowing or about to?
+function isBadWeather(weather: WeatherConditions): boolean {
+  // Currently precipitating
+  if (weather.precipitation_type !== 'none') {
+    return true;
   }
 
-  // 3. Delay penalty (2 points per minute of delay)
-  score -= route.delay_penalty;
+  // High chance of rain in next hour (>50%)
+  if (weather.precipitation_probability > 0.5) {
+    return true;
+  }
 
-  // 4. Transfer penalty (5 points per transfer)
-  const transfers = route.legs.filter(l =>
-    l.type === 'subway' || l.type === 'bus'
-  ).length - 1;
-  score -= Math.max(0, transfers) * 5;
-
-  return Math.max(0, score);
+  return false;
 }
 ```
 
@@ -348,14 +351,14 @@ function scoreRoute(
 
 **Deliverable:** Can compute transit-only and bike+transit routes
 
-### Phase 4: Scoring & Recommendations
-**Goal: Weather-aware route scoring**
+### Phase 4: Ranking & Recommendations
+**Goal: Weather-aware route ranking**
 
-- [ ] Implement scoring service with weather penalties
-- [ ] Create recommendation generator
-- [ ] Add unit tests for scoring edge cases
+- [ ] Implement simple ranking (sort by time, bump bike if rain/snow)
+- [ ] Create response builder with all options listed
+- [ ] Add unit tests for ranking logic
 
-**Deliverable:** Weather correctly deprioritizes bike option
+**Deliverable:** Bad weather moves bike option to #2
 
 ### Phase 5: API Server
 **Goal: REST API endpoints**
@@ -440,8 +443,7 @@ commute-optimizer/
 │   │   ├── routing/
 │   │   │   ├── RouteService.ts
 │   │   │   ├── TransitPathfinder.ts
-│   │   │   ├── BikeRouter.ts
-│   │   │   └── ScoringService.ts
+│   │   │   └── BikeRouter.ts
 │   │   │
 │   │   ├── notification/
 │   │   │   ├── NotificationService.ts
@@ -481,7 +483,7 @@ commute-optimizer/
 │           └── WeatherBadge.tsx
 │
 └── tests/
-    ├── scoring.test.ts
+    ├── ranking.test.ts
     └── routing.test.ts
 ```
 
@@ -545,8 +547,8 @@ DEFAULT_WORK_LNG=-73.9855
 
 ## Critical Implementation Files
 
-1. **`src/services/routing/RouteService.ts`** - Core orchestration
-2. **`src/services/routing/ScoringService.ts`** - Weather-aware scoring
-3. **`src/services/mta/MTAService.ts`** - MTA realtime integration
+1. **`src/services/routing/RouteService.ts`** - Core orchestration + ranking logic
+2. **`src/services/mta/MTAService.ts`** - MTA realtime integration
+3. **`src/services/weather/WeatherService.ts`** - Weather API + bad weather check
 4. **`src/db/schema.sql`** - Database schema (implement first)
 5. **`src/scheduler/MorningCommute.ts`** - Notification scheduler
