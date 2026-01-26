@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  transiter:
+    image: jamespfennell/transiter:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - TRANSITER_DB_DRIVER=postgres
+      - TRANSITER_DB_HOST=db
+      - TRANSITER_DB_PORT=5432
+      - TRANSITER_DB_USER=transiter
+      - TRANSITER_DB_PASSWORD=transiter
+      - TRANSITER_DB_NAME=transiter
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transiter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - TRANSITER_URL=http://transiter:8080
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - transiter
+    restart: unless-stopped
+
+volumes:
+  pgdata:

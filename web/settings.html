@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commute Optimizer - Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .station-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .station-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .station-item:hover {
+      background: #f9f9f9;
+    }
+
+    .station-item:last-child {
+      border-bottom: none;
+    }
+
+    .station-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 12px;
+      cursor: pointer;
+    }
+
+    .station-info {
+      flex: 1;
+    }
+
+    .station-name {
+      font-weight: 500;
+    }
+
+    .station-lines {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .station-distance {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .line-badge {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: bold;
+      text-align: center;
+      line-height: 20px;
+      margin-right: 4px;
+    }
+
+    .line-G { background: #6CBE45; }
+    .line-A, .line-C, .line-E { background: #0039A6; }
+    .line-B, .line-D, .line-F, .line-M { background: #FF6319; }
+    .line-N, .line-Q, .line-R, .line-W { background: #FCCC0A; color: #333; }
+    .line-1, .line-2, .line-3 { background: #EE352E; }
+    .line-4, .line-5, .line-6 { background: #00933C; }
+    .line-7 { background: #B933AD; }
+    .line-L { background: #A7A9AC; }
+    .line-S { background: #808183; }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      background: white;
+    }
+
+    .btn {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .btn:hover {
+      background: #1557b0;
+    }
+
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .preview-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    .preview-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚙️ Commute Optimizer Settings</h1>
+    </header>
+
+    <div id="loading" class="loading">Loading stations...</div>
+
+    <div id="content" style="display: none;">
+      <div class="card">
+        <h2>🚲 Bike-to Stations</h2>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
+          Select stations you'd bike to for a faster commute
+        </p>
+        <div id="bikeStations" class="station-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>🚇 Walk-to Stations</h2>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
+          Select stations within walking distance
+        </p>
+        <div id="walkStations" class="station-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>🎯 Destination Station</h2>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
+          Where do you get off to go to work?
+        </p>
+        <select id="destinationStation"></select>
+      </div>
+
+      <button class="btn" id="saveBtn" onclick="saveSettings()">
+        Save Settings
+      </button>
+
+      <div id="status" class="status"></div>
+
+      <a href="/api/commute" target="_blank" class="preview-link">
+        Preview commute options →
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let stations = [];
+    let settings = {};
+
+    async function init() {
+      try {
+        // Fetch stations and settings in parallel
+        const [stationsRes, settingsRes] = await Promise.all([
+          fetch('/api/stations'),
+          fetch('/api/settings')
+        ]);
+
+        stations = (await stationsRes.json()).stations;
+        settings = await settingsRes.json();
+
+        renderStations();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        document.getElementById('loading').textContent = 'Failed to load. Is the server running?';
+      }
+    }
+
+    function renderStations() {
+      const bikeContainer = document.getElementById('bikeStations');
+      const walkContainer = document.getElementById('walkStations');
+      const destSelect = document.getElementById('destinationStation');
+
+      // Filter stations by distance for bike (0.3 - 2 miles) and walk (< 0.8 miles)
+      const bikeStations = stations.filter(s => s.distanceFromHome >= 0.3 && s.distanceFromHome <= 2.5);
+      const walkStations = stations.filter(s => s.distanceFromHome <= 1.0);
+
+      // Render bike-to stations
+      bikeContainer.innerHTML = bikeStations.map(s => `
+        <label class="station-item">
+          <input type="checkbox" name="bikeStation" value="${s.id}"
+            ${settings.bikeToStations?.includes(s.id) ? 'checked' : ''}>
+          <div class="station-info">
+            <div class="station-name">${s.name}</div>
+            <div class="station-lines">
+              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
+            </div>
+          </div>
+          <div class="station-distance">${s.distanceFromHome} mi</div>
+        </label>
+      `).join('');
+
+      // Render walk-to stations
+      walkContainer.innerHTML = walkStations.map(s => `
+        <label class="station-item">
+          <input type="checkbox" name="walkStation" value="${s.id}"
+            ${settings.walkToStations?.includes(s.id) ? 'checked' : ''}>
+          <div class="station-info">
+            <div class="station-name">${s.name}</div>
+            <div class="station-lines">
+              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
+            </div>
+          </div>
+          <div class="station-distance">${s.walkMinutes} min walk</div>
+        </label>
+      `).join('');
+
+      // Render destination dropdown (all stations, sorted by borough)
+      const manhattanStations = stations.filter(s => s.borough === 'Manhattan');
+      const queensStations = stations.filter(s => s.borough === 'Queens');
+      const brooklynStations = stations.filter(s => s.borough === 'Brooklyn');
+
+      destSelect.innerHTML = `
+        <optgroup label="Manhattan">
+          ${manhattanStations.map(s => `
+            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+              ${s.name} (${s.lines.join('/')})
+            </option>
+          `).join('')}
+        </optgroup>
+        <optgroup label="Queens">
+          ${queensStations.map(s => `
+            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+              ${s.name} (${s.lines.join('/')})
+            </option>
+          `).join('')}
+        </optgroup>
+        <optgroup label="Brooklyn">
+          ${brooklynStations.map(s => `
+            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+              ${s.name} (${s.lines.join('/')})
+            </option>
+          `).join('')}
+        </optgroup>
+      `;
+    }
+
+    async function saveSettings() {
+      const btn = document.getElementById('saveBtn');
+      const status = document.getElementById('status');
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      // Get selected stations
+      const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
+        .map(el => el.value);
+      const walkToStations = Array.from(document.querySelectorAll('input[name="walkStation"]:checked'))
+        .map(el => el.value);
+      const destinationStation = document.getElementById('destinationStation').value;
+
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bikeToStations,
+            walkToStations,
+            destinationStation
+          })
+        });
+
+        if (response.ok) {
+          status.className = 'status success';
+          status.textContent = '✓ Settings saved successfully!';
+        } else {
+          throw new Error('Failed to save');
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = '✗ Failed to save settings. Please try again.';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Save Settings';
+
+      // Hide status after 3 seconds
+      setTimeout(() => {
+        status.className = 'status';
+      }, 3000);
+    }
+
+    // Initialize on page load
+    init();
+  </script>
+</body>
+</html>

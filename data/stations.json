@@ -1,0 +1,238 @@
+{
+  "stations": [
+    {
+      "id": "bedford-nostrand",
+      "name": "Bedford-Nostrand Avs",
+      "transiterId": "G26",
+      "lines": ["G"],
+      "lat": 40.6896,
+      "lng": -73.9535,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "classon",
+      "name": "Classon Av",
+      "transiterId": "G28",
+      "lines": ["G"],
+      "lat": 40.6889,
+      "lng": -73.9600,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "clinton-washington-g",
+      "name": "Clinton-Washington Avs",
+      "transiterId": "G29",
+      "lines": ["G"],
+      "lat": 40.6880,
+      "lng": -73.9667,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "fulton-g",
+      "name": "Fulton St",
+      "transiterId": "G30",
+      "lines": ["G"],
+      "lat": 40.6870,
+      "lng": -73.9752,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "hoyt-schermerhorn",
+      "name": "Hoyt-Schermerhorn Sts",
+      "transiterId": "A42",
+      "lines": ["A", "C", "G"],
+      "lat": 40.6884,
+      "lng": -73.9851,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "lafayette",
+      "name": "Lafayette Av",
+      "transiterId": "G31",
+      "lines": ["C"],
+      "lat": 40.6861,
+      "lng": -73.9739,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "clinton-washington-c",
+      "name": "Clinton-Washington Avs",
+      "transiterId": "G32",
+      "lines": ["C"],
+      "lat": 40.6831,
+      "lng": -73.9659,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "myrtle-willoughby",
+      "name": "Myrtle-Willoughby Avs",
+      "transiterId": "G33",
+      "lines": ["G"],
+      "lat": 40.6946,
+      "lng": -73.9489,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "flushing",
+      "name": "Flushing Av",
+      "transiterId": "G34",
+      "lines": ["G"],
+      "lat": 40.7004,
+      "lng": -73.9504,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "broadway-g",
+      "name": "Broadway",
+      "transiterId": "G35",
+      "lines": ["G"],
+      "lat": 40.7063,
+      "lng": -73.9503,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "metropolitan",
+      "name": "Metropolitan Av",
+      "transiterId": "G36",
+      "lines": ["G"],
+      "lat": 40.7127,
+      "lng": -73.9511,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "greenpoint",
+      "name": "Greenpoint Av",
+      "transiterId": "G22",
+      "lines": ["G"],
+      "lat": 40.7313,
+      "lng": -73.9542,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "nassau",
+      "name": "Nassau Av",
+      "transiterId": "G21",
+      "lines": ["G"],
+      "lat": 40.7244,
+      "lng": -73.9512,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "court-sq",
+      "name": "Court Sq",
+      "transiterId": "G22",
+      "lines": ["G", "7", "E", "M"],
+      "lat": 40.7471,
+      "lng": -73.9456,
+      "borough": "Queens"
+    },
+    {
+      "id": "court-sq-23",
+      "name": "Court Sq-23 St",
+      "transiterId": "F09",
+      "lines": ["E", "M"],
+      "lat": 40.7479,
+      "lng": -73.9461,
+      "borough": "Queens"
+    },
+    {
+      "id": "long-island-city",
+      "name": "Long Island City-Court Sq",
+      "transiterId": "G21",
+      "lines": ["G"],
+      "lat": 40.7460,
+      "lng": -73.9436,
+      "borough": "Queens"
+    },
+    {
+      "id": "21st-queensbridge",
+      "name": "21 St-Queensbridge",
+      "transiterId": "F11",
+      "lines": ["F"],
+      "lat": 40.7543,
+      "lng": -73.9424,
+      "borough": "Queens"
+    },
+    {
+      "id": "atlantic-barclays",
+      "name": "Atlantic Av-Barclays Ctr",
+      "transiterId": "D24",
+      "lines": ["B", "Q", "D", "N", "R", "2", "3", "4", "5"],
+      "lat": 40.6842,
+      "lng": -73.9779,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "jay-st-metrotech",
+      "name": "Jay St-MetroTech",
+      "transiterId": "A41",
+      "lines": ["A", "C", "F", "R"],
+      "lat": 40.6923,
+      "lng": -73.9872,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "dekalb",
+      "name": "DeKalb Av",
+      "transiterId": "R30",
+      "lines": ["B", "Q", "R"],
+      "lat": 40.6907,
+      "lng": -73.9818,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "borough-hall",
+      "name": "Borough Hall",
+      "transiterId": "R28",
+      "lines": ["2", "3", "4", "5", "R"],
+      "lat": 40.6923,
+      "lng": -73.9901,
+      "borough": "Brooklyn"
+    },
+    {
+      "id": "times-sq-42",
+      "name": "Times Sq-42 St",
+      "transiterId": "R16",
+      "lines": ["1", "2", "3", "7", "N", "Q", "R", "W", "S"],
+      "lat": 40.7559,
+      "lng": -73.9871,
+      "borough": "Manhattan"
+    },
+    {
+      "id": "herald-sq",
+      "name": "34 St-Herald Sq",
+      "transiterId": "R17",
+      "lines": ["B", "D", "F", "M", "N", "Q", "R", "W"],
+      "lat": 40.7497,
+      "lng": -73.9878,
+      "borough": "Manhattan"
+    },
+    {
+      "id": "union-sq",
+      "name": "14 St-Union Sq",
+      "transiterId": "R20",
+      "lines": ["4", "5", "6", "L", "N", "Q", "R", "W"],
+      "lat": 40.7356,
+      "lng": -73.9906,
+      "borough": "Manhattan"
+    },
+    {
+      "id": "grand-central",
+      "name": "Grand Central-42 St",
+      "transiterId": "631",
+      "lines": ["4", "5", "6", "7", "S"],
+      "lat": 40.7527,
+      "lng": -73.9772,
+      "borough": "Manhattan"
+    },
+    {
+      "id": "penn-station",
+      "name": "34 St-Penn Station",
+      "transiterId": "A28",
+      "lines": ["1", "2", "3", "A", "C", "E"],
+      "lat": 40.7506,
+      "lng": -73.9910,
+      "borough": "Manhattan"
+    }
+  ]
+}
