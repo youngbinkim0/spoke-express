@@ -1,8 +1,98 @@
 import { config } from '../config.js';
-import type { TransiterStopResponse, TransiterArrival } from '../types/index.js';
+import type { TransiterStopResponse, TransiterArrival, Station } from '../types/index.js';
 import NodeCache from 'node-cache';
 
 const cache = new NodeCache({ stdTTL: config.cacheTtl.arrivals });
+const stationsCache = new NodeCache({ stdTTL: 3600 }); // Cache stations for 1 hour
+
+interface TransiterStop {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  type: string;
+  serviceMaps?: Array<{
+    configId: string;
+    routes?: Array<{ id: string; color?: string }>;
+  }>;
+}
+
+interface TransiterStopsResponse {
+  stops: TransiterStop[];
+  nextId?: string;
+}
+
+// Fetch all stations from Transiter (with pagination)
+export async function getAllStations(): Promise<Station[]> {
+  const cacheKey = 'all_stations';
+  const cached = stationsCache.get<Station[]>(cacheKey);
+  if (cached) return cached;
+
+  const stations: Station[] = [];
+  let nextId: string | undefined;
+
+  try {
+    do {
+      const url = nextId
+        ? `${config.transiterUrl}/systems/${config.transitSystem}/stops?limit=100&first_id=${nextId}`
+        : `${config.transiterUrl}/systems/${config.transitSystem}/stops?limit=100`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`Transiter stops error: ${response.status}`);
+        break;
+      }
+
+      const data = (await response.json()) as TransiterStopsResponse;
+
+      for (const stop of data.stops) {
+        // Only include STATION type (not individual platforms like G33N, G33S)
+        if (stop.type !== 'STATION') continue;
+
+        // Get routes from serviceMaps (use 'alltimes' or first available)
+        const serviceMap = stop.serviceMaps?.find((sm) => sm.configId === 'alltimes') || stop.serviceMaps?.[0];
+        const lines = serviceMap?.routes?.map((r) => r.id) || [];
+
+        // Determine borough based on coordinates (rough approximation)
+        const borough = getBoroughFromCoords(stop.latitude, stop.longitude);
+
+        stations.push({
+          id: stop.id.toLowerCase(),
+          name: stop.name,
+          transiterId: stop.id,
+          lines,
+          lat: stop.latitude,
+          lng: stop.longitude,
+          borough,
+        });
+      }
+
+      nextId = data.nextId;
+    } while (nextId);
+
+    stationsCache.set(cacheKey, stations);
+    console.log(`Loaded ${stations.length} stations from Transiter`);
+    return stations;
+  } catch (error) {
+    console.error('Failed to fetch stations from Transiter:', error);
+    return [];
+  }
+}
+
+// Rough borough determination based on coordinates
+function getBoroughFromCoords(lat: number, lng: number): string {
+  // Manhattan: roughly lat > 40.7 and lng > -74.02 and lng < -73.93
+  if (lat > 40.7 && lng > -74.02 && lng < -73.93) return 'Manhattan';
+  // Brooklyn: lat < 40.7 and lng > -74.04 and lng < -73.85
+  if (lat < 40.71 && lng > -74.04 && lng < -73.85) return 'Brooklyn';
+  // Queens: lat > 40.7 and lng > -73.93
+  if (lat > 40.7 && lng > -73.96) return 'Queens';
+  // Bronx: lat > 40.8
+  if (lat > 40.8) return 'Bronx';
+  // Staten Island (no subway, but just in case)
+  if (lng < -74.05) return 'Staten Island';
+  return 'Brooklyn'; // Default
+}
 
 export async function getStopArrivals(stopId: string): Promise<TransiterArrival[]> {
   const cacheKey = `arrivals_${stopId}`;

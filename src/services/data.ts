@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import type { Settings, StationsData, Station } from '../types/index.js';
+import type { Settings, Station } from '../types/index.js';
+import { getAllStations } from './transiter.js';
 
 const DATA_DIR = join(process.cwd(), 'data');
 const SETTINGS_PATH = join(DATA_DIR, 'settings.json');
-const STATIONS_PATH = join(DATA_DIR, 'stations.json');
 
 // Default settings if file doesn't exist
 const DEFAULT_SETTINGS: Settings = {
@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS: Settings = {
   work: { lat: 40.7471, lng: -73.9456, address: '' },
   bikeToStations: [],
   walkToStations: [],
-  destinationStation: 'court-sq',
+  destinationStation: 'G22', // Court Sq
 };
 
 export function getSettings(): Settings {
@@ -38,23 +38,12 @@ export function saveSettings(settings: Settings): void {
   }
 }
 
-export function getStations(): Station[] {
-  try {
-    const data = readFileSync(STATIONS_PATH, 'utf-8');
-    const parsed: StationsData = JSON.parse(data);
-    return parsed.stations;
-  } catch (error) {
-    console.error('Error reading stations:', error);
-    return [];
-  }
+export async function getStationById(id: string): Promise<Station | undefined> {
+  const stations = await getAllStations();
+  return stations.find((s) => s.id === id || s.transiterId === id);
 }
 
-export function getStationById(id: string): Station | undefined {
-  const stations = getStations();
-  return stations.find((s) => s.id === id);
-}
-
-export function getStationByTransiterId(transiterId: string): Station | undefined {
-  const stations = getStations();
+export async function getStationByTransiterId(transiterId: string): Promise<Station | undefined> {
+  const stations = await getAllStations();
   return stations.find((s) => s.transiterId === transiterId);
 }

@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
-import { getStations, getSettings } from '../services/data.js';
+import { getSettings } from '../services/data.js';
 import { calculateWalkTime } from '../services/google-routes.js';
+import { getAllStations } from '../services/transiter.js';
 
 const app = new Hono();
 
 // Get all available stations with distance from home
-app.get('/', (c) => {
-  const stations = getStations();
+app.get('/', async (c) => {
+  const stations = await getAllStations();
   const settings = getSettings();
 
   // Calculate distance from home for each station
@@ -21,6 +22,7 @@ app.get('/', (c) => {
 
     return {
       id: station.id,
+      transiterId: station.transiterId,
       name: station.name,
       lines: station.lines,
       borough: station.borough,
@@ -36,10 +38,10 @@ app.get('/', (c) => {
 });
 
 // Get a specific station
-app.get('/:id', (c) => {
+app.get('/:id', async (c) => {
   const id = c.req.param('id');
-  const stations = getStations();
-  const station = stations.find((s) => s.id === id);
+  const stations = await getAllStations();
+  const station = stations.find((s) => s.id === id || s.transiterId === id);
 
   if (!station) {
     return c.json({ error: 'Station not found' }, 404);

@@ -35,9 +35,9 @@ app.get('/health', async (c) => {
   });
 });
 
-// Serve settings UI at root
+// Serve main UI at root
 app.get('/', (c) => {
-  return c.redirect('/static/settings.html');
+  return c.redirect('/static/index.html');
 });
 
 // Start server

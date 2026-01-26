@@ -21,14 +21,14 @@ app.get('/', async (c) => {
   const weather = await getWeather(settings.home.lat, settings.home.lng);
 
   // Get destination station
-  const destStation = getStationById(settings.destinationStation);
+  const destStation = await getStationById(settings.destinationStation);
   if (!destStation) {
     return c.json({ error: 'Destination station not configured' }, 400);
   }
 
   // Calculate bike-to-transit options
   for (const stationId of settings.bikeToStations) {
-    const station = getStationById(stationId);
+    const station = await getStationById(stationId);
     if (!station) continue;
 
     try {
@@ -84,7 +84,7 @@ app.get('/', async (c) => {
 
   // Calculate walk-to-transit options
   for (const stationId of settings.walkToStations) {
-    const station = getStationById(stationId);
+    const station = await getStationById(stationId);
     if (!station) continue;
 
     try {

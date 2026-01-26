@@ -197,6 +197,7 @@
   <div class="container">
     <header>
       <h1>⚙️ Commute Optimizer Settings</h1>
+      <a href="/static/index.html" style="color: white; text-decoration: none; font-size: 0.9rem;">← Back to Results</a>
     </header>
 
     <div id="loading" class="loading">Loading stations...</div>
@@ -274,8 +275,8 @@
       // Render bike-to stations
       bikeContainer.innerHTML = bikeStations.map(s => `
         <label class="station-item">
-          <input type="checkbox" name="bikeStation" value="${s.id}"
-            ${settings.bikeToStations?.includes(s.id) ? 'checked' : ''}>
+          <input type="checkbox" name="bikeStation" value="${s.transiterId}"
+            ${settings.bikeToStations?.includes(s.transiterId) ? 'checked' : ''}>
           <div class="station-info">
             <div class="station-name">${s.name}</div>
             <div class="station-lines">
@@ -289,8 +290,8 @@
       // Render walk-to stations
       walkContainer.innerHTML = walkStations.map(s => `
         <label class="station-item">
-          <input type="checkbox" name="walkStation" value="${s.id}"
-            ${settings.walkToStations?.includes(s.id) ? 'checked' : ''}>
+          <input type="checkbox" name="walkStation" value="${s.transiterId}"
+            ${settings.walkToStations?.includes(s.transiterId) ? 'checked' : ''}>
           <div class="station-info">
             <div class="station-name">${s.name}</div>
             <div class="station-lines">
@@ -309,21 +310,21 @@
       destSelect.innerHTML = `
         <optgroup label="Manhattan">
           ${manhattanStations.map(s => `
-            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
               ${s.name} (${s.lines.join('/')})
             </option>
           `).join('')}
         </optgroup>
         <optgroup label="Queens">
           ${queensStations.map(s => `
-            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
               ${s.name} (${s.lines.join('/')})
             </option>
           `).join('')}
         </optgroup>
         <optgroup label="Brooklyn">
           ${brooklynStations.map(s => `
-            <option value="${s.id}" ${settings.destinationStation === s.id ? 'selected' : ''}>
+            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
               ${s.name} (${s.lines.join('/')})
             </option>
           `).join('')}

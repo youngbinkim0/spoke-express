@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NYC Commute Optimizer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .settings-link {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .settings-link:hover {
+      color: #fff;
+    }
+
+    .weather-bar {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .weather-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .weather-temp {
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .weather-conditions {
+      color: #888;
+    }
+
+    .weather-warning {
+      background: #ff6b6b;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .time {
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 16px 20px;
+      border-left: 4px solid #4ecca3;
+    }
+
+    .option-card.transit-only {
+      border-left-color: #0077b6;
+    }
+
+    .option-card.rank-1 {
+      background: #1a3a5c;
+    }
+
+    .option-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .option-rank {
+      background: #4ecca3;
+      color: #1a1a2e;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .option-card.transit-only .option-rank {
+      background: #0077b6;
+    }
+
+    .option-summary {
+      font-size: 1.1rem;
+      font-weight: 500;
+      flex: 1;
+      margin-left: 12px;
+    }
+
+    .option-duration {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #4ecca3;
+    }
+
+    .option-card.transit-only .option-duration {
+      color: #0077b6;
+    }
+
+    .option-details {
+      display: flex;
+      gap: 20px;
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .option-legs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .leg {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #0f3460;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .leg-icon {
+      font-size: 1rem;
+    }
+
+    .leg-arrow {
+      color: #555;
+    }
+
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .alerts {
+      margin-top: 20px;
+    }
+
+    .alert {
+      background: #ff6b6b22;
+      border: 1px solid #ff6b6b;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      color: #ff6b6b;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .error {
+      background: #ff6b6b22;
+      border: 1px solid #ff6b6b;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #ff6b6b;
+    }
+
+    .no-options {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .no-options a {
+      color: #4ecca3;
+    }
+
+    .refresh-info {
+      text-align: center;
+      margin-top: 20px;
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    /* MTA line colors */
+    .line-1, .line-2, .line-3 { background: #EE352E; }
+    .line-4, .line-5, .line-6 { background: #00933C; }
+    .line-7 { background: #B933AD; }
+    .line-A, .line-C, .line-E { background: #0039A6; }
+    .line-B, .line-D, .line-F, .line-M { background: #FF6319; }
+    .line-G { background: #6CBE45; }
+    .line-J, .line-Z { background: #996633; }
+    .line-L { background: #A7A9AC; }
+    .line-N, .line-Q, .line-R, .line-W { background: #FCCC0A; color: #000; }
+    .line-S { background: #808183; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Commute Options</h1>
+      <a href="/static/settings.html" class="settings-link">Settings</a>
+    </header>
+
+    <div id="content">
+      <div class="loading">Loading...</div>
+    </div>
+
+    <div class="refresh-info">
+      Auto-refreshes every 30 seconds
+    </div>
+  </div>
+
+  <script>
+    const lineColors = {
+      '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
+      '4': '#00933C', '5': '#00933C', '6': '#00933C',
+      '7': '#B933AD',
+      'A': '#0039A6', 'C': '#0039A6', 'E': '#0039A6',
+      'B': '#FF6319', 'D': '#FF6319', 'F': '#FF6319', 'M': '#FF6319',
+      'G': '#6CBE45',
+      'J': '#996633', 'Z': '#996633',
+      'L': '#A7A9AC',
+      'N': '#FCCC0A', 'Q': '#FCCC0A', 'R': '#FCCC0A', 'W': '#FCCC0A',
+      'S': '#808183',
+    };
+
+    function getModeIcon(mode) {
+      switch (mode) {
+        case 'bike': return '🚲';
+        case 'walk': return '🚶';
+        case 'subway': return '🚇';
+        default: return '•';
+      }
+    }
+
+    function renderLineBadge(line) {
+      const color = lineColors[line] || '#888';
+      const textColor = ['N', 'Q', 'R', 'W'].includes(line) ? '#000' : '#fff';
+      return `<span class="line-badge" style="background:${color};color:${textColor}">${line}</span>`;
+    }
+
+    function renderOption(option) {
+      const typeClass = option.type === 'bike_to_transit' ? '' : 'transit-only';
+      const rankClass = option.rank === 1 ? 'rank-1' : '';
+
+      const legsHtml = option.legs.map((leg, i) => {
+        let legContent = `<span class="leg-icon">${getModeIcon(leg.mode)}</span>`;
+        if (leg.route) {
+          legContent += renderLineBadge(leg.route);
+        }
+        legContent += ` ${leg.duration}m`;
+
+        const arrow = i < option.legs.length - 1 ? '<span class="leg-arrow">→</span>' : '';
+        return `<span class="leg">${legContent}</span>${arrow}`;
+      }).join('');
+
+      return `
+        <div class="option-card ${typeClass} ${rankClass}">
+          <div class="option-header">
+            <span class="option-rank">${option.rank}</span>
+            <span class="option-summary">${option.summary}</span>
+            <span class="option-duration">${option.duration_minutes}m</span>
+          </div>
+          <div class="option-details">
+            <span>Next train: ${option.nextTrain}</span>
+            <span>Arrive: ${option.arrival_time}</span>
+          </div>
+          <div class="option-legs">${legsHtml}</div>
+        </div>
+      `;
+    }
+
+    function renderWeather(weather) {
+      const warningHtml = weather.is_bad
+        ? '<span class="weather-warning">Bad for biking</span>'
+        : '';
+
+      return `
+        <div class="weather-bar">
+          <div class="weather-info">
+            <span class="weather-temp">${weather.temp_f}°F</span>
+            <span class="weather-conditions">${weather.conditions}</span>
+            ${warningHtml}
+          </div>
+          <span class="time">${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+        </div>
+      `;
+    }
+
+    function renderAlerts(alerts) {
+      if (!alerts || alerts.length === 0) return '';
+
+      return `
+        <div class="alerts">
+          ${alerts.map(a => `<div class="alert">⚠️ ${a.route}: ${a.message}</div>`).join('')}
+        </div>
+      `;
+    }
+
+    async function loadCommute() {
+      const content = document.getElementById('content');
+
+      try {
+        const response = await fetch('/api/commute');
+        if (!response.ok) throw new Error('Failed to load');
+
+        const data = await response.json();
+
+        if (data.options.length === 0) {
+          content.innerHTML = `
+            ${renderWeather(data.weather)}
+            <div class="no-options">
+              No commute options configured.<br>
+              <a href="/static/settings.html">Configure stations</a>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = `
+          ${renderWeather(data.weather)}
+          <div class="options-list">
+            ${data.options.map(renderOption).join('')}
+          </div>
+          ${renderAlerts(data.alerts)}
+        `;
+      } catch (error) {
+        content.innerHTML = `
+          <div class="error">
+            Failed to load commute options.<br>
+            ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Initial load
+    loadCommute();
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadCommute, 30000);
+  </script>
+</body>
+</html>
