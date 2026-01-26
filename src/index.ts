@@ -17,7 +17,7 @@ app.use('*', logger());
 app.use('*', cors());
 
 // Serve static files (settings UI)
-app.use('/static/*', serveStatic({ root: './web' }));
+app.use('/static/*', serveStatic({ root: './', rewriteRequestPath: (path) => path.replace('/static', '/web') }));
 
 // API routes
 app.route('/api/commute', commuteRoutes);
@@ -49,10 +49,11 @@ console.log(`OpenWeather API: ${config.openWeatherApiKey ? 'configured' : 'not c
 serve({
   fetch: app.fetch,
   port: config.port,
+  hostname: config.hostname,
 });
 
-console.log(`Server running at http://localhost:${config.port}`);
-console.log(`Settings UI: http://localhost:${config.port}/`);
+console.log(`Server running at http://${config.hostname}:${config.port}`);
+console.log(`Settings UI: http://${config.hostname}:${config.port}/`);
 console.log(`API endpoints:`);
 console.log(`  GET  /api/commute   - Get ranked commute options`);
 console.log(`  GET  /api/settings  - Get current settings`);

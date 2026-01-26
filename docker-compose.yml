@@ -3,22 +3,16 @@ version: '3.8'
 services:
   transiter:
     image: jamespfennell/transiter:latest
+    command: server -p postgres://transiter:transiter@db:5432/transiter
     ports:
       - "8080:8080"
-    environment:
-      - TRANSITER_DB_DRIVER=postgres
-      - TRANSITER_DB_HOST=db
-      - TRANSITER_DB_PORT=5432
-      - TRANSITER_DB_USER=transiter
-      - TRANSITER_DB_PASSWORD=transiter
-      - TRANSITER_DB_NAME=transiter
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
   db:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.4-alpine
     environment:
       - POSTGRES_USER=transiter
       - POSTGRES_PASSWORD=transiter

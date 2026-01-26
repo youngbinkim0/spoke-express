@@ -55,7 +55,7 @@ export async function getBikeTime(from: Location, to: Location): Promise<number>
       return estimate;
     }
 
-    const data: GoogleRoutesResponse = await response.json();
+    const data = (await response.json()) as GoogleRoutesResponse;
 
     if (data.routes && data.routes.length > 0) {
       // Duration is returned as "480s" format

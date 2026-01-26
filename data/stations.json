@@ -3,7 +3,7 @@
     {
       "id": "bedford-nostrand",
       "name": "Bedford-Nostrand Avs",
-      "transiterId": "G26",
+      "transiterId": "G33",
       "lines": ["G"],
       "lat": 40.6896,
       "lng": -73.9535,
@@ -12,7 +12,7 @@
     {
       "id": "classon",
       "name": "Classon Av",
-      "transiterId": "G28",
+      "transiterId": "G34",
       "lines": ["G"],
       "lat": 40.6889,
       "lng": -73.9600,
@@ -21,7 +21,7 @@
     {
       "id": "clinton-washington-g",
       "name": "Clinton-Washington Avs",
-      "transiterId": "G29",
+      "transiterId": "G35",
       "lines": ["G"],
       "lat": 40.6880,
       "lng": -73.9667,
@@ -30,7 +30,7 @@
     {
       "id": "fulton-g",
       "name": "Fulton St",
-      "transiterId": "G30",
+      "transiterId": "G36",
       "lines": ["G"],
       "lat": 40.6870,
       "lng": -73.9752,
@@ -66,7 +66,7 @@
     {
       "id": "myrtle-willoughby",
       "name": "Myrtle-Willoughby Avs",
-      "transiterId": "G33",
+      "transiterId": "G32",
       "lines": ["G"],
       "lat": 40.6946,
       "lng": -73.9489,
@@ -75,7 +75,7 @@
     {
       "id": "flushing",
       "name": "Flushing Av",
-      "transiterId": "G34",
+      "transiterId": "G31",
       "lines": ["G"],
       "lat": 40.7004,
       "lng": -73.9504,
@@ -84,7 +84,7 @@
     {
       "id": "broadway-g",
       "name": "Broadway",
-      "transiterId": "G35",
+      "transiterId": "G30",
       "lines": ["G"],
       "lat": 40.7063,
       "lng": -73.9503,
@@ -93,7 +93,7 @@
     {
       "id": "metropolitan",
       "name": "Metropolitan Av",
-      "transiterId": "G36",
+      "transiterId": "G29",
       "lines": ["G"],
       "lat": 40.7127,
       "lng": -73.9511,
@@ -102,7 +102,7 @@
     {
       "id": "greenpoint",
       "name": "Greenpoint Av",
-      "transiterId": "G22",
+      "transiterId": "G26",
       "lines": ["G"],
       "lat": 40.7313,
       "lng": -73.9542,
@@ -111,7 +111,7 @@
     {
       "id": "nassau",
       "name": "Nassau Av",
-      "transiterId": "G21",
+      "transiterId": "G28",
       "lines": ["G"],
       "lat": 40.7244,
       "lng": -73.9512,

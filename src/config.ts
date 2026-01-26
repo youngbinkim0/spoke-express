@@ -1,5 +1,6 @@
 export const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '8888', 10),
+  hostname: process.env.HOST || '0.0.0.0',
   transiterUrl: process.env.TRANSITER_URL || 'http://localhost:8080',
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
   openWeatherApiKey: process.env.OPENWEATHER_API_KEY || '',

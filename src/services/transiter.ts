@@ -18,7 +18,7 @@ export async function getStopArrivals(stopId: string): Promise<TransiterArrival[
       return [];
     }
 
-    const data: TransiterStopResponse = await response.json();
+    const data = (await response.json()) as TransiterStopResponse;
     const arrivals = data.stopTimes || [];
 
     cache.set(cacheKey, arrivals);
@@ -29,11 +29,16 @@ export async function getStopArrivals(stopId: string): Promise<TransiterArrival[
   }
 }
 
+// Parse Transiter timestamp (Unix seconds as string) to milliseconds
+function parseArrivalTime(timeStr: string): number {
+  return parseInt(timeStr, 10) * 1000;
+}
+
 export function getNextArrival(arrivals: TransiterArrival[], direction?: string): TransiterArrival | null {
   const now = Date.now();
 
   const validArrivals = arrivals.filter((a) => {
-    const arrivalTime = new Date(a.arrival.time).getTime();
+    const arrivalTime = parseArrivalTime(a.arrival.time);
     // Only include arrivals in the future (with 1 min buffer)
     if (arrivalTime < now - 60000) return false;
     // Filter by direction if specified
@@ -45,14 +50,14 @@ export function getNextArrival(arrivals: TransiterArrival[], direction?: string)
 
   // Sort by arrival time and return the first
   validArrivals.sort((a, b) => {
-    return new Date(a.arrival.time).getTime() - new Date(b.arrival.time).getTime();
+    return parseArrivalTime(a.arrival.time) - parseArrivalTime(b.arrival.time);
   });
 
   return validArrivals[0];
 }
 
 export function formatArrivalTime(arrival: TransiterArrival): string {
-  const date = new Date(arrival.arrival.time);
+  const date = new Date(parseArrivalTime(arrival.arrival.time));
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -62,7 +67,7 @@ export function formatArrivalTime(arrival: TransiterArrival): string {
 
 export function getMinutesUntilArrival(arrival: TransiterArrival): number {
   const now = Date.now();
-  const arrivalTime = new Date(arrival.arrival.time).getTime();
+  const arrivalTime = parseArrivalTime(arrival.arrival.time);
   return Math.max(0, Math.round((arrivalTime - now) / 60000));
 }
 
@@ -76,10 +81,10 @@ export function estimateTransitTime(fromStopId: string, toStopId: string): numbe
   // For now, return a reasonable default based on common routes
   // You can expand this with actual stop-to-stop times
   const knownRoutes: Record<string, number> = {
-    'G26_G22': 18, // Bedford-Nostrand to Court Sq (G)
-    'G28_G22': 16, // Classon to Court Sq (G)
-    'G29_G22': 14, // Clinton-Washington to Court Sq (G)
-    'G30_G22': 12, // Fulton to Court Sq (G)
+    'G33_G22': 18, // Bedford-Nostrand to Court Sq (G)
+    'G34_G22': 16, // Classon to Court Sq (G)
+    'G35_G22': 14, // Clinton-Washington to Court Sq (G)
+    'G36_G22': 12, // Fulton to Court Sq (G)
     'A42_G22': 15, // Hoyt-Schermerhorn to Court Sq
   };
 

@@ -40,7 +40,7 @@ export async function getWeather(lat: number, lng: number): Promise<Weather> {
       return getDefaultWeather();
     }
 
-    const data: OpenWeatherResponse = await response.json();
+    const data = (await response.json()) as OpenWeatherResponse;
     const weather = parseWeatherResponse(data);
 
     cache.set(cacheKey, weather);
