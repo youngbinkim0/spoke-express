@@ -1,554 +1,371 @@
 # NYC Commute Optimizer - Implementation Plan
 
-A tool that pulls real-time MTA data and weather to recommend the optimal commute mode each morning for Brooklyn to Manhattan commutes.
+**Goal:** Android widget showing ranked commute options (home → work) with zero clicks. Weather-aware: bike option moves to #2 on rainy days.
 
-## Core Features
+## Why Build This vs Citymapper?
 
-1. **Two commute modes:**
-   - Public transit only (subway/bus)
-   - Combo mode: bike to transit station, then take public transit
+| Pain Point | Citymapper | This Project |
+|------------|-----------|--------------|
+| Open app | Required | Not needed (widget) |
+| Type start/end | Every time | Predefined |
+| Check weather separately | Yes | Built-in |
+| Auto-rank by weather | No | Yes |
 
-2. **Weather-aware routing:** Deprioritize bike option when raining or snowing
-
-3. **Real-time MTA data integration** for accurate delay information
-
-4. **Push notifications** for morning commute recommendations
+**Core value:** Glance at widget → see today's best option → go.
 
 ---
 
-## 1. Recommended Tech Stack
+## Simplified Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Android Widget                           │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  72°F Sunny                          7:45 AM        │    │
+│  │                                                     │    │
+│  │  1. 🚲 Bike → G train         28 min  ← best       │    │
+│  │  2. 🚇 Walk → G train         35 min               │    │
+│  │  3. 🚇 Walk → A/C             42 min               │    │
+│  │                                                     │    │
+│  │  ⚠️ G train: Minor delays eastbound                │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend API (hosted)                      │
+│                                                              │
+│   GET /commute                                               │
+│   → Combines weather + routes + alerts                       │
+│   → Returns ranked options                                   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+            ┌─────────────────┼─────────────────┐
+            ▼                 ▼                 ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │ Google       │  │ OpenWeather  │  │ MTA Alerts   │
+    │ Routes API   │  │ API          │  │ API          │
+    │              │  │              │  │              │
+    │ Transit time │  │ Rain/snow    │  │ Delays       │
+    │ directions   │  │ forecast     │  │ disruptions  │
+    └──────────────┘  └──────────────┘  └──────────────┘
+```
+
+---
+
+## Key Simplification: Use Google Routes API
+
+Instead of parsing GTFS data ourselves, use [Google Routes API](https://developers.google.com/maps/documentation/routes) for transit routing.
+
+**Pricing:** ~$5 per 1,000 requests (Basic tier)
+- 2 requests/day × 30 days = 60 requests/month = **$0.30/month**
+
+**What we get:**
+- Real-time transit directions
+- Accurate duration estimates
+- Multiple route options
+- No GTFS parsing needed
+
+**What we still build:**
+- Weather check (OpenWeatherMap)
+- MTA alerts (free API)
+- Ranking logic
+- Android widget
+
+---
+
+## Tech Stack (Simplified)
 
 ### Backend
-| Component | Technology | Justification |
-|-----------|------------|---------------|
-| **Runtime** | Node.js 20+ with TypeScript | Strong async handling for API calls, excellent ecosystem for real-time data |
-| **Framework** | Fastify | Faster than Express, built-in TypeScript support, schema validation |
-| **Database** | SQLite (via better-sqlite3) | Zero-config, file-based, perfect for personal tool |
-| **Caching** | node-cache (in-memory) | Simple solution for caching API responses |
-| **Scheduler** | node-cron | Lightweight scheduling for morning notification triggers |
-| **GTFS Parser** | gtfs-realtime-bindings + gtfs | Official Google libraries for parsing MTA feeds |
+| Component | Technology | Why |
+|-----------|------------|-----|
+| Runtime | Node.js + TypeScript | Simple, fast |
+| Framework | Hono or Express | Lightweight |
+| Hosting | Railway / Fly.io / Vercel | Free tier works |
+| Cache | In-memory (node-cache) | Reduce API calls |
 
-### Frontend (Optional Web Dashboard)
-| Component | Technology | Justification |
-|-----------|------------|---------------|
-| **Framework** | React with Vite | Fast development, good for simple dashboard |
-| **Styling** | Tailwind CSS | Rapid prototyping |
-| **State** | Zustand | Minimal boilerplate |
+### Android Widget
+| Option | Pros | Cons |
+|--------|------|------|
+| **KWGT + Tasker** | No coding, flexible | Setup complexity |
+| **Native Kotlin** | Full control, polished | More dev work |
+| **Flutter** | Cross-platform | Overkill for widget |
 
-### Notifications
-| Component | Technology | Justification |
-|-----------|------------|---------------|
-| **Push Service** | Web Push API + Pushover | Web Push for browser, Pushover for mobile |
-| **Alternative** | ntfy.sh | Self-hostable, free, works on all platforms |
+**Recommendation:** Start with KWGT + Tasker for quick prototype, native Kotlin later if needed.
 
 ---
 
-## 2. System Architecture
+## API Design
 
+### `GET /commute`
+
+Single endpoint returns everything the widget needs.
+
+**Request:**
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           NYC Commute Optimizer                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐       │
-│  │   Scheduler      │    │   API Server     │    │   Web Dashboard  │       │
-│  │   (node-cron)    │    │   (Fastify)      │    │   (React/Vite)   │       │
-│  │                  │    │                  │    │                  │       │
-│  │ • Morning check  │    │ • /routes        │    │ • Route display  │       │
-│  │ • Weather poll   │    │ • /weather       │    │ • Settings       │       │
-│  │ • MTA poll       │    │ • /notifications │    │ • History        │       │
-│  └────────┬─────────┘    └────────┬─────────┘    └──────────────────┘       │
-│           │                       │                                          │
-│           ▼                       ▼                                          │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        Core Services Layer                           │    │
-│  ├─────────────────┬─────────────────┬─────────────────┬───────────────┤    │
-│  │  RouteService   │  WeatherService │  MTAService     │ NotifyService │    │
-│  │                 │                 │                 │               │    │
-│  │ • Optimization  │ • Current       │ • Realtime      │ • Web Push    │    │
-│  │ • Scoring       │ • Forecast      │ • Alerts        │ • Pushover    │    │
-│  │ • Bike+Transit  │ • Rain/Snow     │ • Delays        │ • ntfy        │    │
-│  └────────┬────────┴────────┬────────┴────────┬────────┴───────────────┘    │
-│           │                 │                 │                              │
-│           ▼                 ▼                 ▼                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        Data Layer                                    │    │
-│  ├─────────────────────────────────────────────────────────────────────┤    │
-│  │  SQLite Database          │  In-Memory Cache (node-cache)           │    │
-│  │  • User preferences       │  • MTA realtime (TTL: 60s)              │    │
-│  │  • Route history          │  • Weather data (TTL: 10min)            │    │
-│  │  • Static GTFS data       │  • Computed routes (TTL: 5min)          │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          External APIs                                       │
-├─────────────────┬─────────────────┬─────────────────┬───────────────────────┤
-│   MTA GTFS      │   MTA Realtime  │  Weather API    │   Notification APIs   │
-│   (Static)      │   (Protobuf)    │  (OpenWeather)  │   (Pushover/ntfy)     │
-└─────────────────┴─────────────────┴─────────────────┴───────────────────────┘
+GET /commute?home=40.6892,-73.9442&work=40.7580,-73.9855
 ```
 
----
-
-## 3. Data Models
-
-### Database Schema (SQLite)
-
-```typescript
-// User preferences for commute
-interface UserPreferences {
-  id: number;
-  home_lat: number;
-  home_lng: number;
-  home_address: string;
-  work_lat: number;
-  work_lng: number;
-  work_address: string;
-  preferred_departure_time: string;      // "08:00"
-  notification_enabled: boolean;
-  notification_minutes_before: number;   // e.g., 30
-  bike_max_distance_miles: number;       // max willing to bike to station
-  created_at: string;
-  updated_at: string;
-}
-
-// Saved transit stations for quick lookup
-interface TransitStation {
-  id: string;               // MTA stop_id
-  name: string;
-  lat: number;
-  lng: number;
-  routes: string;           // JSON array of route IDs, e.g., '["A","C","G"]'
-  station_type: 'subway' | 'bus';
-  borough: string;
-}
-
-// Route calculation history
-interface RouteHistory {
-  id: number;
-  calculated_at: string;
-  recommended_type: 'transit_only' | 'bike_to_transit';
-  duration_minutes: number;
-  was_bad_weather: boolean;
-  details: string;          // JSON blob with full route details
-}
-```
-
-### Application Types
-
-```typescript
-interface TransitLeg {
-  type: 'subway' | 'bus' | 'walk' | 'bike';
-  from: string;              // Station/location name
-  to: string;
-  route_id?: string;         // e.g., "G", "B62"
-  duration_minutes: number;
-  distance_miles?: number;
-}
-
-interface CommuteOption {
-  id: string;
-  type: 'transit_only' | 'bike_to_transit';
-  legs: TransitLeg[];
-  duration_minutes: number;
-  departure_time: Date;
-  arrival_time: Date;
-}
-
-interface Weather {
-  temperature_f: number;
-  conditions: string;        // "Sunny", "Cloudy", "Rain", etc.
-  precipitation_type: 'none' | 'rain' | 'snow' | 'mix';
-  precipitation_probability: number;  // 0-1
-  is_bad: boolean;           // Computed: should we avoid biking?
-}
-
-interface CommuteResponse {
-  options: CommuteOption[];  // All options, ranked (first = recommended)
-  weather: Weather;
-  alerts: MTAAlert[];
-  generated_at: Date;
-}
-```
-
----
-
-## 4. API Integrations
-
-### MTA GTFS Feeds
-
-```typescript
-// MTA API endpoints (requires API key from https://api.mta.info/)
-
-export const MTA_FEEDS = {
-  // Static GTFS (download periodically)
-  static: {
-    subway: 'http://web.mta.info/developers/data/nyct/subway/google_transit.zip',
-    bus_brooklyn: 'http://web.mta.info/developers/data/nyct/bus/google_transit_brooklyn.zip',
-  },
-
-  // GTFS-Realtime feeds (poll every 30-60 seconds)
-  realtime: {
-    ace: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
-    bdfm: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
-    g: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g',
-    jz: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz',
-    l: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l',
-    nqrw: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
-    '1234567': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
-    alerts: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts',
-  }
-};
-```
-
-### Weather API (OpenWeatherMap)
-
-```typescript
-// OpenWeatherMap One Call API 3.0
-// Free tier: 1000 calls/day
-// Register at: https://openweathermap.org/api
-
-const WEATHER_API = {
-  base_url: 'https://api.openweathermap.org/data/3.0/onecall',
-  params: 'units=imperial&exclude=minutely,daily'
-};
-
-// Alternative: Weather.gov (free, no key, US only)
-const WEATHER_GOV_API = {
-  base_url: 'https://api.weather.gov',
-  // Requires User-Agent header
-};
-```
-
-### Notification Services
-
-| Service | Cost | Notes |
-|---------|------|-------|
-| **Pushover** | $5 one-time | Best for mobile, reliable |
-| **ntfy.sh** | Free | Self-hostable, works everywhere |
-| **Web Push** | Free | Browser only, requires service worker |
-
----
-
-## 5. Core Algorithm
-
-### Simple Ranking Logic
-
-**Primary sort: fastest route wins.** If it's raining or snowing, bike option moves to #2.
-
-```typescript
-interface CommuteOption {
-  type: 'transit_only' | 'bike_to_transit';
-  duration_minutes: number;
-  legs: TransitLeg[];
-}
-
-interface Weather {
-  is_bad: boolean;  // rain or snow
-  conditions: string;
-}
-
-function isBadWeather(weather: WeatherConditions): boolean {
-  return weather.precipitation_type === 'rain'
-      || weather.precipitation_type === 'snow'
-      || weather.precipitation_type === 'mix';
-}
-
-function rankRoutes(
-  routes: CommuteOption[],
-  weather: Weather
-): CommuteOption[] {
-  // Step 1: Sort all routes by duration (fastest first)
-  const sorted = [...routes].sort((a, b) =>
-    a.duration_minutes - b.duration_minutes
-  );
-
-  // Step 2: If bad weather and bike option is #1, swap it to #2
-  if (weather.is_bad && sorted[0]?.type === 'bike_to_transit') {
-    // Find the fastest transit-only option
-    const transitIndex = sorted.findIndex(r => r.type === 'transit_only');
-    if (transitIndex > 0) {
-      // Swap: move transit-only to #1, bike to #2
-      const [transit] = sorted.splice(transitIndex, 1);
-      sorted.unshift(transit);
+**Response:**
+```json
+{
+  "options": [
+    {
+      "rank": 1,
+      "type": "bike_to_transit",
+      "duration_minutes": 28,
+      "summary": "Bike → G train",
+      "legs": [
+        { "mode": "bike", "duration": 8, "instruction": "Bike to Bedford-Nostrand" },
+        { "mode": "subway", "duration": 18, "route": "G", "instruction": "G to Court Sq" },
+        { "mode": "walk", "duration": 2, "instruction": "Walk to destination" }
+      ],
+      "departure_time": "7:52 AM",
+      "arrival_time": "8:20 AM"
+    },
+    {
+      "rank": 2,
+      "type": "transit_only",
+      "duration_minutes": 35,
+      "summary": "Walk → G train",
+      "legs": [...],
+      "departure_time": "7:45 AM",
+      "arrival_time": "8:20 AM"
     }
-  }
-
-  return sorted;
+  ],
+  "weather": {
+    "temp_f": 72,
+    "conditions": "Sunny",
+    "is_bad": false
+  },
+  "alerts": [
+    {
+      "route": "G",
+      "severity": "minor",
+      "message": "Minor delays eastbound due to signal problems"
+    }
+  ],
+  "generated_at": "2025-01-26T12:45:00Z"
 }
 ```
 
-### Example Output
+---
 
-**Good weather (sunny, 65°F):**
-```
-1. 🚲 Bike + G train     → 28 min  ← recommended
-2. 🚇 Walk + G train     → 35 min
-3. 🚇 Walk + A/C train   → 38 min
-```
+## Core Algorithm
 
-**Bad weather (raining):**
-```
-1. 🚇 Walk + G train     → 35 min  ← recommended
-2. 🚲 Bike + G train     → 28 min  (not recommended: rain)
-3. 🚇 Walk + A/C train   → 38 min
-```
-
-### Weather Check
+### Ranking Logic
 
 ```typescript
-// Simple check - is it currently raining/snowing or about to?
-function isBadWeather(weather: WeatherConditions): boolean {
-  // Currently precipitating
-  if (weather.precipitation_type !== 'none') {
-    return true;
+function rankOptions(
+  transitRoute: Route,
+  bikeToTransitRoute: Route,
+  weather: Weather
+): RankedOption[] {
+  const options = [
+    { ...transitRoute, type: 'transit_only' },
+    { ...bikeToTransitRoute, type: 'bike_to_transit' }
+  ];
+
+  // Sort by duration (fastest first)
+  options.sort((a, b) => a.duration_minutes - b.duration_minutes);
+
+  // If bad weather, ensure bike isn't #1
+  if (weather.is_bad && options[0].type === 'bike_to_transit') {
+    // Swap positions
+    [options[0], options[1]] = [options[1], options[0]];
   }
 
-  // High chance of rain in next hour (>50%)
-  if (weather.precipitation_probability > 0.5) {
-    return true;
-  }
+  // Add rank numbers
+  return options.map((opt, i) => ({ ...opt, rank: i + 1 }));
+}
 
-  return false;
+function isBadWeather(weather: Weather): boolean {
+  return (
+    weather.precipitation_type !== 'none' ||
+    weather.precipitation_probability > 0.5
+  );
 }
 ```
 
 ---
 
-## 6. Implementation Phases
+## Implementation Phases
 
-### Phase 1: Foundation
-**Goal: Basic project structure and data layer**
+### Phase 1: Backend MVP (1-2 days)
+- [ ] Set up Node.js project with TypeScript
+- [ ] Integrate OpenWeatherMap API
+- [ ] Integrate Google Routes API (transit directions)
+- [ ] Add MTA alerts API
+- [ ] Implement `/commute` endpoint
+- [ ] Deploy to Railway/Fly.io
 
-- [ ] Initialize Node.js/TypeScript project with Fastify
-- [ ] Set up SQLite schema and migrations
-- [ ] Download and parse MTA static GTFS data
-- [ ] Populate transit_stations table
-- [ ] Create config system with environment variables
+**Deliverable:** Working API that returns ranked commute options
 
-**Deliverable:** Can query nearby stations from database
+### Phase 2: Bike Route Calculation (1 day)
+- [ ] Calculate bike time to nearby subway stations
+- [ ] Query Google Routes for transit from station → work
+- [ ] Combine bike + transit into single option
 
-### Phase 2: Core Services
-**Goal: External API integrations working**
+**Deliverable:** Bike-to-transit option included in response
 
-- [ ] Implement MTA realtime feed fetching (GTFS-realtime)
-- [ ] Implement weather service (OpenWeatherMap)
-- [ ] Add in-memory caching layer
-- [ ] Register for MTA + weather API keys
+### Phase 3: Android Widget (1-2 days)
 
-**Deliverable:** Can fetch live MTA delays and current weather
+**Option A: KWGT + Tasker (no coding)**
+- [ ] Install KWGT and Tasker
+- [ ] Create Tasker task to fetch `/commute` endpoint
+- [ ] Parse JSON response
+- [ ] Design KWGT widget to display results
+- [ ] Set up periodic refresh (every 15 min in morning)
 
-### Phase 3: Routing Engine
-**Goal: Route computation working**
+**Option B: Native Kotlin widget**
+- [ ] Create Android Studio project
+- [ ] Implement AppWidgetProvider
+- [ ] Add WorkManager for background refresh
+- [ ] Design widget layout
+- [ ] Handle click to open Google Maps
 
-- [ ] Build route constructor from GTFS data
-- [ ] Implement transit pathfinding algorithm
-- [ ] Add bike time estimation
-- [ ] Create main RouteService orchestrator
+**Deliverable:** Widget showing commute options on home screen
 
-**Deliverable:** Can compute transit-only and bike+transit routes
-
-### Phase 4: Ranking & Recommendations
-**Goal: Weather-aware route ranking**
-
-- [ ] Implement simple ranking (sort by time, bump bike if rain/snow)
-- [ ] Create response builder with all options listed
-- [ ] Add unit tests for ranking logic
-
-**Deliverable:** Bad weather moves bike option to #2
-
-### Phase 5: API Server
-**Goal: REST API endpoints**
-
-- [ ] Set up Fastify server
-- [ ] `GET /api/routes` - Get route recommendations
-- [ ] `GET /api/weather` - Get current weather
-- [ ] `GET/PUT /api/preferences` - User preferences
-- [ ] `GET /api/alerts` - MTA service alerts
-
-**Deliverable:** Can query routes via HTTP
-
-### Phase 6: Notifications
-**Goal: Morning push notifications**
-
-- [ ] Implement notification service (Pushover/ntfy)
-- [ ] Create node-cron scheduler for morning job
-- [ ] Track notification history
-
-**Deliverable:** Receive morning commute recommendations on phone
-
-### Phase 7: Web Dashboard (Optional)
-**Goal: Simple web UI**
-
-- [ ] Set up React + Vite + Tailwind
-- [ ] Dashboard view with current recommendation
-- [ ] Settings page for preferences
-- [ ] History page for past recommendations
-
-**Deliverable:** Full working application
+### Phase 4: Polish (optional)
+- [ ] Add caching to reduce API calls
+- [ ] Morning notification via ntfy.sh
+- [ ] Settings screen for home/work addresses
+- [ ] History tracking
 
 ---
 
-## 7. Project Structure
+## Project Structure (Simplified)
 
 ```
 commute-optimizer/
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
-├── .gitignore
-├── README.md
-│
-├── scripts/
-│   ├── import-gtfs.ts          # One-time GTFS import
-│   └── test-notification.ts    # Manual notification test
-│
-├── data/
-│   ├── commute.db              # SQLite database
-│   └── gtfs/                   # Downloaded GTFS files (gitignored)
 │
 ├── src/
-│   ├── index.ts                # Main entry point
+│   ├── index.ts              # Entry point
+│   ├── server.ts             # HTTP server
 │   │
-│   ├── config/
-│   │   ├── index.ts            # Configuration loader
-│   │   ├── mta.ts              # MTA API config
-│   │   └── weather.ts          # Weather API config
-│   │
-│   ├── db/
-│   │   ├── schema.sql          # SQLite schema
-│   │   ├── Database.ts         # DB connection wrapper
-│   │   └── repositories/
-│   │       ├── PreferencesRepo.ts
-│   │       ├── StationsRepo.ts
-│   │       └── HistoryRepo.ts
-│   │
-│   ├── types/
-│   │   ├── index.ts            # Shared types
-│   │   ├── gtfs.ts             # GTFS types
-│   │   └── routes.ts           # Route types
+│   ├── routes/
+│   │   └── commute.ts        # GET /commute endpoint
 │   │
 │   ├── services/
-│   │   ├── mta/
-│   │   │   ├── MTAService.ts
-│   │   │   ├── GTFSImporter.ts
-│   │   │   └── AlertParser.ts
-│   │   │
-│   │   ├── weather/
-│   │   │   └── WeatherService.ts
-│   │   │
-│   │   ├── routing/
-│   │   │   ├── RouteService.ts
-│   │   │   ├── TransitPathfinder.ts
-│   │   │   └── BikeRouter.ts
-│   │   │
-│   │   ├── notification/
-│   │   │   ├── NotificationService.ts
-│   │   │   ├── PushoverProvider.ts
-│   │   │   └── NtfyProvider.ts
-│   │   │
-│   │   └── cache/
-│   │       └── CacheService.ts
+│   │   ├── google-routes.ts  # Google Routes API client
+│   │   ├── weather.ts        # OpenWeatherMap client
+│   │   ├── mta-alerts.ts     # MTA alerts client
+│   │   └── ranking.ts        # Ranking logic
 │   │
-│   ├── scheduler/
-│   │   └── MorningCommute.ts
+│   ├── types/
+│   │   └── index.ts          # TypeScript types
 │   │
-│   ├── server/
-│   │   ├── index.ts
-│   │   └── routes/
-│   │       ├── routes.ts
-│   │       ├── weather.ts
-│   │       ├── alerts.ts
-│   │       └── preferences.ts
-│   │
-│   └── utils/
-│       ├── geo.ts              # Haversine distance
-│       ├── time.ts             # Time utilities
-│       └── logger.ts
+│   └── config.ts             # Environment config
 │
-├── web/                        # React frontend (optional)
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── src/
-│       ├── App.tsx
-│       ├── pages/
-│       │   ├── Dashboard.tsx
-│       │   ├── Settings.tsx
-│       │   └── History.tsx
-│       └── components/
-│           ├── RouteCard.tsx
-│           └── WeatherBadge.tsx
-│
-└── tests/
-    ├── ranking.test.ts
-    └── routing.test.ts
+└── android/                  # Widget (if native)
+    └── ...
 ```
 
 ---
 
-## 8. Environment Variables
+## Environment Variables
 
 ```bash
 # .env.example
 
-# MTA API (required) - Register at https://api.mta.info/
-MTA_API_KEY=your_mta_api_key
+# Google Routes API (required)
+# Get key at: https://console.cloud.google.com/
+GOOGLE_MAPS_API_KEY=your_key
 
-# Weather API (pick one)
-OPENWEATHER_API_KEY=your_openweather_key
-# OR use Weather.gov (no key needed)
-USE_WEATHER_GOV=true
+# OpenWeatherMap (required)
+# Get key at: https://openweathermap.org/api
+OPENWEATHER_API_KEY=your_key
 
-# Notifications (pick one or more)
-PUSHOVER_APP_TOKEN=your_pushover_app_token
-PUSHOVER_USER_KEY=your_pushover_user_key
-# OR
-NTFY_TOPIC=your_ntfy_topic
+# MTA API (optional, for alerts)
+# Get key at: https://api.mta.info/
+MTA_API_KEY=your_key
 
-# Database
-DATABASE_PATH=./data/commute.db
+# Predefined locations
+HOME_LAT=40.6892
+HOME_LNG=-73.9442
+HOME_ADDRESS="123 Brooklyn St, Brooklyn, NY"
+
+WORK_LAT=40.7580
+WORK_LNG=-73.9855
+WORK_ADDRESS="456 Manhattan Ave, New York, NY"
 
 # Server
 PORT=3000
-HOST=localhost
-
-# Default locations (Brooklyn to Manhattan)
-DEFAULT_HOME_LAT=40.6892
-DEFAULT_HOME_LNG=-73.9442
-DEFAULT_WORK_LAT=40.7580
-DEFAULT_WORK_LNG=-73.9855
 ```
 
 ---
 
-## 9. Brooklyn-Manhattan Focus
+## Cost Estimate
 
-### Key Subway Lines
-`A`, `C`, `G`, `F`, `R`, `N`, `Q`, `B`, `D`, `2`, `3`, `4`, `5`, `L`
-
-### Major Brooklyn Transit Hubs (for bike-to-transit)
-| Station | Lines |
-|---------|-------|
-| Atlantic Ave-Barclays Ctr | B, Q, D, N, R, 2, 3, 4, 5 |
-| Jay St-MetroTech | A, C, F, R |
-| Bedford Ave | L |
-| Hoyt-Schermerhorn | A, C, G |
-
-### Bike Time Estimation
-- **Flat ground:** 12 mph average
-- **Bridge crossing:** 10 mph average
-- **Add 20%** for NYC grid (non-straight routes)
-- **Add 2 minutes** for locking bike at station
+| Service | Monthly Cost |
+|---------|-------------|
+| Google Routes API | ~$0.30 (60 requests) |
+| OpenWeatherMap | Free (1000/day) |
+| MTA Alerts | Free |
+| Hosting (Railway) | Free tier |
+| **Total** | **~$0.30/month** |
 
 ---
 
-## Critical Implementation Files
+## Android Widget Options
 
-1. **`src/services/routing/RouteService.ts`** - Core orchestration + ranking logic
-2. **`src/services/mta/MTAService.ts`** - MTA realtime integration
-3. **`src/services/weather/WeatherService.ts`** - Weather API + bad weather check
-4. **`src/db/schema.sql`** - Database schema (implement first)
-5. **`src/scheduler/MorningCommute.ts`** - Notification scheduler
+### Option A: KWGT + Tasker (Recommended for MVP)
+
+**Pros:**
+- No Android development needed
+- Highly customizable visuals
+- Quick to set up
+
+**Setup:**
+1. Install [KWGT](https://play.google.com/store/apps/details?id=org.kustom.widget)
+2. Install [Tasker](https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm)
+3. Create Tasker HTTP Request task to call your API
+4. Parse JSON and store in Tasker variables
+5. Design KWGT widget using Tasker variables
+
+### Option B: Native Kotlin Widget
+
+**Pros:**
+- Better performance
+- More polished UX
+- Click actions (open in Google Maps)
+
+**Key components:**
+- `AppWidgetProvider` - Widget lifecycle
+- `WorkManager` - Background refresh
+- `RemoteViews` - Widget layout
+- `Retrofit` - API calls
+
+---
+
+## What This Gets You
+
+**Morning routine:**
+1. Wake up
+2. Glance at home screen widget
+3. See: "🚲 Bike → G train, 28 min" or "🚇 Walk → G (rain today)"
+4. Go
+
+**No more:**
+- Opening Citymapper
+- Typing start/end addresses
+- Checking weather app separately
+- Deciding whether to bike
+
+---
+
+## Next Steps
+
+1. **Get API keys:**
+   - [Google Cloud Console](https://console.cloud.google.com/) - Enable Routes API
+   - [OpenWeatherMap](https://openweathermap.org/api) - Sign up for free tier
+
+2. **Start with backend** - Get `/commute` endpoint working
+
+3. **Test with curl** - Verify response format
+
+4. **Build widget** - KWGT for quick win, native later if needed
