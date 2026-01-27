@@ -10,8 +10,9 @@
     "transiter:install": "curl -X POST 'http://localhost:8080/systems' -H 'Content-Type: application/json' -d '{\"id\": \"us-ny-subway\", \"config_url\": \"https://raw.githubusercontent.com/jamespfennell/transiter-ny/main/subway.yaml\"}'"
   },
   "dependencies": {
-    "hono": "^4.0.0",
     "@hono/node-server": "^1.8.0",
+    "dotenv": "^17.2.3",
+    "hono": "^4.0.0",
     "node-cache": "^5.1.2"
   },
   "devDependencies": {

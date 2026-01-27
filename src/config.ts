@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 export const config = {
   port: parseInt(process.env.PORT || '8888', 10),
   hostname: process.env.HOST || '0.0.0.0',
