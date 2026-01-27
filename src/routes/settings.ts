@@ -1,9 +1,18 @@
 import { Hono } from 'hono';
 import { getSettings, saveSettings } from '../services/data.js';
 import { geocodeAddress } from '../services/google-routes.js';
+import { config } from '../config.js';
 import type { Settings } from '../types/index.js';
 
 const app = new Hono();
+
+// Get Google Maps API key for client-side Places Autocomplete
+app.get('/maps-key', (c) => {
+  if (!config.googleMapsApiKey) {
+    return c.json({ error: 'Google Maps API key not configured' }, 500);
+  }
+  return c.json({ apiKey: config.googleMapsApiKey });
+});
 
 // Geocode an address
 app.post('/geocode', async (c) => {

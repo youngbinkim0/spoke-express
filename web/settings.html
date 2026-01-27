@@ -252,6 +252,34 @@
       color: #888;
       margin-bottom: 8px;
     }
+
+    /* Google Places Autocomplete styling */
+    .pac-container {
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: none;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .pac-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .pac-item:hover {
+      background: #f5f5f5;
+    }
+
+    .pac-item-query {
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .pac-matched {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -323,17 +351,26 @@
     let settings = {};
     let homeCoords = null;
     let workCoords = null;
+    let homeAutocomplete = null;
+    let workAutocomplete = null;
 
     async function init() {
       try {
-        // Fetch stations and settings in parallel
-        const [stationsRes, settingsRes] = await Promise.all([
+        // Fetch stations, settings, and maps key in parallel
+        const [stationsRes, settingsRes, mapsKeyRes] = await Promise.all([
           fetch('/api/stations'),
-          fetch('/api/settings')
+          fetch('/api/settings'),
+          fetch('/api/settings/maps-key')
         ]);
 
         allStations = (await stationsRes.json()).stations;
         settings = await settingsRes.json();
+
+        // Load Google Maps API if key is available
+        if (mapsKeyRes.ok) {
+          const { apiKey } = await mapsKeyRes.json();
+          await loadGoogleMapsAPI(apiKey);
+        }
 
         // Set address inputs and coords
         document.getElementById('homeAddress').value = settings.home?.address || '';
@@ -360,6 +397,81 @@
         console.error('Failed to load data:', error);
         document.getElementById('loading').textContent = 'Failed to load. Is the server running?';
       }
+    }
+
+    function loadGoogleMapsAPI(apiKey) {
+      return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps) {
+          initAutocomplete();
+          resolve();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = reject;
+        window.initAutocomplete = () => {
+          initAutocomplete();
+          resolve();
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    function initAutocomplete() {
+      const homeInput = document.getElementById('homeAddress');
+      const workInput = document.getElementById('workAddress');
+
+      const options = {
+        componentRestrictions: { country: 'us' },
+        fields: ['formatted_address', 'geometry', 'name'],
+        types: ['address']
+      };
+
+      // Home address autocomplete
+      homeAutocomplete = new google.maps.places.Autocomplete(homeInput, options);
+      homeAutocomplete.addListener('place_changed', () => {
+        const place = homeAutocomplete.getPlace();
+        if (place.geometry) {
+          homeCoords = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
+          document.getElementById('homeCoords').textContent = `📍 ${place.formatted_address}`;
+          document.getElementById('homeCoords').className = 'coords-display success';
+        }
+      });
+
+      // Clear coords when user types manually (so we know to re-geocode)
+      homeInput.addEventListener('input', () => {
+        homeCoords = null;
+        document.getElementById('homeCoords').textContent = 'Select an address from suggestions';
+        document.getElementById('homeCoords').className = 'coords-display';
+      });
+
+      // Work address autocomplete
+      workAutocomplete = new google.maps.places.Autocomplete(workInput, options);
+      workAutocomplete.addListener('place_changed', () => {
+        const place = workAutocomplete.getPlace();
+        if (place.geometry) {
+          workCoords = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
+          document.getElementById('workCoords').textContent = `📍 ${place.formatted_address}`;
+          document.getElementById('workCoords').className = 'coords-display success';
+          updateNearestStation();
+        }
+      });
+
+      // Clear coords when user types manually
+      workInput.addEventListener('input', () => {
+        workCoords = null;
+        document.getElementById('workCoords').textContent = 'Select an address from suggestions';
+        document.getElementById('workCoords').className = 'coords-display';
+      });
     }
 
     async function geocodeAddress(address) {
@@ -485,21 +597,22 @@
       const status = document.getElementById('status');
 
       btn.disabled = true;
-      btn.textContent = 'Geocoding addresses...';
+      btn.textContent = 'Validating addresses...';
 
       // Get addresses
       const homeAddress = document.getElementById('homeAddress').value.trim();
       const workAddress = document.getElementById('workAddress').value.trim();
 
-      // Geocode home address if changed
-      if (homeAddress && homeAddress !== settings.home?.address) {
+      // Check if home address needs geocoding (no coords yet, or address changed without autocomplete selection)
+      if (homeAddress && !homeCoords) {
+        btn.textContent = 'Geocoding home address...';
         const result = await geocodeAddress(homeAddress);
         if (result) {
           homeCoords = { lat: result.lat, lng: result.lng };
           document.getElementById('homeCoords').textContent = `📍 ${result.formattedAddress}`;
           document.getElementById('homeCoords').className = 'coords-display success';
         } else {
-          document.getElementById('homeCoords').textContent = '❌ Could not find address';
+          document.getElementById('homeCoords').textContent = '❌ Could not find address. Please select from suggestions.';
           document.getElementById('homeCoords').className = 'coords-display error';
           btn.disabled = false;
           btn.textContent = 'Save Settings';
@@ -507,8 +620,9 @@
         }
       }
 
-      // Geocode work address if changed
-      if (workAddress && workAddress !== settings.work?.address) {
+      // Check if work address needs geocoding
+      if (workAddress && !workCoords) {
+        btn.textContent = 'Geocoding work address...';
         const result = await geocodeAddress(workAddress);
         if (result) {
           workCoords = { lat: result.lat, lng: result.lng };
@@ -516,12 +630,21 @@
           document.getElementById('workCoords').className = 'coords-display success';
           updateNearestStation();
         } else {
-          document.getElementById('workCoords').textContent = '❌ Could not find address';
+          document.getElementById('workCoords').textContent = '❌ Could not find address. Please select from suggestions.';
           document.getElementById('workCoords').className = 'coords-display error';
           btn.disabled = false;
           btn.textContent = 'Save Settings';
           return;
         }
+      }
+
+      // Validate we have coords
+      if (!homeCoords || !workCoords) {
+        status.className = 'status error';
+        status.textContent = '✗ Please enter both home and work addresses.';
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+        return;
       }
 
       btn.textContent = 'Saving...';
