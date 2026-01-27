@@ -56,8 +56,44 @@
       gap: 8px;
     }
 
+    .card p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .location-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .location-inputs label {
+      display: block;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .location-inputs input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .nearest-station {
+      margin-top: 12px;
+      padding: 10px;
+      background: #e8f4fd;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #1a73e8;
+    }
+
     .station-list {
-      max-height: 300px;
+      max-height: 350px;
       overflow-y: auto;
     }
 
@@ -123,7 +159,28 @@
     .line-4, .line-5, .line-6 { background: #00933C; }
     .line-7 { background: #B933AD; }
     .line-L { background: #A7A9AC; }
-    .line-S { background: #808183; }
+    .line-S, .line-FS, .line-H { background: #808183; }
+    .line-J, .line-Z { background: #996633; }
+    .line-SI { background: #0039A6; }
+
+    .filter-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .filter-controls label {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .filter-controls input {
+      width: 60px;
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
 
     select {
       width: 100%;
@@ -155,6 +212,15 @@
       cursor: not-allowed;
     }
 
+    .btn-secondary {
+      background: #666;
+      margin-top: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #555;
+    }
+
     .status {
       padding: 12px;
       border-radius: 6px;
@@ -180,16 +246,10 @@
       color: #666;
     }
 
-    .preview-link {
-      display: block;
-      text-align: center;
-      margin-top: 20px;
-      color: #1a73e8;
-      text-decoration: none;
-    }
-
-    .preview-link:hover {
-      text-decoration: underline;
+    .station-count {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -203,44 +263,84 @@
     <div id="loading" class="loading">Loading stations...</div>
 
     <div id="content" style="display: none;">
+      <!-- Home Location -->
+      <div class="card">
+        <h2>🏠 Home Location</h2>
+        <p>Your starting point for the commute</p>
+        <div class="location-inputs">
+          <div>
+            <label>Latitude</label>
+            <input type="number" id="homeLat" step="0.0001" placeholder="40.6892">
+          </div>
+          <div>
+            <label>Longitude</label>
+            <input type="number" id="homeLng" step="0.0001" placeholder="-73.9442">
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Location -->
+      <div class="card">
+        <h2>🏢 Work Location</h2>
+        <p>Your destination - nearest station will be auto-selected</p>
+        <div class="location-inputs">
+          <div>
+            <label>Latitude</label>
+            <input type="number" id="workLat" step="0.0001" placeholder="40.7471">
+          </div>
+          <div>
+            <label>Longitude</label>
+            <input type="number" id="workLng" step="0.0001" placeholder="-73.9456">
+          </div>
+        </div>
+        <div id="nearestStation" class="nearest-station" style="display: none;">
+          Nearest station: <strong id="nearestStationName"></strong>
+        </div>
+      </div>
+
+      <!-- Bike-to Stations -->
       <div class="card">
         <h2>🚲 Bike-to Stations</h2>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
-          Select stations you'd bike to for a faster commute
-        </p>
+        <p>Select stations you'd bike to (typically 0.5 - 3 miles away)</p>
+        <div class="filter-controls">
+          <label>Show stations from</label>
+          <input type="number" id="bikeMinDist" value="0.3" step="0.1" min="0">
+          <label>to</label>
+          <input type="number" id="bikeMaxDist" value="3" step="0.1" min="0">
+          <label>miles</label>
+          <button class="btn-secondary" style="padding: 6px 12px; width: auto; margin: 0;" onclick="renderStations()">Update</button>
+        </div>
+        <div id="bikeStationCount" class="station-count"></div>
         <div id="bikeStations" class="station-list"></div>
       </div>
 
+      <!-- Walk-to Stations -->
       <div class="card">
         <h2>🚇 Walk-to Stations</h2>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
-          Select stations within walking distance
-        </p>
+        <p>Select stations within walking distance</p>
+        <div class="filter-controls">
+          <label>Show stations within</label>
+          <input type="number" id="walkMaxDist" value="1.5" step="0.1" min="0">
+          <label>miles</label>
+          <button class="btn-secondary" style="padding: 6px 12px; width: auto; margin: 0;" onclick="renderStations()">Update</button>
+        </div>
+        <div id="walkStationCount" class="station-count"></div>
         <div id="walkStations" class="station-list"></div>
       </div>
 
-      <div class="card">
-        <h2>🎯 Destination Station</h2>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 12px;">
-          Where do you get off to go to work?
-        </p>
-        <select id="destinationStation"></select>
-      </div>
+      <!-- Destination Station (hidden, auto-selected) -->
+      <input type="hidden" id="destinationStation">
 
       <button class="btn" id="saveBtn" onclick="saveSettings()">
         Save Settings
       </button>
 
       <div id="status" class="status"></div>
-
-      <a href="/api/commute" target="_blank" class="preview-link">
-        Preview commute options →
-      </a>
     </div>
   </div>
 
   <script>
-    let stations = [];
+    let allStations = [];
     let settings = {};
 
     async function init() {
@@ -251,10 +351,22 @@
           fetch('/api/settings')
         ]);
 
-        stations = (await stationsRes.json()).stations;
+        allStations = (await stationsRes.json()).stations;
         settings = await settingsRes.json();
 
+        // Set location inputs
+        document.getElementById('homeLat').value = settings.home?.lat || '';
+        document.getElementById('homeLng').value = settings.home?.lng || '';
+        document.getElementById('workLat').value = settings.work?.lat || '';
+        document.getElementById('workLng').value = settings.work?.lng || '';
+
         renderStations();
+        updateNearestStation();
+
+        // Add listeners for work location changes
+        document.getElementById('workLat').addEventListener('change', updateNearestStation);
+        document.getElementById('workLng').addEventListener('change', updateNearestStation);
+
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').style.display = 'block';
       } catch (error) {
@@ -263,14 +375,73 @@
       }
     }
 
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 3959; // Earth's radius in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function findNearestStation(lat, lng) {
+      if (!lat || !lng || allStations.length === 0) return null;
+
+      let nearest = null;
+      let minDist = Infinity;
+
+      for (const station of allStations) {
+        const dist = calculateDistance(lat, lng, station.lat || 0, station.lng || 0);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = { ...station, distance: dist };
+        }
+      }
+
+      return nearest;
+    }
+
+    function updateNearestStation() {
+      const workLat = parseFloat(document.getElementById('workLat').value);
+      const workLng = parseFloat(document.getElementById('workLng').value);
+
+      const nearest = findNearestStation(workLat, workLng);
+      const container = document.getElementById('nearestStation');
+      const nameEl = document.getElementById('nearestStationName');
+      const destInput = document.getElementById('destinationStation');
+
+      if (nearest) {
+        nameEl.textContent = `${nearest.name} (${nearest.lines.join('/')}) - ${nearest.distance.toFixed(2)} mi`;
+        container.style.display = 'block';
+        destInput.value = nearest.transiterId;
+      } else {
+        container.style.display = 'none';
+        destInput.value = settings.destinationStation || '';
+      }
+    }
+
     function renderStations() {
       const bikeContainer = document.getElementById('bikeStations');
       const walkContainer = document.getElementById('walkStations');
-      const destSelect = document.getElementById('destinationStation');
 
-      // Filter stations by distance for bike (0.3 - 2 miles) and walk (< 0.8 miles)
-      const bikeStations = stations.filter(s => s.distanceFromHome >= 0.3 && s.distanceFromHome <= 2.5);
-      const walkStations = stations.filter(s => s.distanceFromHome <= 1.0);
+      // Get filter values
+      const bikeMinDist = parseFloat(document.getElementById('bikeMinDist').value) || 0;
+      const bikeMaxDist = parseFloat(document.getElementById('bikeMaxDist').value) || 5;
+      const walkMaxDist = parseFloat(document.getElementById('walkMaxDist').value) || 2;
+
+      // Filter stations by distance
+      const bikeStations = allStations.filter(s =>
+        s.distanceFromHome >= bikeMinDist && s.distanceFromHome <= bikeMaxDist
+      );
+      const walkStations = allStations.filter(s => s.distanceFromHome <= walkMaxDist);
+
+      // Update counts
+      document.getElementById('bikeStationCount').textContent =
+        `${bikeStations.length} stations in range`;
+      document.getElementById('walkStationCount').textContent =
+        `${walkStations.length} stations in range`;
 
       // Render bike-to stations
       bikeContainer.innerHTML = bikeStations.map(s => `
@@ -285,7 +456,7 @@
           </div>
           <div class="station-distance">${s.distanceFromHome} mi</div>
         </label>
-      `).join('');
+      `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
 
       // Render walk-to stations
       walkContainer.innerHTML = walkStations.map(s => `
@@ -300,36 +471,7 @@
           </div>
           <div class="station-distance">${s.walkMinutes} min walk</div>
         </label>
-      `).join('');
-
-      // Render destination dropdown (all stations, sorted by borough)
-      const manhattanStations = stations.filter(s => s.borough === 'Manhattan');
-      const queensStations = stations.filter(s => s.borough === 'Queens');
-      const brooklynStations = stations.filter(s => s.borough === 'Brooklyn');
-
-      destSelect.innerHTML = `
-        <optgroup label="Manhattan">
-          ${manhattanStations.map(s => `
-            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
-              ${s.name} (${s.lines.join('/')})
-            </option>
-          `).join('')}
-        </optgroup>
-        <optgroup label="Queens">
-          ${queensStations.map(s => `
-            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
-              ${s.name} (${s.lines.join('/')})
-            </option>
-          `).join('')}
-        </optgroup>
-        <optgroup label="Brooklyn">
-          ${brooklynStations.map(s => `
-            <option value="${s.transiterId}" ${settings.destinationStation === s.transiterId ? 'selected' : ''}>
-              ${s.name} (${s.lines.join('/')})
-            </option>
-          `).join('')}
-        </optgroup>
-      `;
+      `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
     }
 
     async function saveSettings() {
@@ -338,6 +480,12 @@
 
       btn.disabled = true;
       btn.textContent = 'Saving...';
+
+      // Get location values
+      const homeLat = parseFloat(document.getElementById('homeLat').value);
+      const homeLng = parseFloat(document.getElementById('homeLng').value);
+      const workLat = parseFloat(document.getElementById('workLat').value);
+      const workLng = parseFloat(document.getElementById('workLng').value);
 
       // Get selected stations
       const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
@@ -351,6 +499,8 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            home: { lat: homeLat, lng: homeLng },
+            work: { lat: workLat, lng: workLng },
             bikeToStations,
             walkToStations,
             destinationStation
@@ -359,6 +509,22 @@
 
         if (response.ok) {
           status.className = 'status success';
+          status.textContent = '✓ Settings saved! Reloading stations...';
+
+          // Reload stations with new home location
+          const stationsRes = await fetch('/api/stations');
+          allStations = (await stationsRes.json()).stations;
+
+          // Update settings object
+          settings.home = { lat: homeLat, lng: homeLng };
+          settings.work = { lat: workLat, lng: workLng };
+          settings.bikeToStations = bikeToStations;
+          settings.walkToStations = walkToStations;
+          settings.destinationStation = destinationStation;
+
+          renderStations();
+          updateNearestStation();
+
           status.textContent = '✓ Settings saved successfully!';
         } else {
           throw new Error('Failed to save');

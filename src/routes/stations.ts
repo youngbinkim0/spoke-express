@@ -26,6 +26,8 @@ app.get('/', async (c) => {
       name: station.name,
       lines: station.lines,
       borough: station.borough,
+      lat: station.lat,
+      lng: station.lng,
       distanceFromHome: Math.round(distanceMiles * 10) / 10,
       walkMinutes,
     };
