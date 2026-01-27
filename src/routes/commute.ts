@@ -6,9 +6,9 @@ import {
   getStopArrivals,
   getNextArrival,
   formatArrivalTime,
-  estimateTransitTime,
   getAllStations,
 } from '../services/transiter.js';
+import { getTransitRoute } from '../services/routing.js';
 import { rankOptions } from '../services/ranking.js';
 import type { CommuteOption, CommuteResponse, Leg, Alert } from '../types/index.js';
 
@@ -23,12 +23,6 @@ app.get('/', async (c) => {
   // Get weather for home location
   const weather = await getWeather(settings.home.lat, settings.home.lng);
 
-  // Get destination station
-  const destStation = await getStationById(settings.destinationStation);
-  if (!destStation) {
-    return c.json({ error: 'Destination station not configured' }, 400);
-  }
-
   // Calculate bike-to-transit options
   for (const stationId of settings.bikeToStations) {
     const station = await getStationById(stationId);
@@ -38,28 +32,60 @@ app.get('/', async (c) => {
       // Get bike time from home to station
       const bikeTime = await getBikeTime(settings.home, { lat: station.lat, lng: station.lng });
 
-      // Get next train arrival at this station
+      // Get transit route from station to work using Google
+      const transitRoute = await getTransitRoute(
+        { lat: station.lat, lng: station.lng },
+        settings.work
+      );
+
+      if (!transitRoute || transitRoute.steps.length === 0) {
+        console.warn(`No transit route from ${station.name} to work`);
+        continue;
+      }
+
+      // Get next train arrival at this station from Transiter (live times)
       const arrivals = await getStopArrivals(station.transiterId);
       const nextArrival = getNextArrival(arrivals);
 
-      // Estimate transit time to destination
-      const transitTime = estimateTransitTime(station.transiterId, destStation.transiterId);
+      const totalTime = bikeTime + transitRoute.totalDuration;
 
-      // Walk time from destination station to work
-      const walkToWork = calculateWalkTime({ lat: destStation.lat, lng: destStation.lng }, settings.work);
+      // Build legs from Google's transit route
+      const legs: Leg[] = [{ mode: 'bike', duration: bikeTime, to: station.name }];
 
-      const totalTime = bikeTime + transitTime + walkToWork;
+      // Find first and last transit step indices
+      const transitIndices = transitRoute.steps
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => s.mode === 'subway' || s.mode === 'rail')
+        .map(({ i }) => i);
+      const firstTransitIndex = transitIndices[0] ?? transitRoute.steps.length;
+      const lastTransitIndex = transitIndices[transitIndices.length - 1] ?? -1;
 
-      const legs: Leg[] = [
-        { mode: 'bike', duration: bikeTime, to: station.name },
-        {
-          mode: 'subway',
-          duration: transitTime,
-          to: destStation.name,
-          route: station.lines[0],
-        },
-        { mode: 'walk', duration: walkToWork, to: 'Work' },
-      ];
+      for (let i = 0; i < transitRoute.steps.length; i++) {
+        const step = transitRoute.steps[i];
+        // Only include transfer walks (between first and last transit legs)
+        if (step.mode === 'walk' && step.duration > 1 && i > firstTransitIndex && i < lastTransitIndex) {
+          legs.push({
+            mode: 'walk',
+            duration: step.duration,
+            to: step.toStop || 'Transfer',
+          });
+        } else if (step.mode === 'subway' || step.mode === 'rail') {
+          legs.push({
+            mode: 'subway',
+            duration: step.duration,
+            to: step.toStop || 'Destination',
+            route: step.route,
+          });
+        }
+      }
+
+      // Build summary
+      const transitLegs = transitRoute.steps.filter((s) => s.mode === 'subway' || s.mode === 'rail');
+      const routeNames = transitLegs.map((l) => l.route).join(' → ');
+      const summary =
+        transitRoute.transfers > 0
+          ? `Bike → ${station.name} → ${routeNames} (${transitRoute.transfers} transfer${transitRoute.transfers > 1 ? 's' : ''})`
+          : `Bike → ${station.name} → ${routeNames}`;
 
       // Calculate arrival time
       const now = new Date();
@@ -67,10 +93,10 @@ app.get('/', async (c) => {
 
       options.push({
         id: `bike_${stationId}`,
-        rank: 0, // Will be set by ranking
+        rank: 0,
         type: 'bike_to_transit',
         duration_minutes: totalTime,
-        summary: `Bike → ${station.name} → ${station.lines[0]}`,
+        summary,
         legs,
         nextTrain: nextArrival ? formatArrivalTime(nextArrival) : 'N/A',
         arrival_time: arrivalTime.toLocaleTimeString('en-US', {
@@ -86,7 +112,6 @@ app.get('/', async (c) => {
   }
 
   // Calculate walk-to-transit options (auto-inferred from home location)
-  // Include all stations within MAX_WALK_MINUTES walking distance
   const allStations = await getAllStations();
   const walkableStations = allStations.filter((station) => {
     const walkTime = calculateWalkTime(settings.home, { lat: station.lat, lng: station.lng });
@@ -98,28 +123,59 @@ app.get('/', async (c) => {
       // Calculate walk time from home to station
       const walkTime = calculateWalkTime(settings.home, { lat: station.lat, lng: station.lng });
 
-      // Get next train arrival
+      // Get transit route from station to work using Google
+      const transitRoute = await getTransitRoute(
+        { lat: station.lat, lng: station.lng },
+        settings.work
+      );
+
+      if (!transitRoute || transitRoute.steps.length === 0) {
+        continue;
+      }
+
+      // Get next train arrival from Transiter (live times)
       const arrivals = await getStopArrivals(station.transiterId);
       const nextArrival = getNextArrival(arrivals);
 
-      // Estimate transit time
-      const transitTime = estimateTransitTime(station.transiterId, destStation.transiterId);
+      const totalTime = walkTime + transitRoute.totalDuration;
 
-      // Walk time from destination station to work
-      const walkToWork = calculateWalkTime({ lat: destStation.lat, lng: destStation.lng }, settings.work);
+      // Build legs
+      const legs: Leg[] = [{ mode: 'walk', duration: walkTime, to: station.name }];
 
-      const totalTime = walkTime + transitTime + walkToWork;
+      // Find first and last transit step indices
+      const transitIndices = transitRoute.steps
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => s.mode === 'subway' || s.mode === 'rail')
+        .map(({ i }) => i);
+      const firstTransitIndex = transitIndices[0] ?? transitRoute.steps.length;
+      const lastTransitIndex = transitIndices[transitIndices.length - 1] ?? -1;
 
-      const legs: Leg[] = [
-        { mode: 'walk', duration: walkTime, to: station.name },
-        {
-          mode: 'subway',
-          duration: transitTime,
-          to: destStation.name,
-          route: station.lines[0],
-        },
-        { mode: 'walk', duration: walkToWork, to: 'Work' },
-      ];
+      for (let i = 0; i < transitRoute.steps.length; i++) {
+        const step = transitRoute.steps[i];
+        // Only include transfer walks (between first and last transit legs)
+        if (step.mode === 'walk' && step.duration > 1 && i > firstTransitIndex && i < lastTransitIndex) {
+          legs.push({
+            mode: 'walk',
+            duration: step.duration,
+            to: step.toStop || 'Transfer',
+          });
+        } else if (step.mode === 'subway' || step.mode === 'rail') {
+          legs.push({
+            mode: 'subway',
+            duration: step.duration,
+            to: step.toStop || 'Destination',
+            route: step.route,
+          });
+        }
+      }
+
+      // Build summary
+      const transitLegs = transitRoute.steps.filter((s) => s.mode === 'subway' || s.mode === 'rail');
+      const routeNames = transitLegs.map((l) => l.route).join(' → ');
+      const summary =
+        transitRoute.transfers > 0
+          ? `Walk → ${station.name} → ${routeNames} (${transitRoute.transfers} transfer${transitRoute.transfers > 1 ? 's' : ''})`
+          : `Walk → ${station.name} → ${routeNames}`;
 
       const now = new Date();
       const arrivalTime = new Date(now.getTime() + totalTime * 60000);
@@ -129,7 +185,7 @@ app.get('/', async (c) => {
         rank: 0,
         type: 'transit_only',
         duration_minutes: totalTime,
-        summary: `Walk → ${station.name} → ${station.lines[0]}`,
+        summary,
         legs,
         nextTrain: nextArrival ? formatArrivalTime(nextArrival) : 'N/A',
         arrival_time: arrivalTime.toLocaleTimeString('en-US', {

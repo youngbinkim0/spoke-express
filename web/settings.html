@@ -366,10 +366,12 @@
         allStations = (await stationsRes.json()).stations;
         settings = await settingsRes.json();
 
-        // Load Google Maps API if key is available
+        // Load Google Maps API if key is available (non-blocking)
         if (mapsKeyRes.ok) {
           const { apiKey } = await mapsKeyRes.json();
-          await loadGoogleMapsAPI(apiKey);
+          loadGoogleMapsAPI(apiKey).catch(err => {
+            console.warn('Google Maps failed to load, autocomplete disabled:', err);
+          });
         }
 
         // Set address inputs and coords
@@ -407,12 +409,21 @@
           return;
         }
 
+        // Timeout after 10 seconds
+        const timeout = setTimeout(() => {
+          reject(new Error('Google Maps API load timeout'));
+        }, 10000);
+
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
-        script.onerror = reject;
-        window.initAutocomplete = () => {
+        script.onerror = (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        };
+        script.onload = () => {
+          clearTimeout(timeout);
           initAutocomplete();
           resolve();
         };
