@@ -62,25 +62,26 @@
       margin-bottom: 12px;
     }
 
-    .location-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .location-inputs label {
-      display: block;
-      font-size: 0.85rem;
-      color: #666;
-      margin-bottom: 4px;
-    }
-
-    .location-inputs input {
+    .address-input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
-      font-size: 0.95rem;
+      font-size: 1rem;
+    }
+
+    .coords-display {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 8px;
+    }
+
+    .coords-display.success {
+      color: #28a745;
+    }
+
+    .coords-display.error {
+      color: #dc3545;
     }
 
     .nearest-station {
@@ -267,32 +268,16 @@
       <div class="card">
         <h2>🏠 Home Location</h2>
         <p>Your starting point for the commute</p>
-        <div class="location-inputs">
-          <div>
-            <label>Latitude</label>
-            <input type="number" id="homeLat" step="0.0001" placeholder="40.6892">
-          </div>
-          <div>
-            <label>Longitude</label>
-            <input type="number" id="homeLng" step="0.0001" placeholder="-73.9442">
-          </div>
-        </div>
+        <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
+        <div id="homeCoords" class="coords-display"></div>
       </div>
 
       <!-- Work Location -->
       <div class="card">
         <h2>🏢 Work Location</h2>
         <p>Your destination - nearest station will be auto-selected</p>
-        <div class="location-inputs">
-          <div>
-            <label>Latitude</label>
-            <input type="number" id="workLat" step="0.0001" placeholder="40.7471">
-          </div>
-          <div>
-            <label>Longitude</label>
-            <input type="number" id="workLng" step="0.0001" placeholder="-73.9456">
-          </div>
-        </div>
+        <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
+        <div id="workCoords" class="coords-display"></div>
         <div id="nearestStation" class="nearest-station" style="display: none;">
           Nearest station: <strong id="nearestStationName"></strong>
         </div>
@@ -317,8 +302,9 @@
       <!-- Walk-to Stations (auto-calculated) -->
       <div class="card">
         <h2>🚇 Walk-to Stations</h2>
-        <p>Automatically includes all stations within 30 minutes walking distance from your home. No selection needed.</p>
+        <p>Automatically includes all stations within 30 minutes walking distance from your home.</p>
         <div id="walkStationCount" class="station-count" style="color: #1a73e8;"></div>
+        <div id="walkStations" class="station-list"></div>
       </div>
 
       <!-- Destination Station (hidden, auto-selected) -->
@@ -335,6 +321,8 @@
   <script>
     let allStations = [];
     let settings = {};
+    let homeCoords = null;
+    let workCoords = null;
 
     async function init() {
       try {
@@ -347,24 +335,48 @@
         allStations = (await stationsRes.json()).stations;
         settings = await settingsRes.json();
 
-        // Set location inputs
-        document.getElementById('homeLat').value = settings.home?.lat || '';
-        document.getElementById('homeLng').value = settings.home?.lng || '';
-        document.getElementById('workLat').value = settings.work?.lat || '';
-        document.getElementById('workLng').value = settings.work?.lng || '';
+        // Set address inputs and coords
+        document.getElementById('homeAddress').value = settings.home?.address || '';
+        document.getElementById('workAddress').value = settings.work?.address || '';
+
+        if (settings.home?.lat && settings.home?.lng) {
+          homeCoords = { lat: settings.home.lat, lng: settings.home.lng };
+          document.getElementById('homeCoords').textContent = `📍 ${settings.home.lat.toFixed(4)}, ${settings.home.lng.toFixed(4)}`;
+          document.getElementById('homeCoords').className = 'coords-display success';
+        }
+
+        if (settings.work?.lat && settings.work?.lng) {
+          workCoords = { lat: settings.work.lat, lng: settings.work.lng };
+          document.getElementById('workCoords').textContent = `📍 ${settings.work.lat.toFixed(4)}, ${settings.work.lng.toFixed(4)}`;
+          document.getElementById('workCoords').className = 'coords-display success';
+        }
 
         renderStations();
         updateNearestStation();
-
-        // Add listeners for work location changes
-        document.getElementById('workLat').addEventListener('change', updateNearestStation);
-        document.getElementById('workLng').addEventListener('change', updateNearestStation);
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').style.display = 'block';
       } catch (error) {
         console.error('Failed to load data:', error);
         document.getElementById('loading').textContent = 'Failed to load. Is the server running?';
+      }
+    }
+
+    async function geocodeAddress(address) {
+      if (!address || address.trim().length === 0) return null;
+
+      try {
+        const response = await fetch('/api/settings/geocode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address })
+        });
+
+        if (!response.ok) return null;
+        return await response.json();
+      } catch (error) {
+        console.error('Geocoding failed:', error);
+        return null;
       }
     }
 
@@ -397,10 +409,12 @@
     }
 
     function updateNearestStation() {
-      const workLat = parseFloat(document.getElementById('workLat').value);
-      const workLng = parseFloat(document.getElementById('workLng').value);
+      if (!workCoords) {
+        document.getElementById('nearestStation').style.display = 'none';
+        return;
+      }
 
-      const nearest = findNearestStation(workLat, workLng);
+      const nearest = findNearestStation(workCoords.lat, workCoords.lng);
       const container = document.getElementById('nearestStation');
       const nameEl = document.getElementById('nearestStationName');
       const destInput = document.getElementById('destinationStation');
@@ -417,6 +431,7 @@
 
     function renderStations() {
       const bikeContainer = document.getElementById('bikeStations');
+      const walkContainer = document.getElementById('walkStations');
 
       // Get filter values for bike stations
       const bikeMinDist = parseFloat(document.getElementById('bikeMinDist').value) || 0;
@@ -436,7 +451,7 @@
       document.getElementById('walkStationCount').textContent =
         `${walkStations.length} stations will be auto-included in ranking`;
 
-      // Render bike-to stations
+      // Render bike-to stations (with checkboxes)
       bikeContainer.innerHTML = bikeStations.map(s => `
         <label class="station-item">
           <input type="checkbox" name="bikeStation" value="${s.transiterId}"
@@ -450,6 +465,19 @@
           <div class="station-distance">${s.distanceFromHome} mi</div>
         </label>
       `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
+
+      // Render walk-to stations (read-only list)
+      walkContainer.innerHTML = walkStations.map(s => `
+        <div class="station-item" style="cursor: default;">
+          <div class="station-info">
+            <div class="station-name">${s.name}</div>
+            <div class="station-lines">
+              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
+            </div>
+          </div>
+          <div class="station-distance">${s.walkMinutes} min walk</div>
+        </div>
+      `).join('') || '<p style="padding: 10px; color: #888;">No stations within 30 min walk</p>';
     }
 
     async function saveSettings() {
@@ -457,13 +485,46 @@
       const status = document.getElementById('status');
 
       btn.disabled = true;
-      btn.textContent = 'Saving...';
+      btn.textContent = 'Geocoding addresses...';
 
-      // Get location values
-      const homeLat = parseFloat(document.getElementById('homeLat').value);
-      const homeLng = parseFloat(document.getElementById('homeLng').value);
-      const workLat = parseFloat(document.getElementById('workLat').value);
-      const workLng = parseFloat(document.getElementById('workLng').value);
+      // Get addresses
+      const homeAddress = document.getElementById('homeAddress').value.trim();
+      const workAddress = document.getElementById('workAddress').value.trim();
+
+      // Geocode home address if changed
+      if (homeAddress && homeAddress !== settings.home?.address) {
+        const result = await geocodeAddress(homeAddress);
+        if (result) {
+          homeCoords = { lat: result.lat, lng: result.lng };
+          document.getElementById('homeCoords').textContent = `📍 ${result.formattedAddress}`;
+          document.getElementById('homeCoords').className = 'coords-display success';
+        } else {
+          document.getElementById('homeCoords').textContent = '❌ Could not find address';
+          document.getElementById('homeCoords').className = 'coords-display error';
+          btn.disabled = false;
+          btn.textContent = 'Save Settings';
+          return;
+        }
+      }
+
+      // Geocode work address if changed
+      if (workAddress && workAddress !== settings.work?.address) {
+        const result = await geocodeAddress(workAddress);
+        if (result) {
+          workCoords = { lat: result.lat, lng: result.lng };
+          document.getElementById('workCoords').textContent = `📍 ${result.formattedAddress}`;
+          document.getElementById('workCoords').className = 'coords-display success';
+          updateNearestStation();
+        } else {
+          document.getElementById('workCoords').textContent = '❌ Could not find address';
+          document.getElementById('workCoords').className = 'coords-display error';
+          btn.disabled = false;
+          btn.textContent = 'Save Settings';
+          return;
+        }
+      }
+
+      btn.textContent = 'Saving...';
 
       // Get selected bike-to stations (walk-to is auto-calculated)
       const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
@@ -475,8 +536,8 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            home: { lat: homeLat, lng: homeLng },
-            work: { lat: workLat, lng: workLng },
+            home: { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress },
+            work: { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress },
             bikeToStations,
             destinationStation
           })
@@ -491,8 +552,8 @@
           allStations = (await stationsRes.json()).stations;
 
           // Update settings object
-          settings.home = { lat: homeLat, lng: homeLng };
-          settings.work = { lat: workLat, lng: workLng };
+          settings.home = { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress };
+          settings.work = { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress };
           settings.bikeToStations = bikeToStations;
           settings.destinationStation = destinationStation;
 

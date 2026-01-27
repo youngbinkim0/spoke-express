@@ -1,8 +1,29 @@
 import { Hono } from 'hono';
 import { getSettings, saveSettings } from '../services/data.js';
+import { geocodeAddress } from '../services/google-routes.js';
 import type { Settings } from '../types/index.js';
 
 const app = new Hono();
+
+// Geocode an address
+app.post('/geocode', async (c) => {
+  try {
+    const { address } = await c.req.json();
+    if (!address) {
+      return c.json({ error: 'Address is required' }, 400);
+    }
+
+    const result = await geocodeAddress(address);
+    if (!result) {
+      return c.json({ error: 'Could not geocode address' }, 404);
+    }
+
+    return c.json(result);
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return c.json({ error: 'Geocoding failed' }, 500);
+  }
+});
 
 // Get current settings
 app.get('/', (c) => {

@@ -3,6 +3,7 @@ import type { Location } from '../types/index.js';
 import NodeCache from 'node-cache';
 
 const cache = new NodeCache({ stdTTL: config.cacheTtl.bikeTime });
+const geocodeCache = new NodeCache({ stdTTL: 86400 }); // Cache geocoding for 24 hours
 
 interface GoogleRoutesResponse {
   routes: Array<{
@@ -121,4 +122,66 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 function toRad(deg: number): number {
   return deg * (Math.PI / 180);
+}
+
+interface GeocodeResult {
+  lat: number;
+  lng: number;
+  formattedAddress: string;
+}
+
+interface GoogleGeocodeResponse {
+  results: Array<{
+    formatted_address: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      };
+    };
+  }>;
+  status: string;
+}
+
+export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+  if (!address || address.trim().length === 0) {
+    return null;
+  }
+
+  const cacheKey = `geocode_${address.toLowerCase().trim()}`;
+  const cached = geocodeCache.get<GeocodeResult>(cacheKey);
+  if (cached) return cached;
+
+  if (!config.googleMapsApiKey) {
+    console.error('Google Maps API key not configured for geocoding');
+    return null;
+  }
+
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${config.googleMapsApiKey}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Geocoding error: ${response.status}`);
+      return null;
+    }
+
+    const data = (await response.json()) as GoogleGeocodeResponse;
+
+    if (data.status === 'OK' && data.results.length > 0) {
+      const result: GeocodeResult = {
+        lat: data.results[0].geometry.location.lat,
+        lng: data.results[0].geometry.location.lng,
+        formattedAddress: data.results[0].formatted_address,
+      };
+      geocodeCache.set(cacheKey, result);
+      return result;
+    }
+
+    console.error(`Geocoding failed: ${data.status}`);
+    return null;
+  } catch (error) {
+    console.error('Failed to geocode address:', error);
+    return null;
+  }
 }
