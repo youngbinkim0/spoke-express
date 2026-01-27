@@ -314,18 +314,11 @@
         <div id="bikeStations" class="station-list"></div>
       </div>
 
-      <!-- Walk-to Stations -->
+      <!-- Walk-to Stations (auto-calculated) -->
       <div class="card">
         <h2>🚇 Walk-to Stations</h2>
-        <p>Select stations within walking distance</p>
-        <div class="filter-controls">
-          <label>Show stations within</label>
-          <input type="number" id="walkMaxDist" value="1.5" step="0.1" min="0">
-          <label>miles</label>
-          <button class="btn-secondary" style="padding: 6px 12px; width: auto; margin: 0;" onclick="renderStations()">Update</button>
-        </div>
-        <div id="walkStationCount" class="station-count"></div>
-        <div id="walkStations" class="station-list"></div>
+        <p>Automatically includes all stations within 30 minutes walking distance from your home. No selection needed.</p>
+        <div id="walkStationCount" class="station-count" style="color: #1a73e8;"></div>
       </div>
 
       <!-- Destination Station (hidden, auto-selected) -->
@@ -424,24 +417,24 @@
 
     function renderStations() {
       const bikeContainer = document.getElementById('bikeStations');
-      const walkContainer = document.getElementById('walkStations');
 
-      // Get filter values
+      // Get filter values for bike stations
       const bikeMinDist = parseFloat(document.getElementById('bikeMinDist').value) || 0;
       const bikeMaxDist = parseFloat(document.getElementById('bikeMaxDist').value) || 5;
-      const walkMaxDist = parseFloat(document.getElementById('walkMaxDist').value) || 2;
 
       // Filter stations by distance
       const bikeStations = allStations.filter(s =>
         s.distanceFromHome >= bikeMinDist && s.distanceFromHome <= bikeMaxDist
       );
-      const walkStations = allStations.filter(s => s.distanceFromHome <= walkMaxDist);
+
+      // Walk stations: within 30 min walk (auto-calculated by backend)
+      const walkStations = allStations.filter(s => s.walkMinutes <= 30);
 
       // Update counts
       document.getElementById('bikeStationCount').textContent =
         `${bikeStations.length} stations in range`;
       document.getElementById('walkStationCount').textContent =
-        `${walkStations.length} stations in range`;
+        `${walkStations.length} stations will be auto-included in ranking`;
 
       // Render bike-to stations
       bikeContainer.innerHTML = bikeStations.map(s => `
@@ -455,21 +448,6 @@
             </div>
           </div>
           <div class="station-distance">${s.distanceFromHome} mi</div>
-        </label>
-      `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
-
-      // Render walk-to stations
-      walkContainer.innerHTML = walkStations.map(s => `
-        <label class="station-item">
-          <input type="checkbox" name="walkStation" value="${s.transiterId}"
-            ${settings.walkToStations?.includes(s.transiterId) ? 'checked' : ''}>
-          <div class="station-info">
-            <div class="station-name">${s.name}</div>
-            <div class="station-lines">
-              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
-            </div>
-          </div>
-          <div class="station-distance">${s.walkMinutes} min walk</div>
         </label>
       `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
     }
@@ -487,10 +465,8 @@
       const workLat = parseFloat(document.getElementById('workLat').value);
       const workLng = parseFloat(document.getElementById('workLng').value);
 
-      // Get selected stations
+      // Get selected bike-to stations (walk-to is auto-calculated)
       const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
-        .map(el => el.value);
-      const walkToStations = Array.from(document.querySelectorAll('input[name="walkStation"]:checked'))
         .map(el => el.value);
       const destinationStation = document.getElementById('destinationStation').value;
 
@@ -502,7 +478,6 @@
             home: { lat: homeLat, lng: homeLng },
             work: { lat: workLat, lng: workLng },
             bikeToStations,
-            walkToStations,
             destinationStation
           })
         });
@@ -519,7 +494,6 @@
           settings.home = { lat: homeLat, lng: homeLng };
           settings.work = { lat: workLat, lng: workLng };
           settings.bikeToStations = bikeToStations;
-          settings.walkToStations = walkToStations;
           settings.destinationStation = destinationStation;
 
           renderStations();

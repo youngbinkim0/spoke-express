@@ -7,9 +7,12 @@ import {
   getNextArrival,
   formatArrivalTime,
   estimateTransitTime,
+  getAllStations,
 } from '../services/transiter.js';
 import { rankOptions } from '../services/ranking.js';
 import type { CommuteOption, CommuteResponse, Leg, Alert } from '../types/index.js';
+
+const MAX_WALK_MINUTES = 30; // Auto-include stations within 30min walk
 
 const app = new Hono();
 
@@ -82,11 +85,15 @@ app.get('/', async (c) => {
     }
   }
 
-  // Calculate walk-to-transit options
-  for (const stationId of settings.walkToStations) {
-    const station = await getStationById(stationId);
-    if (!station) continue;
+  // Calculate walk-to-transit options (auto-inferred from home location)
+  // Include all stations within MAX_WALK_MINUTES walking distance
+  const allStations = await getAllStations();
+  const walkableStations = allStations.filter((station) => {
+    const walkTime = calculateWalkTime(settings.home, { lat: station.lat, lng: station.lng });
+    return walkTime <= MAX_WALK_MINUTES;
+  });
 
+  for (const station of walkableStations) {
     try {
       // Calculate walk time from home to station
       const walkTime = calculateWalkTime(settings.home, { lat: station.lat, lng: station.lng });
@@ -118,7 +125,7 @@ app.get('/', async (c) => {
       const arrivalTime = new Date(now.getTime() + totalTime * 60000);
 
       options.push({
-        id: `walk_${stationId}`,
+        id: `walk_${station.id}`,
         rank: 0,
         type: 'transit_only',
         duration_minutes: totalTime,
@@ -133,7 +140,7 @@ app.get('/', async (c) => {
         station,
       });
     } catch (error) {
-      console.error(`Error calculating walk option for ${stationId}:`, error);
+      console.error(`Error calculating walk option for ${station.id}:`, error);
     }
   }
 
