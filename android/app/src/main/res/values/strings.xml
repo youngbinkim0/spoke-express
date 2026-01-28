@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Commute Optimizer</string>
+    <string name="widget_name">Commute Options</string>
+    <string name="widget_description">Shows top 3 commute options with live train times</string>
+
+    <!-- Widget -->
+    <string name="widget_title">Commute Options</string>
+    <string name="widget_loading">Loading…</string>
+    <string name="widget_error">Unable to load</string>
+    <string name="widget_tap_refresh">Tap to refresh</string>
+    <string name="widget_last_updated">Updated %s</string>
+    <string name="widget_no_data">No commute data</string>
+
+    <!-- Duration format -->
+    <string name="duration_format">%d min</string>
+    <string name="next_train_format">Next: %s</string>
+
+    <!-- Config Activity -->
+    <string name="config_title">Widget Setup</string>
+    <string name="config_api_url_label">API Server URL</string>
+    <string name="config_api_url_hint">http://192.168.1.100:8888</string>
+    <string name="config_test_connection">Test Connection</string>
+    <string name="config_save">Save</string>
+    <string name="config_cancel">Cancel</string>
+    <string name="config_testing">Testing connection…</string>
+    <string name="config_success">Connected successfully!</string>
+    <string name="config_error">Connection failed: %s</string>
+    <string name="config_url_required">Please enter the API URL</string>
+
+    <!-- Weather -->
+    <string name="weather_format">%d°F %s</string>
+
+    <!-- Modes -->
+    <string name="mode_bike">Bike</string>
+    <string name="mode_walk">Walk</string>
+    <string name="mode_subway">Subway</string>
+</resources>

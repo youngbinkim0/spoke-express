@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App colors -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="accent">#FF5722</color>
+
+    <!-- Widget colors -->
+    <color name="widget_background">#FFFFFF</color>
+    <color name="widget_background_dark">#1E1E1E</color>
+    <color name="widget_text_primary">#212121</color>
+    <color name="widget_text_secondary">#757575</color>
+    <color name="widget_divider">#E0E0E0</color>
+
+    <!-- Rank badge colors -->
+    <color name="rank_1">#FFD700</color>
+    <color name="rank_2">#C0C0C0</color>
+    <color name="rank_3">#CD7F32</color>
+
+    <!-- Mode colors -->
+    <color name="mode_bike">#4CAF50</color>
+    <color name="mode_walk">#2196F3</color>
+    <color name="mode_subway">#9C27B0</color>
+
+    <!-- Weather colors -->
+    <color name="weather_good">#4CAF50</color>
+    <color name="weather_bad">#F44336</color>
+
+    <!-- MTA Line Colors (official) -->
+    <color name="mta_1">#EE352E</color>
+    <color name="mta_2">#EE352E</color>
+    <color name="mta_3">#EE352E</color>
+    <color name="mta_4">#00933C</color>
+    <color name="mta_5">#00933C</color>
+    <color name="mta_6">#00933C</color>
+    <color name="mta_7">#B933AD</color>
+    <color name="mta_A">#0039A6</color>
+    <color name="mta_C">#0039A6</color>
+    <color name="mta_E">#0039A6</color>
+    <color name="mta_B">#FF6319</color>
+    <color name="mta_D">#FF6319</color>
+    <color name="mta_F">#FF6319</color>
+    <color name="mta_M">#FF6319</color>
+    <color name="mta_G">#6CBE45</color>
+    <color name="mta_J">#996633</color>
+    <color name="mta_Z">#996633</color>
+    <color name="mta_L">#A7A9AC</color>
+    <color name="mta_N">#FCCC0A</color>
+    <color name="mta_Q">#FCCC0A</color>
+    <color name="mta_R">#FCCC0A</color>
+    <color name="mta_W">#FCCC0A</color>
+    <color name="mta_S">#808183</color>
+    <color name="mta_default">#808183</color>
+</resources>

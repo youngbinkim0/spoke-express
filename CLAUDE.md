@@ -85,3 +85,28 @@ Each station has a `transiterId` (e.g., "G26") that maps to Transiter's stop ID.
 ## Frontend
 
 Settings UI at `web/settings.html` - vanilla HTML/CSS/JS served by the backend at root `/`. MTA line colors are authentic (G=green, 1-3=red, etc.).
+
+## Android Widget
+
+The Android widget (`android/`) displays the top 3 commute options on the home screen.
+
+### Building the Widget
+
+```bash
+cd android
+
+# Build debug APK (requires Java 17+)
+./gradlew assembleDebug
+
+# Install on device
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Widget Features
+- **4x2 layout**: Header with weather + 3 option rows + timestamp
+- **Live data**: Fetches from backend `/api/commute` endpoint
+- **Auto-refresh**: WorkManager updates every 15 minutes
+- **Manual refresh**: Tap refresh icon
+- **MTA colors**: Authentic subway line colors
+
+See `android/README.md` for full documentation.

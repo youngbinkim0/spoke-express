@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget dimensions -->
+    <dimen name="widget_padding">8dp</dimen>
+    <dimen name="widget_corner_radius">16dp</dimen>
+
+    <!-- Text sizes -->
+    <dimen name="widget_title_size">16sp</dimen>
+    <dimen name="widget_text_primary">14sp</dimen>
+    <dimen name="widget_text_secondary">12sp</dimen>
+    <dimen name="widget_text_small">10sp</dimen>
+
+    <!-- Element sizes -->
+    <dimen name="rank_badge_size">24dp</dimen>
+    <dimen name="mode_icon_size">20dp</dimen>
+    <dimen name="line_badge_size">18dp</dimen>
+    <dimen name="refresh_icon_size">24dp</dimen>
+
+    <!-- Spacing -->
+    <dimen name="item_spacing">4dp</dimen>
+    <dimen name="section_spacing">8dp</dimen>
+</resources>
