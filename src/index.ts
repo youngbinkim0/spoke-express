@@ -8,6 +8,7 @@ import { config } from './config.js';
 import commuteRoutes from './routes/commute.js';
 import settingsRoutes from './routes/settings.js';
 import stationsRoutes from './routes/stations.js';
+import arrivalsRoutes from './routes/arrivals.js';
 import { checkTransiterHealth } from './services/transiter.js';
 
 const app = new Hono();
@@ -23,6 +24,7 @@ app.use('/static/*', serveStatic({ root: './', rewriteRequestPath: (path) => pat
 app.route('/api/commute', commuteRoutes);
 app.route('/api/settings', settingsRoutes);
 app.route('/api/stations', stationsRoutes);
+app.route('/api/arrivals', arrivalsRoutes);
 
 // Health check
 app.get('/health', async (c) => {
@@ -59,4 +61,5 @@ console.log(`  GET  /api/commute   - Get ranked commute options`);
 console.log(`  GET  /api/settings  - Get current settings`);
 console.log(`  PUT  /api/settings  - Update settings`);
 console.log(`  GET  /api/stations  - Get available stations`);
+console.log(`  GET  /api/arrivals  - Get live train arrivals`);
 console.log(`  GET  /health        - Health check`);

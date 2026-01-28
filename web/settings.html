@@ -335,6 +335,14 @@
         <div id="walkStations" class="station-list"></div>
       </div>
 
+      <!-- Live Train Stations -->
+      <div class="card">
+        <h2>🚆 Live Train Stations</h2>
+        <p>Select up to 3 stations to display on the Live Train Times page.</p>
+        <div id="liveStationCount" class="station-count"></div>
+        <div id="liveStations" class="station-list"></div>
+      </div>
+
       <!-- Destination Station (hidden, auto-selected) -->
       <input type="hidden" id="destinationStation">
 
@@ -601,6 +609,39 @@
           <div class="station-distance">${s.walkMinutes} min walk</div>
         </div>
       `).join('') || '<p style="padding: 10px; color: #888;">No stations within 30 min walk</p>';
+
+      // Render live train stations (select up to 3)
+      const liveContainer = document.getElementById('liveStations');
+      const nearbyStations = allStations.filter(s => s.distanceFromHome <= 5).slice(0, 50);
+      const selectedLive = settings.liveTrainStations || [];
+
+      document.getElementById('liveStationCount').textContent =
+        `${selectedLive.length}/3 stations selected`;
+
+      liveContainer.innerHTML = nearbyStations.map(s => `
+        <label class="station-item">
+          <input type="checkbox" name="liveStation" value="${s.transiterId}"
+            ${selectedLive.includes(s.transiterId) ? 'checked' : ''}
+            onchange="checkLiveStationLimit(this)">
+          <div class="station-info">
+            <div class="station-name">${s.name}</div>
+            <div class="station-lines">
+              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
+            </div>
+          </div>
+          <div class="station-distance">${s.distanceFromHome} mi</div>
+        </label>
+      `).join('') || '<p style="padding: 10px; color: #888;">No nearby stations found</p>';
+    }
+
+    function checkLiveStationLimit(checkbox) {
+      const checked = document.querySelectorAll('input[name="liveStation"]:checked');
+      if (checked.length > 3) {
+        checkbox.checked = false;
+        alert('You can select up to 3 stations for Live Train Times.');
+      }
+      document.getElementById('liveStationCount').textContent =
+        `${Math.min(checked.length, 3)}/3 stations selected`;
     }
 
     async function saveSettings() {
@@ -663,6 +704,8 @@
       // Get selected bike-to stations (walk-to is auto-calculated)
       const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
         .map(el => el.value);
+      const liveTrainStations = Array.from(document.querySelectorAll('input[name="liveStation"]:checked'))
+        .map(el => el.value).slice(0, 3);
       const destinationStation = document.getElementById('destinationStation').value;
 
       try {
@@ -673,6 +716,7 @@
             home: { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress },
             work: { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress },
             bikeToStations,
+            liveTrainStations,
             destinationStation
           })
         });
@@ -689,6 +733,7 @@
           settings.home = { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress };
           settings.work = { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress };
           settings.bikeToStations = bikeToStations;
+          settings.liveTrainStations = liveTrainStations;
           settings.destinationStation = destinationStation;
 
           renderStations();

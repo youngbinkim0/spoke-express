@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: Settings = {
   bikeToStations: [],
   walkToStations: [],
   destinationStation: 'G22', // Court Sq
+  liveTrainStations: [],
 };
 
 export function getSettings(): Settings {

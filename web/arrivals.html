@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Train Times - NYC Commute</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    .stations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .station-card {
+      background: #16213e;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .station-header {
+      background: #1a3a5c;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .station-lines {
+      display: flex;
+      gap: 6px;
+    }
+
+    .line-groups {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .line-group {
+      border-bottom: 1px solid #0f3460;
+      padding-bottom: 16px;
+    }
+
+    .line-group:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .line-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .line-name {
+      font-weight: 500;
+      color: #ccc;
+    }
+
+    .direction {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      background: #0f3460;
+      border-radius: 8px;
+    }
+
+    .direction:last-child {
+      margin-bottom: 0;
+    }
+
+    .direction-arrow {
+      font-size: 1.2rem;
+      color: #4ecca3;
+      width: 24px;
+    }
+
+    .headsign {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #aaa;
+    }
+
+    .arrivals {
+      display: flex;
+      gap: 8px;
+    }
+
+    .arrival-time {
+      background: #1a3a5c;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #4ecca3;
+    }
+
+    .arrival-time.soon {
+      background: #4ecca3;
+      color: #1a1a2e;
+    }
+
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .line-badge.small {
+      width: 22px;
+      height: 22px;
+      font-size: 0.75rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .error {
+      background: #ff6b6b22;
+      border: 1px solid #ff6b6b;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #ff6b6b;
+    }
+
+    .no-stations {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+
+    .no-stations h2 {
+      color: #ccc;
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+    }
+
+    .no-stations a {
+      color: #4ecca3;
+      text-decoration: none;
+    }
+
+    .no-stations a:hover {
+      text-decoration: underline;
+    }
+
+    .refresh-info {
+      text-align: center;
+      margin-top: 20px;
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    .last-updated {
+      text-align: center;
+      margin-top: 8px;
+      color: #666;
+      font-size: 0.75rem;
+    }
+
+    /* MTA line colors */
+    .line-1, .line-2, .line-3 { background: #EE352E; }
+    .line-4, .line-5, .line-6 { background: #00933C; }
+    .line-7 { background: #B933AD; }
+    .line-A, .line-C, .line-E { background: #0039A6; }
+    .line-B, .line-D, .line-F, .line-M { background: #FF6319; }
+    .line-G { background: #6CBE45; }
+    .line-J, .line-Z { background: #996633; }
+    .line-L { background: #A7A9AC; }
+    .line-N, .line-Q, .line-R, .line-W { background: #FCCC0A; color: #000; }
+    .line-S, .line-FS, .line-FX { background: #808183; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Live Train Times</h1>
+      <div class="nav-links">
+        <a href="/static/index.html">Commute</a>
+        <a href="/static/settings.html">Settings</a>
+      </div>
+    </header>
+
+    <div id="content">
+      <div class="loading">Loading...</div>
+    </div>
+
+    <div class="refresh-info">
+      Auto-refreshes every 30 seconds
+    </div>
+    <div class="last-updated" id="lastUpdated"></div>
+  </div>
+
+  <script>
+    const lineColors = {
+      '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
+      '4': '#00933C', '5': '#00933C', '6': '#00933C',
+      '7': '#B933AD',
+      'A': '#0039A6', 'C': '#0039A6', 'E': '#0039A6',
+      'B': '#FF6319', 'D': '#FF6319', 'F': '#FF6319', 'M': '#FF6319',
+      'G': '#6CBE45',
+      'J': '#996633', 'Z': '#996633',
+      'L': '#A7A9AC',
+      'N': '#FCCC0A', 'Q': '#FCCC0A', 'R': '#FCCC0A', 'W': '#FCCC0A',
+      'S': '#808183', 'FS': '#808183', 'FX': '#808183',
+    };
+
+    function renderLineBadge(line, small = false) {
+      const color = lineColors[line] || '#888';
+      const textColor = ['N', 'Q', 'R', 'W'].includes(line) ? '#000' : '#fff';
+      const sizeClass = small ? 'small' : '';
+      return `<span class="line-badge ${sizeClass}" style="background:${color};color:${textColor}">${line}</span>`;
+    }
+
+    function getDirectionArrow(direction) {
+      switch (direction) {
+        case 'N': return '↑';
+        case 'S': return '↓';
+        case 'E': return '→';
+        case 'W': return '←';
+        default: return '→';
+      }
+    }
+
+    function renderDirection(group) {
+      const arrivalsHtml = group.arrivals.map((a, i) => {
+        const soonClass = a.minutesAway <= 2 ? 'soon' : '';
+        const text = a.minutesAway === 0 ? 'Now' : `${a.minutesAway}min`;
+        return `<span class="arrival-time ${soonClass}">${text}</span>`;
+      }).join('');
+
+      return `
+        <div class="direction">
+          <span class="direction-arrow">${getDirectionArrow(group.direction)}</span>
+          <span class="headsign">${group.headsign}</span>
+          <div class="arrivals">${arrivalsHtml}</div>
+        </div>
+      `;
+    }
+
+    function renderLineGroup(line, directions) {
+      const directionsHtml = directions.map(renderDirection).join('');
+
+      return `
+        <div class="line-group">
+          <div class="line-header">
+            ${renderLineBadge(line)}
+            <span class="line-name">${line} Line</span>
+          </div>
+          ${directionsHtml}
+        </div>
+      `;
+    }
+
+    function renderStation(stationData) {
+      // Group by line
+      const lineMap = new Map();
+      for (const group of stationData.groups) {
+        if (!lineMap.has(group.line)) {
+          lineMap.set(group.line, []);
+        }
+        lineMap.get(group.line).push(group);
+      }
+
+      // Render station header with line badges
+      const linesHtml = stationData.station.lines
+        .map(l => renderLineBadge(l, true))
+        .join('');
+
+      // Render line groups
+      let lineGroupsHtml = '';
+      for (const [line, directions] of lineMap) {
+        lineGroupsHtml += renderLineGroup(line, directions);
+      }
+
+      if (!lineGroupsHtml) {
+        lineGroupsHtml = '<div style="padding: 20px; color: #888; text-align: center;">No trains scheduled</div>';
+      }
+
+      return `
+        <div class="station-card">
+          <div class="station-header">
+            <span>${stationData.station.name}</span>
+            <div class="station-lines">${linesHtml}</div>
+          </div>
+          <div class="line-groups">
+            ${lineGroupsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadArrivals() {
+      const content = document.getElementById('content');
+      const lastUpdated = document.getElementById('lastUpdated');
+
+      try {
+        const response = await fetch('/api/arrivals');
+        if (!response.ok) throw new Error('Failed to load');
+
+        const data = await response.json();
+
+        if (!data.stations || data.stations.length === 0) {
+          content.innerHTML = `
+            <div class="no-stations">
+              <h2>No Stations Configured</h2>
+              <p>Go to <a href="/static/settings.html">Settings</a> to select up to 3 stations for live train times.</p>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="stations-list">
+            ${data.stations.map(renderStation).join('')}
+          </div>
+        `;
+
+        lastUpdated.textContent = `Last updated: ${new Date(data.generatedAt).toLocaleTimeString()}`;
+      } catch (error) {
+        content.innerHTML = `
+          <div class="error">
+            Failed to load train times.<br>
+            ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Initial load
+    loadArrivals();
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadArrivals, 30000);
+  </script>
+</body>
+</html>

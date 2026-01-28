@@ -20,6 +20,7 @@ export interface Settings {
   bikeToStations: string[];
   walkToStations: string[];
   destinationStation: string;
+  liveTrainStations: string[];
 }
 
 export interface StationsData {
@@ -72,8 +73,22 @@ export interface TransiterArrival {
   trip: {
     route: {
       id: string;
+      color?: string;
     };
     direction: string;
+    destination?: {
+      id: string;
+      name: string;
+    };
+  };
+  stop?: {
+    id: string;
+    name: string;
+  };
+  headsign?: string;
+  destination?: {
+    id: string;
+    name: string;
   };
 }
 
@@ -81,4 +96,31 @@ export interface TransiterStopResponse {
   id: string;
   name: string;
   stopTimes: TransiterArrival[];
+}
+
+// Live Train Times types
+export interface ArrivalTime {
+  minutesAway: number;
+  time: string;
+}
+
+export interface ArrivalGroup {
+  line: string;
+  direction: string;
+  headsign: string;
+  arrivals: ArrivalTime[];
+}
+
+export interface StationArrivals {
+  station: {
+    id: string;
+    name: string;
+    lines: string[];
+  };
+  groups: ArrivalGroup[];
+}
+
+export interface ArrivalsResponse {
+  stations: StationArrivals[];
+  generatedAt: string;
 }
