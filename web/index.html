@@ -90,6 +90,26 @@
       font-size: 0.9rem;
     }
 
+    .alerts-section {
+      margin-bottom: 20px;
+    }
+
+    .alert-card {
+      background: #ff6b6b22;
+      border: 1px solid #ff6b6b;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: #ff6b6b;
+    }
+
+    .alert-card.elevator {
+      background: #ffc10722;
+      border-color: #ffc107;
+      color: #ffc107;
+    }
+
     .options-list {
       display: flex;
       flex-direction: column;
@@ -253,36 +273,9 @@
     const STORAGE_KEY = 'commuteOptimizerSettings';
     const TRANSITER_BASE = 'https://demo.transiter.dev';
     const WEATHER_BASE = 'https://api.openweathermap.org';
+    const DIRECTIONS_BASE = 'https://maps.googleapis.com/maps/api/directions/json';
 
-    // Bundled station data
-    const STATIONS = [
-      {"id": "G33", "name": "Bedford-Nostrand Avs", "lines": ["G"], "lat": 40.6896, "lng": -73.9535},
-      {"id": "G34", "name": "Classon Av", "lines": ["G"], "lat": 40.6889, "lng": -73.9600},
-      {"id": "G35", "name": "Clinton-Washington Avs (G)", "lines": ["G"], "lat": 40.6880, "lng": -73.9667},
-      {"id": "G36", "name": "Fulton St (G)", "lines": ["G"], "lat": 40.6870, "lng": -73.9752},
-      {"id": "A42", "name": "Hoyt-Schermerhorn Sts", "lines": ["A", "C", "G"], "lat": 40.6884, "lng": -73.9851},
-      {"id": "G31", "name": "Flushing Av", "lines": ["G"], "lat": 40.7004, "lng": -73.9504},
-      {"id": "G32", "name": "Myrtle-Willoughby Avs", "lines": ["G"], "lat": 40.6946, "lng": -73.9489},
-      {"id": "G30", "name": "Broadway (G)", "lines": ["G"], "lat": 40.7063, "lng": -73.9503},
-      {"id": "G29", "name": "Metropolitan Av", "lines": ["G"], "lat": 40.7127, "lng": -73.9511},
-      {"id": "G28", "name": "Nassau Av", "lines": ["G"], "lat": 40.7244, "lng": -73.9512},
-      {"id": "G26", "name": "Greenpoint Av", "lines": ["G"], "lat": 40.7313, "lng": -73.9542},
-      {"id": "G22", "name": "Court Sq", "lines": ["G", "7", "E", "M"], "lat": 40.7471, "lng": -73.9456},
-      {"id": "G21", "name": "Long Island City-Court Sq", "lines": ["G"], "lat": 40.7460, "lng": -73.9436},
-      {"id": "F09", "name": "Court Sq-23 St", "lines": ["E", "M"], "lat": 40.7479, "lng": -73.9461},
-      {"id": "F11", "name": "21 St-Queensbridge", "lines": ["F"], "lat": 40.7543, "lng": -73.9424},
-      {"id": "D24", "name": "Atlantic Av-Barclays Ctr", "lines": ["B", "Q", "D", "N", "R", "2", "3", "4", "5"], "lat": 40.6842, "lng": -73.9779},
-      {"id": "A41", "name": "Jay St-MetroTech", "lines": ["A", "C", "F", "R"], "lat": 40.6923, "lng": -73.9872},
-      {"id": "R30", "name": "DeKalb Av", "lines": ["B", "Q", "R"], "lat": 40.6907, "lng": -73.9818},
-      {"id": "R28", "name": "Borough Hall", "lines": ["2", "3", "4", "5", "R"], "lat": 40.6923, "lng": -73.9901},
-      {"id": "R16", "name": "Times Sq-42 St", "lines": ["1", "2", "3", "7", "N", "Q", "R", "W", "S"], "lat": 40.7559, "lng": -73.9871},
-      {"id": "R17", "name": "34 St-Herald Sq", "lines": ["B", "D", "F", "M", "N", "Q", "R", "W"], "lat": 40.7497, "lng": -73.9878},
-      {"id": "R20", "name": "14 St-Union Sq", "lines": ["4", "5", "6", "L", "N", "Q", "R", "W"], "lat": 40.7356, "lng": -73.9906},
-      {"id": "631", "name": "Grand Central-42 St", "lines": ["4", "5", "6", "7", "S"], "lat": 40.7527, "lng": -73.9772},
-      {"id": "A28", "name": "34 St-Penn Station", "lines": ["1", "2", "3", "A", "C", "E"], "lat": 40.7506, "lng": -73.9910}
-    ];
-
-    const STATION_MAP = Object.fromEntries(STATIONS.map(s => [s.id, s]));
+    let STATIONS = [];
 
     const lineColors = {
       '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
@@ -302,6 +295,20 @@
       return saved ? JSON.parse(saved) : null;
     }
 
+    async function loadStations() {
+      try {
+        const response = await fetch('stations.json');
+        STATIONS = await response.json();
+      } catch (e) {
+        console.error('Failed to load stations:', e);
+        STATIONS = [];
+      }
+    }
+
+    function getStation(id) {
+      return STATIONS.find(s => s.id === id);
+    }
+
     function calculateDistance(lat1, lng1, lat2, lng2) {
       const R = 3959;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -316,19 +323,7 @@
     function estimateBikeTime(fromLat, fromLng, toLat, toLng) {
       const distance = calculateDistance(fromLat, fromLng, toLat, toLng);
       const BIKE_SPEED_MPH = 10;
-      return Math.ceil((distance / BIKE_SPEED_MPH) * 60 * 1.3); // 1.3x for real roads
-    }
-
-    function estimateTransitTime(fromId, toId) {
-      // Simple estimate based on G line stations
-      const gLineOrder = ['G36', 'G35', 'G34', 'G33', 'G32', 'G31', 'G30', 'G29', 'G28', 'G26', 'G22'];
-      const fromIdx = gLineOrder.indexOf(fromId);
-      const toIdx = gLineOrder.indexOf(toId);
-
-      if (fromIdx !== -1 && toIdx !== -1) {
-        return Math.abs(toIdx - fromIdx) * 2 + 3; // ~2 min per station + buffer
-      }
-      return 15; // Default estimate
+      return Math.ceil((distance / BIKE_SPEED_MPH) * 60 * 1.3);
     }
 
     async function fetchWeather(lat, lng, apiKey) {
@@ -360,6 +355,51 @@
         };
       } catch (e) {
         return { tempF: '--', conditions: 'Error', isBad: false };
+      }
+    }
+
+    async function fetchAlerts() {
+      try {
+        const response = await fetch(`${TRANSITER_BASE}/systems/us-ny-subway/alerts`);
+        if (!response.ok) return [];
+
+        const data = await response.json();
+        return (data.alerts || [])
+          .filter(a => a.effect !== 'ACCESSIBILITY_ISSUE') // Filter elevator alerts for main view
+          .slice(0, 3)
+          .map(a => ({
+            id: a.id,
+            text: a.header?.[0]?.text || 'Service alert',
+            isElevator: a.id.startsWith('elevator:')
+          }));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchTransitTime(originLat, originLng, destLat, destLng, googleKey) {
+      if (!googleKey) {
+        // Fallback estimate
+        const dist = calculateDistance(originLat, originLng, destLat, destLng);
+        return Math.ceil(dist * 4); // Rough estimate: 4 min per mile on subway
+      }
+
+      try {
+        // Use Google Directions API via CORS proxy or direct if allowed
+        const origin = `${originLat},${originLng}`;
+        const dest = `${destLat},${destLng}`;
+
+        // Note: Google Directions API doesn't support CORS for browser requests
+        // We'll use a fallback calculation for now
+        // In production, you'd use a proxy or the Routes API with proper setup
+
+        const dist = calculateDistance(originLat, originLng, destLat, destLng);
+        // Better estimate: account for typical subway speed including stops
+        const avgSubwaySpeedMph = 17; // Including stops
+        return Math.ceil((dist / avgSubwaySpeedMph) * 60);
+      } catch (e) {
+        const dist = calculateDistance(originLat, originLng, destLat, destLng);
+        return Math.ceil(dist * 4);
       }
     }
 
@@ -406,10 +446,8 @@
     }
 
     function rankOptions(options, weather) {
-      // Sort by duration
       let sorted = [...options].sort((a, b) => a.duration - b.duration);
 
-      // If weather is bad, move transit-only above first bike option
       if (weather.isBad) {
         const bikeIdx = sorted.findIndex(o => o.type === 'bike_to_transit');
         const transitIdx = sorted.findIndex(o => o.type === 'transit_only');
@@ -485,11 +523,25 @@
       `;
     }
 
+    function renderAlerts(alerts) {
+      if (!alerts || alerts.length === 0) return '';
+
+      return `
+        <div class="alerts-section">
+          ${alerts.map(a => `
+            <div class="alert-card ${a.isElevator ? 'elevator' : ''}">
+              ⚠️ ${a.text}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     async function loadCommute() {
       const content = document.getElementById('content');
       const settings = loadSettings();
 
-      if (!settings || !settings.homeLat || settings.bikeStations?.length === 0) {
+      if (!settings || !settings.homeLat || !settings.bikeStations || settings.bikeStations.length === 0) {
         content.innerHTML = `
           <div class="no-options">
             Not configured yet.<br>
@@ -500,14 +552,31 @@
       }
 
       try {
-        // Fetch weather
-        const weather = await fetchWeather(settings.homeLat, settings.homeLng, settings.apiKey);
+        // Load stations if not loaded
+        if (STATIONS.length === 0) {
+          await loadStations();
+        }
+
+        // Fetch weather and alerts in parallel
+        const [weather, alerts] = await Promise.all([
+          fetchWeather(settings.homeLat, settings.homeLng, settings.apiKey),
+          fetchAlerts()
+        ]);
+
+        const destStation = getStation(settings.destStation);
+        if (!destStation) {
+          content.innerHTML = `
+            ${renderWeather(weather)}
+            <div class="error">Destination station not found. Please reconfigure.</div>
+          `;
+          return;
+        }
 
         // Build commute options
         const options = [];
 
         for (const stationId of settings.bikeStations) {
-          const station = STATION_MAP[stationId];
+          const station = getStation(stationId);
           if (!station) continue;
 
           const bikeTime = estimateBikeTime(
@@ -515,19 +584,21 @@
             station.lat, station.lng
           );
 
-          const { nextTrain, arrivalTime, routeId } = await fetchNextArrival(stationId);
-          const transitTime = estimateTransitTime(stationId, settings.destStation);
+          const [arrival, transitTime] = await Promise.all([
+            fetchNextArrival(stationId),
+            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.googleKey)
+          ]);
 
-          const route = routeId || station.lines[0];
+          const route = arrival.routeId || station.lines[0];
           options.push({
             type: 'bike_to_transit',
-            summary: `Bike → ${route}`,
+            summary: `Bike → ${route} → ${destStation.name}`,
             duration: bikeTime + transitTime,
-            nextTrain,
-            arrivalTime,
+            nextTrain: arrival.nextTrain,
+            arrivalTime: arrival.arrivalTime,
             legs: [
               { mode: 'bike', duration: bikeTime, to: station.name },
-              { mode: 'subway', duration: transitTime, to: 'Work', route }
+              { mode: 'subway', duration: transitTime, to: destStation.name, route }
             ]
           });
         }
@@ -535,6 +606,7 @@
         if (options.length === 0) {
           content.innerHTML = `
             ${renderWeather(weather)}
+            ${renderAlerts(alerts)}
             <div class="no-options">
               No commute options available.<br>
               <a href="settings.html">Configure stations</a>
@@ -548,8 +620,9 @@
 
         content.innerHTML = `
           ${renderWeather(weather)}
+          ${renderAlerts(alerts)}
           <div class="options-list">
-            ${ranked.slice(0, 3).map(renderOption).join('')}
+            ${ranked.slice(0, 5).map(renderOption).join('')}
           </div>
         `;
       } catch (error) {
@@ -563,7 +636,7 @@
     }
 
     // Initial load
-    loadCommute();
+    loadStations().then(loadCommute);
 
     // Auto-refresh every 30 seconds
     setInterval(loadCommute, 30000);
