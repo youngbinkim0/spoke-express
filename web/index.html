@@ -251,7 +251,7 @@
   </style>
 </head>
 <body>
-  <script src="mta-api.js?v=2"></script>
+  <script src="mta-api.js?v=3"></script>
   <div class="container">
     <header>
       <h1>Commute Options</h1>
@@ -332,7 +332,8 @@
       }
 
       try {
-        const url = `${WEATHER_BASE}/data/3.0/onecall?lat=${lat}&lon=${lng}&units=imperial&exclude=minutely,daily,alerts&appid=${apiKey}`;
+        // Use free 2.5 API (3.0 requires paid subscription)
+        const url = `${WEATHER_BASE}/data/2.5/weather?lat=${lat}&lon=${lng}&units=imperial&appid=${apiKey}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -340,17 +341,16 @@
         }
 
         const data = await response.json();
-        const current = data.current;
-        const weatherId = current.weather[0]?.id || 800;
-        const conditions = current.weather[0]?.main || 'Clear';
-        const precipProb = data.hourly?.[0]?.pop || 0;
+        const weatherId = data.weather?.[0]?.id || 800;
+        const conditions = data.weather?.[0]?.main || 'Clear';
 
-        const isBad = (weatherId >= 200 && weatherId < 700) || precipProb > 0.5;
+        // Weather IDs 200-699 indicate precipitation (rain, snow, etc.)
+        const isBad = weatherId >= 200 && weatherId < 700;
 
         return {
-          tempF: Math.round(current.temp),
+          tempF: Math.round(data.main?.temp || 0),
           conditions,
-          precipProb: Math.round(precipProb * 100),
+          precipProb: 0, // 2.5 API doesn't include precipitation probability
           isBad
         };
       } catch (e) {
