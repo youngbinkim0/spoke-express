@@ -39,6 +39,12 @@
       gap: 10px;
     }
 
+    header a {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
     .card {
       background: white;
       border-radius: 8px;
@@ -62,7 +68,18 @@
       margin-bottom: 12px;
     }
 
-    .address-input {
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .address-input, .api-input {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -70,31 +87,21 @@
       font-size: 1rem;
     }
 
-    .coords-display {
-      font-size: 0.85rem;
-      color: #888;
-      margin-top: 8px;
+    .coords-row {
+      display: flex;
+      gap: 12px;
     }
 
-    .coords-display.success {
-      color: #28a745;
-    }
-
-    .coords-display.error {
-      color: #dc3545;
-    }
-
-    .nearest-station {
-      margin-top: 12px;
+    .coords-row input {
+      flex: 1;
       padding: 10px;
-      background: #e8f4fd;
+      border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 0.9rem;
-      color: #1a73e8;
     }
 
     .station-list {
-      max-height: 350px;
+      max-height: 300px;
       overflow-y: auto;
     }
 
@@ -162,26 +169,6 @@
     .line-L { background: #A7A9AC; }
     .line-S, .line-FS, .line-H { background: #808183; }
     .line-J, .line-Z { background: #996633; }
-    .line-SI { background: #0039A6; }
-
-    .filter-controls {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-
-    .filter-controls label {
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    .filter-controls input {
-      width: 60px;
-      padding: 6px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
 
     select {
       width: 100%;
@@ -213,15 +200,6 @@
       cursor: not-allowed;
     }
 
-    .btn-secondary {
-      background: #666;
-      margin-top: 8px;
-    }
-
-    .btn-secondary:hover {
-      background: #555;
-    }
-
     .status {
       padding: 12px;
       border-radius: 6px;
@@ -241,110 +219,98 @@
       display: block;
     }
 
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-
     .station-count {
       font-size: 0.85rem;
       color: #888;
       margin-bottom: 8px;
     }
 
-    /* Google Places Autocomplete styling */
-    .pac-container {
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      border: none;
+    .help-text {
+      font-size: 0.8rem;
+      color: #888;
       margin-top: 4px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    .pac-item {
-      padding: 10px 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-
-    .pac-item:hover {
-      background: #f5f5f5;
-    }
-
-    .pac-item-query {
-      font-size: 0.95rem;
-      color: #333;
-    }
-
-    .pac-matched {
-      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>⚙️ Commute Optimizer Settings</h1>
-      <a href="/static/index.html" style="color: white; text-decoration: none; font-size: 0.9rem;">← Back to Results</a>
+      <h1>Settings</h1>
+      <a href="index.html">← Back to Results</a>
     </header>
 
-    <div id="loading" class="loading">Loading stations...</div>
+    <div id="content">
+      <!-- API Key -->
+      <div class="card">
+        <h2>API Key</h2>
+        <p>Get a free API key from <a href="https://openweathermap.org/api" target="_blank">OpenWeatherMap</a></p>
+        <input type="text" id="apiKey" class="api-input" placeholder="Enter your OpenWeatherMap API key">
+        <div class="help-text">Required for weather data. Free tier allows 1000 calls/day.</div>
+      </div>
 
-    <div id="content" style="display: none;">
       <!-- Home Location -->
       <div class="card">
-        <h2>🏠 Home Location</h2>
+        <h2>Home Location</h2>
         <p>Your starting point for the commute</p>
-        <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
-        <div id="homeCoords" class="coords-display"></div>
+        <div class="input-group">
+          <label>Address (for reference)</label>
+          <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
+        </div>
+        <div class="coords-row">
+          <div class="input-group">
+            <label>Latitude</label>
+            <input type="number" id="homeLat" step="0.0001" placeholder="40.6892">
+          </div>
+          <div class="input-group">
+            <label>Longitude</label>
+            <input type="number" id="homeLng" step="0.0001" placeholder="-73.9544">
+          </div>
+        </div>
+        <div class="help-text">Tip: Right-click on Google Maps and select coordinates to copy them.</div>
       </div>
 
       <!-- Work Location -->
       <div class="card">
-        <h2>🏢 Work Location</h2>
-        <p>Your destination - nearest station will be auto-selected</p>
-        <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
-        <div id="workCoords" class="coords-display"></div>
-        <div id="nearestStation" class="nearest-station" style="display: none;">
-          Nearest station: <strong id="nearestStationName"></strong>
+        <h2>Work Location</h2>
+        <p>Your destination</p>
+        <div class="input-group">
+          <label>Address (for reference)</label>
+          <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
+        </div>
+        <div class="coords-row">
+          <div class="input-group">
+            <label>Latitude</label>
+            <input type="number" id="workLat" step="0.0001" placeholder="40.7471">
+          </div>
+          <div class="input-group">
+            <label>Longitude</label>
+            <input type="number" id="workLng" step="0.0001" placeholder="-73.9456">
+          </div>
         </div>
       </div>
 
       <!-- Bike-to Stations -->
       <div class="card">
-        <h2>🚲 Bike-to Stations</h2>
-        <p>Select stations you'd bike to (typically 0.5 - 3 miles away)</p>
-        <div class="filter-controls">
-          <label>Show stations from</label>
-          <input type="number" id="bikeMinDist" value="0.3" step="0.1" min="0">
-          <label>to</label>
-          <input type="number" id="bikeMaxDist" value="3" step="0.1" min="0">
-          <label>miles</label>
-          <button class="btn-secondary" style="padding: 6px 12px; width: auto; margin: 0;" onclick="renderStations()">Update</button>
-        </div>
+        <h2>Bike-to Stations</h2>
+        <p>Select stations you'd bike to from home</p>
         <div id="bikeStationCount" class="station-count"></div>
         <div id="bikeStations" class="station-list"></div>
       </div>
 
-      <!-- Walk-to Stations (auto-calculated) -->
+      <!-- Destination Station -->
       <div class="card">
-        <h2>🚇 Walk-to Stations</h2>
-        <p>Automatically includes all stations within 30 minutes walking distance from your home.</p>
-        <div id="walkStationCount" class="station-count" style="color: #1a73e8;"></div>
-        <div id="walkStations" class="station-list"></div>
+        <h2>Destination Station</h2>
+        <p>Station closest to your work</p>
+        <select id="destStation"></select>
       </div>
 
       <!-- Live Train Stations -->
       <div class="card">
-        <h2>🚆 Live Train Stations</h2>
-        <p>Select up to 3 stations to display on the Live Train Times page.</p>
+        <h2>Live Train Stations</h2>
+        <p>Select up to 3 stations to display on the Live Trains page</p>
         <div id="liveStationCount" class="station-count"></div>
         <div id="liveStations" class="station-list"></div>
       </div>
-
-      <!-- Destination Station (hidden, auto-selected) -->
-      <input type="hidden" id="destinationStation">
 
       <button class="btn" id="saveBtn" onclick="saveSettings()">
         Save Settings
@@ -355,160 +321,39 @@
   </div>
 
   <script>
-    let allStations = [];
-    let settings = {};
-    let homeCoords = null;
-    let workCoords = null;
-    let homeAutocomplete = null;
-    let workAutocomplete = null;
+    // Bundled station data (same as Android app)
+    const STATIONS = [
+      {"id": "G33", "name": "Bedford-Nostrand Avs", "lines": ["G"], "lat": 40.6896, "lng": -73.9535, "borough": "Brooklyn"},
+      {"id": "G34", "name": "Classon Av", "lines": ["G"], "lat": 40.6889, "lng": -73.9600, "borough": "Brooklyn"},
+      {"id": "G35", "name": "Clinton-Washington Avs (G)", "lines": ["G"], "lat": 40.6880, "lng": -73.9667, "borough": "Brooklyn"},
+      {"id": "G36", "name": "Fulton St (G)", "lines": ["G"], "lat": 40.6870, "lng": -73.9752, "borough": "Brooklyn"},
+      {"id": "A42", "name": "Hoyt-Schermerhorn Sts", "lines": ["A", "C", "G"], "lat": 40.6884, "lng": -73.9851, "borough": "Brooklyn"},
+      {"id": "G31", "name": "Flushing Av", "lines": ["G"], "lat": 40.7004, "lng": -73.9504, "borough": "Brooklyn"},
+      {"id": "G32", "name": "Myrtle-Willoughby Avs", "lines": ["G"], "lat": 40.6946, "lng": -73.9489, "borough": "Brooklyn"},
+      {"id": "G30", "name": "Broadway (G)", "lines": ["G"], "lat": 40.7063, "lng": -73.9503, "borough": "Brooklyn"},
+      {"id": "G29", "name": "Metropolitan Av", "lines": ["G"], "lat": 40.7127, "lng": -73.9511, "borough": "Brooklyn"},
+      {"id": "G28", "name": "Nassau Av", "lines": ["G"], "lat": 40.7244, "lng": -73.9512, "borough": "Brooklyn"},
+      {"id": "G26", "name": "Greenpoint Av", "lines": ["G"], "lat": 40.7313, "lng": -73.9542, "borough": "Brooklyn"},
+      {"id": "G22", "name": "Court Sq", "lines": ["G", "7", "E", "M"], "lat": 40.7471, "lng": -73.9456, "borough": "Queens"},
+      {"id": "G21", "name": "Long Island City-Court Sq", "lines": ["G"], "lat": 40.7460, "lng": -73.9436, "borough": "Queens"},
+      {"id": "F09", "name": "Court Sq-23 St", "lines": ["E", "M"], "lat": 40.7479, "lng": -73.9461, "borough": "Queens"},
+      {"id": "F11", "name": "21 St-Queensbridge", "lines": ["F"], "lat": 40.7543, "lng": -73.9424, "borough": "Queens"},
+      {"id": "D24", "name": "Atlantic Av-Barclays Ctr", "lines": ["B", "Q", "D", "N", "R", "2", "3", "4", "5"], "lat": 40.6842, "lng": -73.9779, "borough": "Brooklyn"},
+      {"id": "A41", "name": "Jay St-MetroTech", "lines": ["A", "C", "F", "R"], "lat": 40.6923, "lng": -73.9872, "borough": "Brooklyn"},
+      {"id": "R30", "name": "DeKalb Av", "lines": ["B", "Q", "R"], "lat": 40.6907, "lng": -73.9818, "borough": "Brooklyn"},
+      {"id": "R28", "name": "Borough Hall", "lines": ["2", "3", "4", "5", "R"], "lat": 40.6923, "lng": -73.9901, "borough": "Brooklyn"},
+      {"id": "R16", "name": "Times Sq-42 St", "lines": ["1", "2", "3", "7", "N", "Q", "R", "W", "S"], "lat": 40.7559, "lng": -73.9871, "borough": "Manhattan"},
+      {"id": "R17", "name": "34 St-Herald Sq", "lines": ["B", "D", "F", "M", "N", "Q", "R", "W"], "lat": 40.7497, "lng": -73.9878, "borough": "Manhattan"},
+      {"id": "R20", "name": "14 St-Union Sq", "lines": ["4", "5", "6", "L", "N", "Q", "R", "W"], "lat": 40.7356, "lng": -73.9906, "borough": "Manhattan"},
+      {"id": "631", "name": "Grand Central-42 St", "lines": ["4", "5", "6", "7", "S"], "lat": 40.7527, "lng": -73.9772, "borough": "Manhattan"},
+      {"id": "A28", "name": "34 St-Penn Station", "lines": ["1", "2", "3", "A", "C", "E"], "lat": 40.7506, "lng": -73.9910, "borough": "Manhattan"}
+    ];
 
-    async function init() {
-      try {
-        // Fetch stations, settings, and maps key in parallel
-        const [stationsRes, settingsRes, mapsKeyRes] = await Promise.all([
-          fetch('/api/stations'),
-          fetch('/api/settings'),
-          fetch('/api/settings/maps-key')
-        ]);
+    const STORAGE_KEY = 'commuteOptimizerSettings';
 
-        allStations = (await stationsRes.json()).stations;
-        settings = await settingsRes.json();
-
-        // Load Google Maps API if key is available (non-blocking)
-        if (mapsKeyRes.ok) {
-          const { apiKey } = await mapsKeyRes.json();
-          loadGoogleMapsAPI(apiKey).catch(err => {
-            console.warn('Google Maps failed to load, autocomplete disabled:', err);
-          });
-        }
-
-        // Set address inputs and coords
-        document.getElementById('homeAddress').value = settings.home?.address || '';
-        document.getElementById('workAddress').value = settings.work?.address || '';
-
-        if (settings.home?.lat && settings.home?.lng) {
-          homeCoords = { lat: settings.home.lat, lng: settings.home.lng };
-          document.getElementById('homeCoords').textContent = `📍 ${settings.home.lat.toFixed(4)}, ${settings.home.lng.toFixed(4)}`;
-          document.getElementById('homeCoords').className = 'coords-display success';
-        }
-
-        if (settings.work?.lat && settings.work?.lng) {
-          workCoords = { lat: settings.work.lat, lng: settings.work.lng };
-          document.getElementById('workCoords').textContent = `📍 ${settings.work.lat.toFixed(4)}, ${settings.work.lng.toFixed(4)}`;
-          document.getElementById('workCoords').className = 'coords-display success';
-        }
-
-        renderStations();
-        updateNearestStation();
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('content').style.display = 'block';
-      } catch (error) {
-        console.error('Failed to load data:', error);
-        document.getElementById('loading').textContent = 'Failed to load. Is the server running?';
-      }
-    }
-
-    function loadGoogleMapsAPI(apiKey) {
-      return new Promise((resolve, reject) => {
-        if (window.google && window.google.maps) {
-          initAutocomplete();
-          resolve();
-          return;
-        }
-
-        // Timeout after 10 seconds
-        const timeout = setTimeout(() => {
-          reject(new Error('Google Maps API load timeout'));
-        }, 10000);
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = (err) => {
-          clearTimeout(timeout);
-          reject(err);
-        };
-        script.onload = () => {
-          clearTimeout(timeout);
-          initAutocomplete();
-          resolve();
-        };
-        document.head.appendChild(script);
-      });
-    }
-
-    function initAutocomplete() {
-      const homeInput = document.getElementById('homeAddress');
-      const workInput = document.getElementById('workAddress');
-
-      const options = {
-        componentRestrictions: { country: 'us' },
-        fields: ['formatted_address', 'geometry', 'name'],
-        types: ['address']
-      };
-
-      // Home address autocomplete
-      homeAutocomplete = new google.maps.places.Autocomplete(homeInput, options);
-      homeAutocomplete.addListener('place_changed', () => {
-        const place = homeAutocomplete.getPlace();
-        if (place.geometry) {
-          homeCoords = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-          };
-          document.getElementById('homeCoords').textContent = `📍 ${place.formatted_address}`;
-          document.getElementById('homeCoords').className = 'coords-display success';
-        }
-      });
-
-      // Clear coords when user types manually (so we know to re-geocode)
-      homeInput.addEventListener('input', () => {
-        homeCoords = null;
-        document.getElementById('homeCoords').textContent = 'Select an address from suggestions';
-        document.getElementById('homeCoords').className = 'coords-display';
-      });
-
-      // Work address autocomplete
-      workAutocomplete = new google.maps.places.Autocomplete(workInput, options);
-      workAutocomplete.addListener('place_changed', () => {
-        const place = workAutocomplete.getPlace();
-        if (place.geometry) {
-          workCoords = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-          };
-          document.getElementById('workCoords').textContent = `📍 ${place.formatted_address}`;
-          document.getElementById('workCoords').className = 'coords-display success';
-          updateNearestStation();
-        }
-      });
-
-      // Clear coords when user types manually
-      workInput.addEventListener('input', () => {
-        workCoords = null;
-        document.getElementById('workCoords').textContent = 'Select an address from suggestions';
-        document.getElementById('workCoords').className = 'coords-display';
-      });
-    }
-
-    async function geocodeAddress(address) {
-      if (!address || address.trim().length === 0) return null;
-
-      try {
-        const response = await fetch('/api/settings/geocode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address })
-        });
-
-        if (!response.ok) return null;
-        return await response.json();
-      } catch (error) {
-        console.error('Geocoding failed:', error);
-        return null;
-      }
+    function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
     }
 
     function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -522,242 +367,148 @@
       return R * c;
     }
 
-    function findNearestStation(lat, lng) {
-      if (!lat || !lng || allStations.length === 0) return null;
+    function init() {
+      const settings = loadSettings();
 
-      let nearest = null;
-      let minDist = Infinity;
+      // Load saved values
+      document.getElementById('apiKey').value = settings.apiKey || '';
+      document.getElementById('homeAddress').value = settings.homeAddress || '';
+      document.getElementById('homeLat').value = settings.homeLat || '';
+      document.getElementById('homeLng').value = settings.homeLng || '';
+      document.getElementById('workAddress').value = settings.workAddress || '';
+      document.getElementById('workLat').value = settings.workLat || '';
+      document.getElementById('workLng').value = settings.workLng || '';
 
-      for (const station of allStations) {
-        const dist = calculateDistance(lat, lng, station.lat || 0, station.lng || 0);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = { ...station, distance: dist };
-        }
-      }
+      renderStations(settings);
 
-      return nearest;
+      // Re-render stations when home coords change
+      document.getElementById('homeLat').addEventListener('change', () => renderStations(loadSettings()));
+      document.getElementById('homeLng').addEventListener('change', () => renderStations(loadSettings()));
     }
 
-    function updateNearestStation() {
-      if (!workCoords) {
-        document.getElementById('nearestStation').style.display = 'none';
-        return;
-      }
+    function renderStations(settings) {
+      const homeLat = parseFloat(document.getElementById('homeLat').value) || settings.homeLat || 0;
+      const homeLng = parseFloat(document.getElementById('homeLng').value) || settings.homeLng || 0;
 
-      const nearest = findNearestStation(workCoords.lat, workCoords.lng);
-      const container = document.getElementById('nearestStation');
-      const nameEl = document.getElementById('nearestStationName');
-      const destInput = document.getElementById('destinationStation');
+      // Calculate distances and sort
+      const stationsWithDist = STATIONS.map(s => ({
+        ...s,
+        distance: homeLat ? calculateDistance(homeLat, homeLng, s.lat, s.lng) : 0
+      })).sort((a, b) => a.distance - b.distance);
 
-      if (nearest) {
-        nameEl.textContent = `${nearest.name} (${nearest.lines.join('/')}) - ${nearest.distance.toFixed(2)} mi`;
-        container.style.display = 'block';
-        destInput.value = nearest.transiterId;
-      } else {
-        container.style.display = 'none';
-        destInput.value = settings.destinationStation || '';
-      }
-    }
-
-    function renderStations() {
+      // Render bike stations
       const bikeContainer = document.getElementById('bikeStations');
-      const walkContainer = document.getElementById('walkStations');
+      const bikeStations = settings.bikeStations || [];
 
-      // Get filter values for bike stations
-      const bikeMinDist = parseFloat(document.getElementById('bikeMinDist').value) || 0;
-      const bikeMaxDist = parseFloat(document.getElementById('bikeMaxDist').value) || 5;
-
-      // Filter stations by distance
-      const bikeStations = allStations.filter(s =>
-        s.distanceFromHome >= bikeMinDist && s.distanceFromHome <= bikeMaxDist
-      );
-
-      // Walk stations: within 30 min walk (auto-calculated by backend)
-      const walkStations = allStations.filter(s => s.walkMinutes <= 30);
-
-      // Update counts
       document.getElementById('bikeStationCount').textContent =
-        `${bikeStations.length} stations in range`;
-      document.getElementById('walkStationCount').textContent =
-        `${walkStations.length} stations will be auto-included in ranking`;
+        `${bikeStations.length} stations selected`;
 
-      // Render bike-to stations (with checkboxes)
-      bikeContainer.innerHTML = bikeStations.map(s => `
+      bikeContainer.innerHTML = stationsWithDist.map(s => `
         <label class="station-item">
-          <input type="checkbox" name="bikeStation" value="${s.transiterId}"
-            ${settings.bikeToStations?.includes(s.transiterId) ? 'checked' : ''}>
+          <input type="checkbox" name="bikeStation" value="${s.id}"
+            ${bikeStations.includes(s.id) ? 'checked' : ''}>
           <div class="station-info">
             <div class="station-name">${s.name}</div>
             <div class="station-lines">
               ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
             </div>
           </div>
-          <div class="station-distance">${s.distanceFromHome} mi</div>
+          <div class="station-distance">${s.distance.toFixed(2)} mi</div>
         </label>
-      `).join('') || '<p style="padding: 10px; color: #888;">No stations in this range</p>';
+      `).join('');
 
-      // Render walk-to stations (read-only list)
-      walkContainer.innerHTML = walkStations.map(s => `
-        <div class="station-item" style="cursor: default;">
-          <div class="station-info">
-            <div class="station-name">${s.name}</div>
-            <div class="station-lines">
-              ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
-            </div>
-          </div>
-          <div class="station-distance">${s.walkMinutes} min walk</div>
-        </div>
-      `).join('') || '<p style="padding: 10px; color: #888;">No stations within 30 min walk</p>';
+      // Render destination dropdown
+      const destSelect = document.getElementById('destStation');
+      destSelect.innerHTML = stationsWithDist.map(s => `
+        <option value="${s.id}" ${settings.destStation === s.id ? 'selected' : ''}>
+          ${s.name} (${s.lines.join('/')})
+        </option>
+      `).join('');
 
-      // Render live train stations (select up to 3)
+      // Default to Court Sq if not set
+      if (!settings.destStation) {
+        destSelect.value = 'G22';
+      }
+
+      // Render live train stations
       const liveContainer = document.getElementById('liveStations');
-      const nearbyStations = allStations.filter(s => s.distanceFromHome <= 5).slice(0, 50);
-      const selectedLive = settings.liveTrainStations || [];
+      const liveStations = settings.liveStations || [];
 
       document.getElementById('liveStationCount').textContent =
-        `${selectedLive.length}/3 stations selected`;
+        `${liveStations.length}/3 stations selected`;
 
-      liveContainer.innerHTML = nearbyStations.map(s => `
+      liveContainer.innerHTML = stationsWithDist.map(s => `
         <label class="station-item">
-          <input type="checkbox" name="liveStation" value="${s.transiterId}"
-            ${selectedLive.includes(s.transiterId) ? 'checked' : ''}
-            onchange="checkLiveStationLimit(this)">
+          <input type="checkbox" name="liveStation" value="${s.id}"
+            ${liveStations.includes(s.id) ? 'checked' : ''}
+            onchange="checkLiveLimit(this)">
           <div class="station-info">
             <div class="station-name">${s.name}</div>
             <div class="station-lines">
               ${s.lines.map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
             </div>
           </div>
-          <div class="station-distance">${s.distanceFromHome} mi</div>
+          <div class="station-distance">${s.distance.toFixed(2)} mi</div>
         </label>
-      `).join('') || '<p style="padding: 10px; color: #888;">No nearby stations found</p>';
+      `).join('');
     }
 
-    function checkLiveStationLimit(checkbox) {
+    function checkLiveLimit(checkbox) {
       const checked = document.querySelectorAll('input[name="liveStation"]:checked');
       if (checked.length > 3) {
         checkbox.checked = false;
-        alert('You can select up to 3 stations for Live Train Times.');
+        alert('You can select up to 3 stations.');
       }
       document.getElementById('liveStationCount').textContent =
         `${Math.min(checked.length, 3)}/3 stations selected`;
     }
 
-    async function saveSettings() {
-      const btn = document.getElementById('saveBtn');
+    function saveSettings() {
       const status = document.getElementById('status');
 
-      btn.disabled = true;
-      btn.textContent = 'Validating addresses...';
+      const settings = {
+        apiKey: document.getElementById('apiKey').value.trim(),
+        homeAddress: document.getElementById('homeAddress').value.trim(),
+        homeLat: parseFloat(document.getElementById('homeLat').value) || 0,
+        homeLng: parseFloat(document.getElementById('homeLng').value) || 0,
+        workAddress: document.getElementById('workAddress').value.trim(),
+        workLat: parseFloat(document.getElementById('workLat').value) || 0,
+        workLng: parseFloat(document.getElementById('workLng').value) || 0,
+        bikeStations: Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
+          .map(el => el.value),
+        destStation: document.getElementById('destStation').value,
+        liveStations: Array.from(document.querySelectorAll('input[name="liveStation"]:checked'))
+          .map(el => el.value).slice(0, 3)
+      };
 
-      // Get addresses
-      const homeAddress = document.getElementById('homeAddress').value.trim();
-      const workAddress = document.getElementById('workAddress').value.trim();
-
-      // Check if home address needs geocoding (no coords yet, or address changed without autocomplete selection)
-      if (homeAddress && !homeCoords) {
-        btn.textContent = 'Geocoding home address...';
-        const result = await geocodeAddress(homeAddress);
-        if (result) {
-          homeCoords = { lat: result.lat, lng: result.lng };
-          document.getElementById('homeCoords').textContent = `📍 ${result.formattedAddress}`;
-          document.getElementById('homeCoords').className = 'coords-display success';
-        } else {
-          document.getElementById('homeCoords').textContent = '❌ Could not find address. Please select from suggestions.';
-          document.getElementById('homeCoords').className = 'coords-display error';
-          btn.disabled = false;
-          btn.textContent = 'Save Settings';
-          return;
-        }
-      }
-
-      // Check if work address needs geocoding
-      if (workAddress && !workCoords) {
-        btn.textContent = 'Geocoding work address...';
-        const result = await geocodeAddress(workAddress);
-        if (result) {
-          workCoords = { lat: result.lat, lng: result.lng };
-          document.getElementById('workCoords').textContent = `📍 ${result.formattedAddress}`;
-          document.getElementById('workCoords').className = 'coords-display success';
-          updateNearestStation();
-        } else {
-          document.getElementById('workCoords').textContent = '❌ Could not find address. Please select from suggestions.';
-          document.getElementById('workCoords').className = 'coords-display error';
-          btn.disabled = false;
-          btn.textContent = 'Save Settings';
-          return;
-        }
-      }
-
-      // Validate we have coords
-      if (!homeCoords || !workCoords) {
+      // Validate
+      if (!settings.homeLat || !settings.homeLng) {
         status.className = 'status error';
-        status.textContent = '✗ Please enter both home and work addresses.';
-        btn.disabled = false;
-        btn.textContent = 'Save Settings';
+        status.textContent = 'Please enter home coordinates.';
         return;
       }
 
-      btn.textContent = 'Saving...';
-
-      // Get selected bike-to stations (walk-to is auto-calculated)
-      const bikeToStations = Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
-        .map(el => el.value);
-      const liveTrainStations = Array.from(document.querySelectorAll('input[name="liveStation"]:checked'))
-        .map(el => el.value).slice(0, 3);
-      const destinationStation = document.getElementById('destinationStation').value;
-
-      try {
-        const response = await fetch('/api/settings', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            home: { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress },
-            work: { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress },
-            bikeToStations,
-            liveTrainStations,
-            destinationStation
-          })
-        });
-
-        if (response.ok) {
-          status.className = 'status success';
-          status.textContent = '✓ Settings saved! Reloading stations...';
-
-          // Reload stations with new home location
-          const stationsRes = await fetch('/api/stations');
-          allStations = (await stationsRes.json()).stations;
-
-          // Update settings object
-          settings.home = { lat: homeCoords?.lat, lng: homeCoords?.lng, address: homeAddress };
-          settings.work = { lat: workCoords?.lat, lng: workCoords?.lng, address: workAddress };
-          settings.bikeToStations = bikeToStations;
-          settings.liveTrainStations = liveTrainStations;
-          settings.destinationStation = destinationStation;
-
-          renderStations();
-          updateNearestStation();
-
-          status.textContent = '✓ Settings saved successfully!';
-        } else {
-          throw new Error('Failed to save');
-        }
-      } catch (error) {
+      if (settings.bikeStations.length === 0) {
         status.className = 'status error';
-        status.textContent = '✗ Failed to save settings. Please try again.';
+        status.textContent = 'Please select at least one bike-to station.';
+        return;
       }
 
-      btn.disabled = false;
-      btn.textContent = 'Save Settings';
+      // Save to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 
-      // Hide status after 3 seconds
+      status.className = 'status success';
+      status.textContent = 'Settings saved!';
+
+      // Update station counts
+      document.getElementById('bikeStationCount').textContent =
+        `${settings.bikeStations.length} stations selected`;
+
       setTimeout(() => {
         status.className = 'status';
       }, 3000);
     }
 
-    // Initialize on page load
     init();
   </script>
 </body>

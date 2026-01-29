@@ -238,8 +238,8 @@
     <header>
       <h1>Live Train Times</h1>
       <div class="nav-links">
-        <a href="/static/index.html">Commute</a>
-        <a href="/static/settings.html">Settings</a>
+        <a href="index.html">Commute</a>
+        <a href="settings.html">Settings</a>
       </div>
     </header>
 
@@ -254,6 +254,39 @@
   </div>
 
   <script>
+    const STORAGE_KEY = 'commuteOptimizerSettings';
+    const TRANSITER_BASE = 'https://demo.transiter.dev';
+
+    // Bundled station data
+    const STATIONS = [
+      {"id": "G33", "name": "Bedford-Nostrand Avs", "lines": ["G"], "lat": 40.6896, "lng": -73.9535},
+      {"id": "G34", "name": "Classon Av", "lines": ["G"], "lat": 40.6889, "lng": -73.9600},
+      {"id": "G35", "name": "Clinton-Washington Avs (G)", "lines": ["G"], "lat": 40.6880, "lng": -73.9667},
+      {"id": "G36", "name": "Fulton St (G)", "lines": ["G"], "lat": 40.6870, "lng": -73.9752},
+      {"id": "A42", "name": "Hoyt-Schermerhorn Sts", "lines": ["A", "C", "G"], "lat": 40.6884, "lng": -73.9851},
+      {"id": "G31", "name": "Flushing Av", "lines": ["G"], "lat": 40.7004, "lng": -73.9504},
+      {"id": "G32", "name": "Myrtle-Willoughby Avs", "lines": ["G"], "lat": 40.6946, "lng": -73.9489},
+      {"id": "G30", "name": "Broadway (G)", "lines": ["G"], "lat": 40.7063, "lng": -73.9503},
+      {"id": "G29", "name": "Metropolitan Av", "lines": ["G"], "lat": 40.7127, "lng": -73.9511},
+      {"id": "G28", "name": "Nassau Av", "lines": ["G"], "lat": 40.7244, "lng": -73.9512},
+      {"id": "G26", "name": "Greenpoint Av", "lines": ["G"], "lat": 40.7313, "lng": -73.9542},
+      {"id": "G22", "name": "Court Sq", "lines": ["G", "7", "E", "M"], "lat": 40.7471, "lng": -73.9456},
+      {"id": "G21", "name": "Long Island City-Court Sq", "lines": ["G"], "lat": 40.7460, "lng": -73.9436},
+      {"id": "F09", "name": "Court Sq-23 St", "lines": ["E", "M"], "lat": 40.7479, "lng": -73.9461},
+      {"id": "F11", "name": "21 St-Queensbridge", "lines": ["F"], "lat": 40.7543, "lng": -73.9424},
+      {"id": "D24", "name": "Atlantic Av-Barclays Ctr", "lines": ["B", "Q", "D", "N", "R", "2", "3", "4", "5"], "lat": 40.6842, "lng": -73.9779},
+      {"id": "A41", "name": "Jay St-MetroTech", "lines": ["A", "C", "F", "R"], "lat": 40.6923, "lng": -73.9872},
+      {"id": "R30", "name": "DeKalb Av", "lines": ["B", "Q", "R"], "lat": 40.6907, "lng": -73.9818},
+      {"id": "R28", "name": "Borough Hall", "lines": ["2", "3", "4", "5", "R"], "lat": 40.6923, "lng": -73.9901},
+      {"id": "R16", "name": "Times Sq-42 St", "lines": ["1", "2", "3", "7", "N", "Q", "R", "W", "S"], "lat": 40.7559, "lng": -73.9871},
+      {"id": "R17", "name": "34 St-Herald Sq", "lines": ["B", "D", "F", "M", "N", "Q", "R", "W"], "lat": 40.7497, "lng": -73.9878},
+      {"id": "R20", "name": "14 St-Union Sq", "lines": ["4", "5", "6", "L", "N", "Q", "R", "W"], "lat": 40.7356, "lng": -73.9906},
+      {"id": "631", "name": "Grand Central-42 St", "lines": ["4", "5", "6", "7", "S"], "lat": 40.7527, "lng": -73.9772},
+      {"id": "A28", "name": "34 St-Penn Station", "lines": ["1", "2", "3", "A", "C", "E"], "lat": 40.7506, "lng": -73.9910}
+    ];
+
+    const STATION_MAP = Object.fromEntries(STATIONS.map(s => [s.id, s]));
+
     const lineColors = {
       '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
       '4': '#00933C', '5': '#00933C', '6': '#00933C',
@@ -267,6 +300,11 @@
       'S': '#808183', 'FS': '#808183', 'FX': '#808183',
     };
 
+    function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    }
+
     function renderLineBadge(line, small = false) {
       const color = lineColors[line] || '#888';
       const textColor = ['N', 'Q', 'R', 'W'].includes(line) ? '#000' : '#fff';
@@ -278,14 +316,71 @@
       switch (direction) {
         case 'N': return '↑';
         case 'S': return '↓';
-        case 'E': return '→';
-        case 'W': return '←';
         default: return '→';
       }
     }
 
+    async function fetchStationArrivals(stationId) {
+      try {
+        const url = `${TRANSITER_BASE}/systems/us-ny-subway/stops/${stationId}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          return { station: STATION_MAP[stationId], groups: [] };
+        }
+
+        const data = await response.json();
+        const stopTimes = data.stopTimes || [];
+        const now = Date.now();
+
+        // Group by route and direction
+        const groups = new Map();
+
+        for (const st of stopTimes) {
+          const arrTimeStr = st.arrival?.time || st.departure?.time;
+          if (!arrTimeStr) continue;
+
+          const arrMs = parseInt(arrTimeStr) * 1000;
+          if (arrMs < now - 60000) continue; // Skip past arrivals
+
+          const routeId = st.trip?.route?.id || '?';
+          const direction = st.trip?.directionId === '1' ? 'S' : 'N';
+          const headsign = st.trip?.headsign || (direction === 'N' ? 'Northbound' : 'Southbound');
+          const minAway = Math.max(0, Math.round((arrMs - now) / 60000));
+
+          const key = `${routeId}-${direction}`;
+          if (!groups.has(key)) {
+            groups.set(key, {
+              line: routeId,
+              direction,
+              headsign,
+              arrivals: []
+            });
+          }
+
+          const group = groups.get(key);
+          if (group.arrivals.length < 3) {
+            group.arrivals.push({ minutesAway: minAway });
+          }
+        }
+
+        // Sort arrivals within each group
+        for (const group of groups.values()) {
+          group.arrivals.sort((a, b) => a.minutesAway - b.minutesAway);
+        }
+
+        return {
+          station: STATION_MAP[stationId] || { id: stationId, name: stationId, lines: [] },
+          groups: Array.from(groups.values()).sort((a, b) => a.line.localeCompare(b.line))
+        };
+      } catch (e) {
+        console.error('Error fetching arrivals:', e);
+        return { station: STATION_MAP[stationId], groups: [] };
+      }
+    }
+
     function renderDirection(group) {
-      const arrivalsHtml = group.arrivals.map((a, i) => {
+      const arrivalsHtml = group.arrivals.map((a) => {
         const soonClass = a.minutesAway <= 2 ? 'soon' : '';
         const text = a.minutesAway === 0 ? 'Now' : `${a.minutesAway}min`;
         return `<span class="arrival-time ${soonClass}">${text}</span>`;
@@ -355,30 +450,31 @@
     async function loadArrivals() {
       const content = document.getElementById('content');
       const lastUpdated = document.getElementById('lastUpdated');
+      const settings = loadSettings();
+
+      if (!settings || !settings.liveStations || settings.liveStations.length === 0) {
+        content.innerHTML = `
+          <div class="no-stations">
+            <h2>No Stations Configured</h2>
+            <p>Go to <a href="settings.html">Settings</a> to select up to 3 stations for live train times.</p>
+          </div>
+        `;
+        return;
+      }
 
       try {
-        const response = await fetch('/api/arrivals');
-        if (!response.ok) throw new Error('Failed to load');
-
-        const data = await response.json();
-
-        if (!data.stations || data.stations.length === 0) {
-          content.innerHTML = `
-            <div class="no-stations">
-              <h2>No Stations Configured</h2>
-              <p>Go to <a href="/static/settings.html">Settings</a> to select up to 3 stations for live train times.</p>
-            </div>
-          `;
-          return;
-        }
+        // Fetch arrivals for all selected stations in parallel
+        const stationDataList = await Promise.all(
+          settings.liveStations.map(id => fetchStationArrivals(id))
+        );
 
         content.innerHTML = `
           <div class="stations-list">
-            ${data.stations.map(renderStation).join('')}
+            ${stationDataList.map(renderStation).join('')}
           </div>
         `;
 
-        lastUpdated.textContent = `Last updated: ${new Date(data.generatedAt).toLocaleTimeString()}`;
+        lastUpdated.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
       } catch (error) {
         content.innerHTML = `
           <div class="error">

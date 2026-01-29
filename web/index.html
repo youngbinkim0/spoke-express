@@ -103,10 +103,6 @@
       border-left: 4px solid #4ecca3;
     }
 
-    .option-card.transit-only {
-      border-left-color: #0077b6;
-    }
-
     .option-card.rank-1 {
       background: #1a3a5c;
     }
@@ -131,10 +127,6 @@
       font-size: 0.9rem;
     }
 
-    .option-card.transit-only .option-rank {
-      background: #0077b6;
-    }
-
     .option-summary {
       font-size: 1.1rem;
       font-weight: 500;
@@ -146,10 +138,6 @@
       font-size: 1.3rem;
       font-weight: 700;
       color: #4ecca3;
-    }
-
-    .option-card.transit-only .option-duration {
-      color: #0077b6;
     }
 
     .option-details {
@@ -195,19 +183,6 @@
       font-size: 0.75rem;
       font-weight: 700;
       color: #fff;
-    }
-
-    .alerts {
-      margin-top: 20px;
-    }
-
-    .alert {
-      background: #ff6b6b22;
-      border: 1px solid #ff6b6b;
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 0.9rem;
-      color: #ff6b6b;
     }
 
     .loading {
@@ -260,8 +235,8 @@
     <header>
       <h1>Commute Options</h1>
       <div class="nav-links">
-        <a href="/static/arrivals.html">Live Trains</a>
-        <a href="/static/settings.html">Settings</a>
+        <a href="arrivals.html">Live Trains</a>
+        <a href="settings.html">Settings</a>
       </div>
     </header>
 
@@ -275,6 +250,40 @@
   </div>
 
   <script>
+    const STORAGE_KEY = 'commuteOptimizerSettings';
+    const TRANSITER_BASE = 'https://demo.transiter.dev';
+    const WEATHER_BASE = 'https://api.openweathermap.org';
+
+    // Bundled station data
+    const STATIONS = [
+      {"id": "G33", "name": "Bedford-Nostrand Avs", "lines": ["G"], "lat": 40.6896, "lng": -73.9535},
+      {"id": "G34", "name": "Classon Av", "lines": ["G"], "lat": 40.6889, "lng": -73.9600},
+      {"id": "G35", "name": "Clinton-Washington Avs (G)", "lines": ["G"], "lat": 40.6880, "lng": -73.9667},
+      {"id": "G36", "name": "Fulton St (G)", "lines": ["G"], "lat": 40.6870, "lng": -73.9752},
+      {"id": "A42", "name": "Hoyt-Schermerhorn Sts", "lines": ["A", "C", "G"], "lat": 40.6884, "lng": -73.9851},
+      {"id": "G31", "name": "Flushing Av", "lines": ["G"], "lat": 40.7004, "lng": -73.9504},
+      {"id": "G32", "name": "Myrtle-Willoughby Avs", "lines": ["G"], "lat": 40.6946, "lng": -73.9489},
+      {"id": "G30", "name": "Broadway (G)", "lines": ["G"], "lat": 40.7063, "lng": -73.9503},
+      {"id": "G29", "name": "Metropolitan Av", "lines": ["G"], "lat": 40.7127, "lng": -73.9511},
+      {"id": "G28", "name": "Nassau Av", "lines": ["G"], "lat": 40.7244, "lng": -73.9512},
+      {"id": "G26", "name": "Greenpoint Av", "lines": ["G"], "lat": 40.7313, "lng": -73.9542},
+      {"id": "G22", "name": "Court Sq", "lines": ["G", "7", "E", "M"], "lat": 40.7471, "lng": -73.9456},
+      {"id": "G21", "name": "Long Island City-Court Sq", "lines": ["G"], "lat": 40.7460, "lng": -73.9436},
+      {"id": "F09", "name": "Court Sq-23 St", "lines": ["E", "M"], "lat": 40.7479, "lng": -73.9461},
+      {"id": "F11", "name": "21 St-Queensbridge", "lines": ["F"], "lat": 40.7543, "lng": -73.9424},
+      {"id": "D24", "name": "Atlantic Av-Barclays Ctr", "lines": ["B", "Q", "D", "N", "R", "2", "3", "4", "5"], "lat": 40.6842, "lng": -73.9779},
+      {"id": "A41", "name": "Jay St-MetroTech", "lines": ["A", "C", "F", "R"], "lat": 40.6923, "lng": -73.9872},
+      {"id": "R30", "name": "DeKalb Av", "lines": ["B", "Q", "R"], "lat": 40.6907, "lng": -73.9818},
+      {"id": "R28", "name": "Borough Hall", "lines": ["2", "3", "4", "5", "R"], "lat": 40.6923, "lng": -73.9901},
+      {"id": "R16", "name": "Times Sq-42 St", "lines": ["1", "2", "3", "7", "N", "Q", "R", "W", "S"], "lat": 40.7559, "lng": -73.9871},
+      {"id": "R17", "name": "34 St-Herald Sq", "lines": ["B", "D", "F", "M", "N", "Q", "R", "W"], "lat": 40.7497, "lng": -73.9878},
+      {"id": "R20", "name": "14 St-Union Sq", "lines": ["4", "5", "6", "L", "N", "Q", "R", "W"], "lat": 40.7356, "lng": -73.9906},
+      {"id": "631", "name": "Grand Central-42 St", "lines": ["4", "5", "6", "7", "S"], "lat": 40.7527, "lng": -73.9772},
+      {"id": "A28", "name": "34 St-Penn Station", "lines": ["1", "2", "3", "A", "C", "E"], "lat": 40.7506, "lng": -73.9910}
+    ];
+
+    const STATION_MAP = Object.fromEntries(STATIONS.map(s => [s.id, s]));
+
     const lineColors = {
       '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
       '4': '#00933C', '5': '#00933C', '6': '#00933C',
@@ -287,6 +296,132 @@
       'N': '#FCCC0A', 'Q': '#FCCC0A', 'R': '#FCCC0A', 'W': '#FCCC0A',
       'S': '#808183',
     };
+
+    function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    }
+
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 3959;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function estimateBikeTime(fromLat, fromLng, toLat, toLng) {
+      const distance = calculateDistance(fromLat, fromLng, toLat, toLng);
+      const BIKE_SPEED_MPH = 10;
+      return Math.ceil((distance / BIKE_SPEED_MPH) * 60 * 1.3); // 1.3x for real roads
+    }
+
+    function estimateTransitTime(fromId, toId) {
+      // Simple estimate based on G line stations
+      const gLineOrder = ['G36', 'G35', 'G34', 'G33', 'G32', 'G31', 'G30', 'G29', 'G28', 'G26', 'G22'];
+      const fromIdx = gLineOrder.indexOf(fromId);
+      const toIdx = gLineOrder.indexOf(toId);
+
+      if (fromIdx !== -1 && toIdx !== -1) {
+        return Math.abs(toIdx - fromIdx) * 2 + 3; // ~2 min per station + buffer
+      }
+      return 15; // Default estimate
+    }
+
+    async function fetchWeather(lat, lng, apiKey) {
+      if (!apiKey) {
+        return { tempF: '--', conditions: 'No API key', isBad: false };
+      }
+
+      try {
+        const url = `${WEATHER_BASE}/data/3.0/onecall?lat=${lat}&lon=${lng}&units=imperial&exclude=minutely,daily,alerts&appid=${apiKey}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          return { tempF: '--', conditions: 'API error', isBad: false };
+        }
+
+        const data = await response.json();
+        const current = data.current;
+        const weatherId = current.weather[0]?.id || 800;
+        const conditions = current.weather[0]?.main || 'Clear';
+        const precipProb = data.hourly?.[0]?.pop || 0;
+
+        const isBad = (weatherId >= 200 && weatherId < 700) || precipProb > 0.5;
+
+        return {
+          tempF: Math.round(current.temp),
+          conditions,
+          precipProb: Math.round(precipProb * 100),
+          isBad
+        };
+      } catch (e) {
+        return { tempF: '--', conditions: 'Error', isBad: false };
+      }
+    }
+
+    async function fetchNextArrival(stationId) {
+      try {
+        const url = `${TRANSITER_BASE}/systems/us-ny-subway/stops/${stationId}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          return { nextTrain: '--', arrivalTime: '--', routeId: null };
+        }
+
+        const data = await response.json();
+        const stopTimes = data.stopTimes || [];
+        const now = Date.now();
+
+        const nextArrival = stopTimes
+          .filter(st => {
+            const arrTime = (st.arrival?.time || st.departure?.time);
+            if (!arrTime) return false;
+            const arrMs = parseInt(arrTime) * 1000;
+            return arrMs > now - 60000;
+          })
+          .sort((a, b) => {
+            const aTime = parseInt(a.arrival?.time || a.departure?.time);
+            const bTime = parseInt(b.arrival?.time || b.departure?.time);
+            return aTime - bTime;
+          })[0];
+
+        if (nextArrival) {
+          const arrTimeStr = nextArrival.arrival?.time || nextArrival.departure?.time;
+          const arrMs = parseInt(arrTimeStr) * 1000;
+          const minAway = Math.max(0, Math.round((arrMs - now) / 60000));
+          const timeStr = new Date(arrMs).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const routeId = nextArrival.trip?.route?.id;
+
+          return { nextTrain: `${minAway}m`, arrivalTime: timeStr, routeId };
+        }
+
+        return { nextTrain: '--', arrivalTime: '--', routeId: null };
+      } catch (e) {
+        return { nextTrain: '--', arrivalTime: '--', routeId: null };
+      }
+    }
+
+    function rankOptions(options, weather) {
+      // Sort by duration
+      let sorted = [...options].sort((a, b) => a.duration - b.duration);
+
+      // If weather is bad, move transit-only above first bike option
+      if (weather.isBad) {
+        const bikeIdx = sorted.findIndex(o => o.type === 'bike_to_transit');
+        const transitIdx = sorted.findIndex(o => o.type === 'transit_only');
+
+        if (bikeIdx === 0 && transitIdx > 0) {
+          const transit = sorted.splice(transitIdx, 1)[0];
+          sorted.unshift(transit);
+        }
+      }
+
+      return sorted.map((o, i) => ({ ...o, rank: i + 1 }));
+    }
 
     function getModeIcon(mode) {
       switch (mode) {
@@ -304,7 +439,6 @@
     }
 
     function renderOption(option) {
-      const typeClass = option.type === 'bike_to_transit' ? '' : 'transit-only';
       const rankClass = option.rank === 1 ? 'rank-1' : '';
 
       const legsHtml = option.legs.map((leg, i) => {
@@ -319,15 +453,15 @@
       }).join('');
 
       return `
-        <div class="option-card ${typeClass} ${rankClass}">
+        <div class="option-card ${rankClass}">
           <div class="option-header">
             <span class="option-rank">${option.rank}</span>
             <span class="option-summary">${option.summary}</span>
-            <span class="option-duration">${option.duration_minutes}m</span>
+            <span class="option-duration">${option.duration}m</span>
           </div>
           <div class="option-details">
             <span>Next train: ${option.nextTrain}</span>
-            <span>Arrive: ${option.arrival_time}</span>
+            <span>Arrive: ${option.arrivalTime}</span>
           </div>
           <div class="option-legs">${legsHtml}</div>
         </div>
@@ -335,14 +469,14 @@
     }
 
     function renderWeather(weather) {
-      const warningHtml = weather.is_bad
+      const warningHtml = weather.isBad
         ? '<span class="weather-warning">Bad for biking</span>'
         : '';
 
       return `
         <div class="weather-bar">
           <div class="weather-info">
-            <span class="weather-temp">${weather.temp_f}°F</span>
+            <span class="weather-temp">${weather.tempF}°F</span>
             <span class="weather-conditions">${weather.conditions}</span>
             ${warningHtml}
           </div>
@@ -351,42 +485,72 @@
       `;
     }
 
-    function renderAlerts(alerts) {
-      if (!alerts || alerts.length === 0) return '';
-
-      return `
-        <div class="alerts">
-          ${alerts.map(a => `<div class="alert">⚠️ ${a.route}: ${a.message}</div>`).join('')}
-        </div>
-      `;
-    }
-
     async function loadCommute() {
       const content = document.getElementById('content');
+      const settings = loadSettings();
+
+      if (!settings || !settings.homeLat || settings.bikeStations?.length === 0) {
+        content.innerHTML = `
+          <div class="no-options">
+            Not configured yet.<br>
+            <a href="settings.html">Open Settings</a>
+          </div>
+        `;
+        return;
+      }
 
       try {
-        const response = await fetch('/api/commute');
-        if (!response.ok) throw new Error('Failed to load');
+        // Fetch weather
+        const weather = await fetchWeather(settings.homeLat, settings.homeLng, settings.apiKey);
 
-        const data = await response.json();
+        // Build commute options
+        const options = [];
 
-        if (data.options.length === 0) {
+        for (const stationId of settings.bikeStations) {
+          const station = STATION_MAP[stationId];
+          if (!station) continue;
+
+          const bikeTime = estimateBikeTime(
+            settings.homeLat, settings.homeLng,
+            station.lat, station.lng
+          );
+
+          const { nextTrain, arrivalTime, routeId } = await fetchNextArrival(stationId);
+          const transitTime = estimateTransitTime(stationId, settings.destStation);
+
+          const route = routeId || station.lines[0];
+          options.push({
+            type: 'bike_to_transit',
+            summary: `Bike → ${route}`,
+            duration: bikeTime + transitTime,
+            nextTrain,
+            arrivalTime,
+            legs: [
+              { mode: 'bike', duration: bikeTime, to: station.name },
+              { mode: 'subway', duration: transitTime, to: 'Work', route }
+            ]
+          });
+        }
+
+        if (options.length === 0) {
           content.innerHTML = `
-            ${renderWeather(data.weather)}
+            ${renderWeather(weather)}
             <div class="no-options">
-              No commute options configured.<br>
-              <a href="/static/settings.html">Configure stations</a>
+              No commute options available.<br>
+              <a href="settings.html">Configure stations</a>
             </div>
           `;
           return;
         }
 
+        // Rank options
+        const ranked = rankOptions(options, weather);
+
         content.innerHTML = `
-          ${renderWeather(data.weather)}
+          ${renderWeather(weather)}
           <div class="options-list">
-            ${data.options.map(renderOption).join('')}
+            ${ranked.slice(0, 3).map(renderOption).join('')}
           </div>
-          ${renderAlerts(data.alerts)}
         `;
       } catch (error) {
         content.innerHTML = `
