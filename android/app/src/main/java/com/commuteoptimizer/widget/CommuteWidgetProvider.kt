@@ -118,10 +118,16 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         widgetId: Int
     ) {
         val prefs = WidgetPreferences(context)
-        val apiUrl = prefs.getApiUrl(widgetId)
+        val repository = CommuteRepository(context)
+
+        // Check if widget is configured
+        if (!repository.isConfigured()) {
+            val views = buildErrorViews(context, "Tap to configure widget", widgetId)
+            appWidgetManager.updateAppWidget(widgetId, views)
+            return
+        }
 
         scope.launch {
-            val repository = CommuteRepository(apiUrl)
             when (val result = repository.getCommuteOptions()) {
                 is Result.Success -> {
                     prefs.setLastUpdate(widgetId, System.currentTimeMillis())

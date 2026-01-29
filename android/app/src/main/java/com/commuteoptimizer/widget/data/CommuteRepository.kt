@@ -1,42 +1,25 @@
 package com.commuteoptimizer.widget.data
 
-import com.commuteoptimizer.widget.data.api.RetrofitClient
+import android.content.Context
 import com.commuteoptimizer.widget.data.models.CommuteResponse
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.commuteoptimizer.widget.service.CommuteCalculator
+import com.commuteoptimizer.widget.util.WidgetPreferences
 
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
     data class Error(val message: String, val exception: Exception? = null) : Result<Nothing>()
 }
 
-class CommuteRepository(private val baseUrl: String) {
+class CommuteRepository(context: Context) {
 
-    private val apiService = RetrofitClient.getApiService(baseUrl)
+    private val calculator = CommuteCalculator(context)
+    private val prefs = WidgetPreferences(context)
 
-    suspend fun getCommuteOptions(): Result<CommuteResponse> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getCommuteOptions()
-            if (response.isSuccessful && response.body() != null) {
-                Result.Success(response.body()!!)
-            } else {
-                Result.Error("API error: ${response.code()} ${response.message()}")
-            }
-        } catch (e: Exception) {
-            Result.Error("Network error: ${e.message}", e)
-        }
+    suspend fun getCommuteOptions(): Result<CommuteResponse> {
+        return calculator.calculateCommute()
     }
 
-    suspend fun testConnection(): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.healthCheck()
-            if (response.isSuccessful) {
-                Result.Success(true)
-            } else {
-                Result.Error("Server returned: ${response.code()}")
-            }
-        } catch (e: Exception) {
-            Result.Error("Connection failed: ${e.message}", e)
-        }
+    fun isConfigured(): Boolean {
+        return prefs.isConfigured()
     }
 }

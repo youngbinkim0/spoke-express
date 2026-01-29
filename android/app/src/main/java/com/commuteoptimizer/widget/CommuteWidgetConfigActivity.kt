@@ -3,29 +3,49 @@ package com.commuteoptimizer.widget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.graphics.Color
+import android.location.Geocoder
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.commuteoptimizer.widget.data.CommuteRepository
-import com.commuteoptimizer.widget.data.Result
+import com.commuteoptimizer.widget.data.models.LocalStation
+import com.commuteoptimizer.widget.service.LocalDataSource
+import com.commuteoptimizer.widget.util.MtaColors
 import com.commuteoptimizer.widget.util.WidgetPreferences
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.*
 
 class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
-    private lateinit var inputApiUrl: TextInputEditText
-    private lateinit var btnTestConnection: Button
+    private lateinit var inputApiKey: TextInputEditText
+    private lateinit var inputHomeAddress: TextInputEditText
+    private lateinit var inputWorkAddress: TextInputEditText
+    private lateinit var textHomeCoords: TextView
+    private lateinit var textWorkCoords: TextView
+    private lateinit var btnGeocodeHome: Button
+    private lateinit var btnGeocodeWork: Button
+    private lateinit var chipGroupStations: ChipGroup
+    private lateinit var spinnerDestStation: Spinner
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
-    private lateinit var textConnectionStatus: TextView
+    private lateinit var textStatus: TextView
 
     private lateinit var prefs: WidgetPreferences
+    private lateinit var localDataSource: LocalDataSource
+    private lateinit var stations: List<LocalStation>
+
+    private var homeLat: Double = 0.0
+    private var homeLng: Double = 0.0
+    private var workLat: Double = 0.0
+    private var workLng: Double = 0.0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +56,8 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         setContentView(R.layout.activity_config)
 
         prefs = WidgetPreferences(this)
+        localDataSource = LocalDataSource(this)
+        stations = localDataSource.getStations()
 
         // Find the widget ID from the intent
         appWidgetId = intent.extras?.getInt(
@@ -49,23 +71,106 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             return
         }
 
-        // Initialize views
-        inputApiUrl = findViewById(R.id.input_api_url)
-        btnTestConnection = findViewById(R.id.btn_test_connection)
-        btnSave = findViewById(R.id.btn_save)
-        btnCancel = findViewById(R.id.btn_cancel)
-        textConnectionStatus = findViewById(R.id.text_connection_status)
-
-        // Load existing URL if configured
-        val existingUrl = prefs.getApiUrl(appWidgetId)
-        inputApiUrl.setText(existingUrl)
-
+        initViews()
+        loadExistingSettings()
+        setupStationChips()
+        setupDestinationSpinner()
         setupClickListeners()
     }
 
+    private fun initViews() {
+        inputApiKey = findViewById(R.id.input_api_key)
+        inputHomeAddress = findViewById(R.id.input_home_address)
+        inputWorkAddress = findViewById(R.id.input_work_address)
+        textHomeCoords = findViewById(R.id.text_home_coords)
+        textWorkCoords = findViewById(R.id.text_work_coords)
+        btnGeocodeHome = findViewById(R.id.btn_geocode_home)
+        btnGeocodeWork = findViewById(R.id.btn_geocode_work)
+        chipGroupStations = findViewById(R.id.chip_group_stations)
+        spinnerDestStation = findViewById(R.id.spinner_dest_station)
+        btnSave = findViewById(R.id.btn_save)
+        btnCancel = findViewById(R.id.btn_cancel)
+        textStatus = findViewById(R.id.text_status)
+    }
+
+    private fun loadExistingSettings() {
+        // Load API key
+        prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
+
+        // Load home location
+        homeLat = prefs.getHomeLat()
+        homeLng = prefs.getHomeLng()
+        prefs.getHomeAddress()?.let { inputHomeAddress.setText(it) }
+        if (homeLat != 0.0) {
+            textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
+        }
+
+        // Load work location
+        workLat = prefs.getWorkLat()
+        workLng = prefs.getWorkLng()
+        prefs.getWorkAddress()?.let { inputWorkAddress.setText(it) }
+        if (workLat != 0.0) {
+            textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
+        }
+    }
+
+    private fun setupStationChips() {
+        val selectedStations = prefs.getSelectedStations().toSet()
+
+        // Sort stations by name for easier selection
+        val sortedStations = stations.sortedBy { it.name }
+
+        for (station in sortedStations) {
+            val chip = Chip(this).apply {
+                text = "${station.name} (${station.lines.joinToString(",")})"
+                isCheckable = true
+                isChecked = selectedStations.contains(station.id)
+                tag = station.id
+
+                // Color the chip based on primary line
+                val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
+                if (isChecked) {
+                    setChipBackgroundColorResource(android.R.color.transparent)
+                    chipStrokeWidth = 2f
+                    chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
+                }
+
+                setOnCheckedChangeListener { _, checked ->
+                    if (checked) {
+                        setChipBackgroundColorResource(android.R.color.transparent)
+                        chipStrokeWidth = 2f
+                        chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
+                    } else {
+                        chipStrokeWidth = 1f
+                        chipStrokeColor = android.content.res.ColorStateList.valueOf(Color.LTGRAY)
+                    }
+                }
+            }
+            chipGroupStations.addView(chip)
+        }
+    }
+
+    private fun setupDestinationSpinner() {
+        val stationNames = stations.map { "${it.name} (${it.lines.joinToString(",")})" }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, stationNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerDestStation.adapter = adapter
+
+        // Select current destination
+        val currentDest = prefs.getDestStation()
+        val destIndex = stations.indexOfFirst { it.id == currentDest }
+        if (destIndex >= 0) {
+            spinnerDestStation.setSelection(destIndex)
+        }
+    }
+
     private fun setupClickListeners() {
-        btnTestConnection.setOnClickListener {
-            testConnection()
+        btnGeocodeHome.setOnClickListener {
+            geocodeAddress(inputHomeAddress.text?.toString(), isHome = true)
+        }
+
+        btnGeocodeWork.setOnClickListener {
+            geocodeAddress(inputWorkAddress.text?.toString(), isHome = false)
         }
 
         btnSave.setOnClickListener {
@@ -77,47 +182,91 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun testConnection() {
-        val url = inputApiUrl.text?.toString()?.trim()
-
-        if (url.isNullOrEmpty()) {
-            showStatus(getString(R.string.config_url_required), isError = true)
+    private fun geocodeAddress(address: String?, isHome: Boolean) {
+        if (address.isNullOrBlank()) {
+            showStatus("Please enter an address", isError = true)
             return
         }
 
-        showStatus(getString(R.string.config_testing), isError = false)
-        btnTestConnection.isEnabled = false
-
         lifecycleScope.launch {
-            val repository = CommuteRepository(url)
-            when (val result = repository.testConnection()) {
-                is Result.Success -> {
-                    showStatus(getString(R.string.config_success), isError = false)
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    val geocoder = Geocoder(this@CommuteWidgetConfigActivity, Locale.getDefault())
+                    @Suppress("DEPRECATION")
+                    val addresses = geocoder.getFromLocationName(address, 1)
+                    addresses?.firstOrNull()
                 }
-                is Result.Error -> {
-                    showStatus(
-                        getString(R.string.config_error, result.message),
-                        isError = true
-                    )
+
+                if (result != null) {
+                    if (isHome) {
+                        homeLat = result.latitude
+                        homeLng = result.longitude
+                        textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
+                    } else {
+                        workLat = result.latitude
+                        workLng = result.longitude
+                        textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
+                    }
+                    showStatus("Location found!", isError = false)
+                } else {
+                    showStatus("Could not find address", isError = true)
                 }
+            } catch (e: Exception) {
+                showStatus("Geocoding failed: ${e.message}", isError = true)
             }
-            btnTestConnection.isEnabled = true
         }
     }
 
     private fun saveConfiguration() {
-        val url = inputApiUrl.text?.toString()?.trim()
-
-        if (url.isNullOrEmpty()) {
-            showStatus(getString(R.string.config_url_required), isError = true)
+        // Validate API key
+        val apiKey = inputApiKey.text?.toString()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            showStatus("Please enter an OpenWeatherMap API key", isError = true)
             return
         }
 
-        // Save the URL
-        prefs.setApiUrl(appWidgetId, url)
+        // Validate home location
+        if (homeLat == 0.0 || homeLng == 0.0) {
+            showStatus("Please set your home location", isError = true)
+            return
+        }
+
+        // Validate work location
+        if (workLat == 0.0 || workLng == 0.0) {
+            showStatus("Please set your work location", isError = true)
+            return
+        }
+
+        // Get selected stations
+        val selectedStations = mutableListOf<String>()
+        for (i in 0 until chipGroupStations.childCount) {
+            val chip = chipGroupStations.getChildAt(i) as? Chip
+            if (chip?.isChecked == true) {
+                selectedStations.add(chip.tag as String)
+            }
+        }
+
+        if (selectedStations.isEmpty()) {
+            showStatus("Please select at least one station", isError = true)
+            return
+        }
+
+        // Get destination station
+        val destIndex = spinnerDestStation.selectedItemPosition
+        val destStation = if (destIndex >= 0 && destIndex < stations.size) {
+            stations[destIndex].id
+        } else {
+            "G22" // Default to Court Sq
+        }
+
+        // Save all settings
+        prefs.setOpenWeatherApiKey(apiKey)
+        prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
+        prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
+        prefs.setSelectedStations(selectedStations)
+        prefs.setDestStation(destStation)
 
         // Trigger initial widget update
-        val appWidgetManager = AppWidgetManager.getInstance(this)
         val intent = Intent(this, CommuteWidgetProvider::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
@@ -133,9 +282,9 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun showStatus(message: String, isError: Boolean) {
-        textConnectionStatus.visibility = View.VISIBLE
-        textConnectionStatus.text = message
-        textConnectionStatus.setTextColor(
+        textStatus.visibility = View.VISIBLE
+        textStatus.text = message
+        textStatus.setTextColor(
             if (isError) Color.parseColor("#F44336") else Color.parseColor("#4CAF50")
         )
     }
