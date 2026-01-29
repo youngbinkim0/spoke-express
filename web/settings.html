@@ -79,12 +79,37 @@
       margin-bottom: 4px;
     }
 
+    .address-row {
+      display: flex;
+      gap: 8px;
+    }
+
     .address-input, .api-input {
-      width: 100%;
+      flex: 1;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 1rem;
+    }
+
+    .btn-lookup {
+      padding: 12px 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .btn-lookup:hover {
+      background: #45a049;
+    }
+
+    .btn-lookup:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
 
     .coords-row {
@@ -92,12 +117,42 @@
       gap: 12px;
     }
 
-    .coords-row input {
+    .coords-row .input-group {
       flex: 1;
+    }
+
+    .coords-row input {
+      width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 0.9rem;
+    }
+
+    .geocode-status {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .geocode-status.success {
+      display: block;
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .geocode-status.error {
+      display: block;
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .geocode-status.loading {
+      display: block;
+      background: #e2e3e5;
+      color: #383d41;
     }
 
     .station-list {
@@ -245,7 +300,7 @@
         <h2>API Key</h2>
         <p>Get a free API key from <a href="https://openweathermap.org/api" target="_blank">OpenWeatherMap</a></p>
         <input type="text" id="apiKey" class="api-input" placeholder="Enter your OpenWeatherMap API key">
-        <div class="help-text">Required for weather data. Free tier allows 1000 calls/day.</div>
+        <div class="help-text">Required for weather data and address lookup. Free tier allows 1000 calls/day.</div>
       </div>
 
       <!-- Home Location -->
@@ -253,9 +308,13 @@
         <h2>Home Location</h2>
         <p>Your starting point for the commute</p>
         <div class="input-group">
-          <label>Address (for reference)</label>
-          <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
+          <label>Address</label>
+          <div class="address-row">
+            <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
+            <button class="btn-lookup" onclick="geocodeAddress('home')">Lookup</button>
+          </div>
         </div>
+        <div id="homeGeoStatus" class="geocode-status"></div>
         <div class="coords-row">
           <div class="input-group">
             <label>Latitude</label>
@@ -266,7 +325,6 @@
             <input type="number" id="homeLng" step="0.0001" placeholder="-73.9544">
           </div>
         </div>
-        <div class="help-text">Tip: Right-click on Google Maps and select coordinates to copy them.</div>
       </div>
 
       <!-- Work Location -->
@@ -274,9 +332,13 @@
         <h2>Work Location</h2>
         <p>Your destination</p>
         <div class="input-group">
-          <label>Address (for reference)</label>
-          <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
+          <label>Address</label>
+          <div class="address-row">
+            <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
+            <button class="btn-lookup" onclick="geocodeAddress('work')">Lookup</button>
+          </div>
         </div>
+        <div id="workGeoStatus" class="geocode-status"></div>
         <div class="coords-row">
           <div class="input-group">
             <label>Latitude</label>
@@ -350,6 +412,7 @@
     ];
 
     const STORAGE_KEY = 'commuteOptimizerSettings';
+    const GEOCODE_API = 'https://api.openweathermap.org/geo/1.0/direct';
 
     function loadSettings() {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -365,6 +428,65 @@
                 Math.sin(dLng/2) * Math.sin(dLng/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
+    }
+
+    async function geocodeAddress(type) {
+      const addressInput = document.getElementById(`${type}Address`);
+      const latInput = document.getElementById(`${type}Lat`);
+      const lngInput = document.getElementById(`${type}Lng`);
+      const statusEl = document.getElementById(`${type}GeoStatus`);
+      const apiKey = document.getElementById('apiKey').value.trim();
+
+      const address = addressInput.value.trim();
+
+      if (!address) {
+        statusEl.className = 'geocode-status error';
+        statusEl.textContent = 'Please enter an address.';
+        return;
+      }
+
+      if (!apiKey) {
+        statusEl.className = 'geocode-status error';
+        statusEl.textContent = 'Please enter your OpenWeatherMap API key first.';
+        return;
+      }
+
+      statusEl.className = 'geocode-status loading';
+      statusEl.textContent = 'Looking up address...';
+
+      try {
+        const url = `${GEOCODE_API}?q=${encodeURIComponent(address)}&limit=1&appid=${apiKey}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.length === 0) {
+          statusEl.className = 'geocode-status error';
+          statusEl.textContent = 'Address not found. Try adding city/state.';
+          return;
+        }
+
+        const result = data[0];
+        latInput.value = result.lat.toFixed(6);
+        lngInput.value = result.lon.toFixed(6);
+
+        const locationName = [result.name, result.state, result.country].filter(Boolean).join(', ');
+        statusEl.className = 'geocode-status success';
+        statusEl.textContent = `Found: ${locationName}`;
+
+        // Update station distances if this is home
+        if (type === 'home') {
+          renderStations(loadSettings());
+        }
+
+      } catch (error) {
+        statusEl.className = 'geocode-status error';
+        statusEl.textContent = `Lookup failed: ${error.message}`;
+      }
     }
 
     function init() {
@@ -484,7 +606,7 @@
       // Validate
       if (!settings.homeLat || !settings.homeLng) {
         status.className = 'status error';
-        status.textContent = 'Please enter home coordinates.';
+        status.textContent = 'Please enter home coordinates (use Lookup button).';
         return;
       }
 
