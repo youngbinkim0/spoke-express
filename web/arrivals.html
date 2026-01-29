@@ -249,9 +249,10 @@
     <div class="last-updated" id="lastUpdated"></div>
   </div>
 
+  <script src="mta-api.js"></script>
   <script>
     const STORAGE_KEY = 'commuteOptimizerSettings';
-    const TRANSITER_BASE = 'https://demo.transiter.dev';
+    // MTA API is now used via mta-api.js
 
     let STATIONS = [];
 
@@ -305,56 +306,14 @@
       const station = getStation(stationId) || { id: stationId, name: stationId, lines: [] };
 
       try {
-        const url = `${TRANSITER_BASE}/systems/us-ny-subway/stops/${stationId}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          return { station, groups: [] };
+        // Use MTA API directly via mta-api.js
+        if (window.MtaApi) {
+          const groups = await window.MtaApi.getGroupedArrivals(stationId, station.lines);
+          return { station, groups };
         }
-
-        const data = await response.json();
-        const stopTimes = data.stopTimes || [];
-        const now = Date.now();
-
-        const groups = new Map();
-
-        for (const st of stopTimes) {
-          const arrTimeStr = st.arrival?.time || st.departure?.time;
-          if (!arrTimeStr) continue;
-
-          const arrMs = parseInt(arrTimeStr) * 1000;
-          if (arrMs < now - 60000) continue;
-
-          const routeId = st.trip?.route?.id || '?';
-          const direction = st.trip?.directionId === '1' ? 'S' : 'N';
-          const headsign = st.trip?.headsign || (direction === 'N' ? 'Northbound' : 'Southbound');
-          const minAway = Math.max(0, Math.round((arrMs - now) / 60000));
-
-          const key = `${routeId}-${direction}`;
-          if (!groups.has(key)) {
-            groups.set(key, {
-              line: routeId,
-              direction,
-              headsign,
-              arrivals: []
-            });
-          }
-
-          const group = groups.get(key);
-          if (group.arrivals.length < 3) {
-            group.arrivals.push({ minutesAway: minAway });
-          }
-        }
-
-        for (const group of groups.values()) {
-          group.arrivals.sort((a, b) => a.minutesAway - b.minutesAway);
-        }
-
-        return {
-          station,
-          groups: Array.from(groups.values()).sort((a, b) => a.line.localeCompare(b.line))
-        };
+        return { station, groups: [] };
       } catch (e) {
+        console.error('Error fetching arrivals:', e);
         return { station, groups: [] };
       }
     }

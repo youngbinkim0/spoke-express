@@ -3,6 +3,7 @@ package com.commuteoptimizer.widget.service
 import android.content.Context
 import com.commuteoptimizer.widget.data.Result
 import com.commuteoptimizer.widget.data.api.ApiClientFactory
+import com.commuteoptimizer.widget.data.api.MtaApiService
 import com.commuteoptimizer.widget.data.models.*
 import com.commuteoptimizer.widget.util.WidgetPreferences
 import java.text.SimpleDateFormat
@@ -11,11 +12,11 @@ import java.util.*
 /**
  * Main calculator that orchestrates API calls and builds commute options.
  * This replaces the need for a backend server.
+ * Uses MTA GTFS-realtime API directly (no rate limits).
  */
 class CommuteCalculator(private val context: Context) {
 
     private val prefs = WidgetPreferences(context)
-    private val transiterApi = ApiClientFactory.transiterApi
     private val weatherApi = ApiClientFactory.weatherApi
     private val localDataSource = LocalDataSource(context)
 
@@ -158,8 +159,8 @@ class CommuteCalculator(private val context: Context) {
             station.lat, station.lng
         )
 
-        // Get next train arrival from Transiter
-        val (nextTrainText, arrivalTime, routeId) = getNextArrival(stationId)
+        // Get next train arrival from MTA API
+        val (nextTrainText, arrivalTime, routeId) = getNextArrival(stationId, station.lines)
 
         // Estimate transit time to destination
         val transitTime = DistanceCalculator.estimateTransitTime(stationId, destStationId)
@@ -207,46 +208,10 @@ class CommuteCalculator(private val context: Context) {
         )
     }
 
-    private suspend fun getNextArrival(stationId: String): Triple<String, String, String?> {
+    private suspend fun getNextArrival(stationId: String, lines: List<String>): Triple<String, String, String?> {
         return try {
-            val response = transiterApi.getStopArrivals(stationId)
-            if (response.isSuccessful && response.body() != null) {
-                val stopData = response.body()!!
-                val stopTimes = stopData.stopTimes ?: emptyList()
-
-                val now = System.currentTimeMillis()
-
-                // Find next valid arrival
-                val nextArrival = stopTimes
-                    .filter { stopTime ->
-                        val arrivalTimeStr = stopTime.arrival?.time ?: stopTime.departure?.time
-                        if (arrivalTimeStr != null) {
-                            val arrivalMs = arrivalTimeStr.toLongOrNull()?.times(1000) ?: 0
-                            arrivalMs > now - 60000 // Within 1 minute buffer
-                        } else false
-                    }
-                    .minByOrNull { stopTime ->
-                        val arrivalTimeStr = stopTime.arrival?.time ?: stopTime.departure?.time
-                        arrivalTimeStr?.toLongOrNull() ?: Long.MAX_VALUE
-                    }
-
-                if (nextArrival != null) {
-                    val arrivalTimeStr = nextArrival.arrival?.time ?: nextArrival.departure?.time ?: "0"
-                    val arrivalMs = arrivalTimeStr.toLongOrNull()?.times(1000) ?: 0
-                    val minutesAway = ((arrivalMs - now) / 60000).toInt().coerceAtLeast(0)
-
-                    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-                    val formattedTime = timeFormat.format(Date(arrivalMs))
-
-                    val routeId = nextArrival.trip.route.id
-
-                    Triple("${minutesAway}m", formattedTime, routeId)
-                } else {
-                    Triple("--", "--", null)
-                }
-            } else {
-                Triple("--", "--", null)
-            }
+            val result = MtaApiService.getNextArrival(stationId, lines)
+            Triple(result.nextTrain, result.arrivalTime, result.routeId)
         } catch (e: Exception) {
             Triple("--", "--", null)
         }

@@ -251,6 +251,7 @@
   </style>
 </head>
 <body>
+  <script src="mta-api.js"></script>
   <div class="container">
     <header>
       <h1>Commute Options</h1>
@@ -271,9 +272,8 @@
 
   <script>
     const STORAGE_KEY = 'commuteOptimizerSettings';
-    const TRANSITER_BASE = 'https://demo.transiter.dev';
     const WEATHER_BASE = 'https://api.openweathermap.org';
-    const DIRECTIONS_BASE = 'https://maps.googleapis.com/maps/api/directions/json';
+    // MTA API is now used via mta-api.js
 
     let STATIONS = [];
 
@@ -359,22 +359,10 @@
     }
 
     async function fetchAlerts() {
-      try {
-        const response = await fetch(`${TRANSITER_BASE}/systems/us-ny-subway/alerts`);
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        return (data.alerts || [])
-          .filter(a => a.effect !== 'ACCESSIBILITY_ISSUE') // Filter elevator alerts for main view
-          .slice(0, 3)
-          .map(a => ({
-            id: a.id,
-            text: a.header?.[0]?.text || 'Service alert',
-            isElevator: a.id.startsWith('elevator:')
-          }));
-      } catch (e) {
-        return [];
-      }
+      // MTA service status can be fetched from MTA's service status page
+      // For now, we'll return empty as the main alerts require parsing HTML
+      // In production, you could use a serverless function or the MTA status API
+      return [];
     }
 
     async function fetchTransitTime(originLat, originLng, destLat, destLng, googleKey) {
@@ -403,46 +391,12 @@
       }
     }
 
-    async function fetchNextArrival(stationId) {
-      try {
-        const url = `${TRANSITER_BASE}/systems/us-ny-subway/stops/${stationId}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          return { nextTrain: '--', arrivalTime: '--', routeId: null };
-        }
-
-        const data = await response.json();
-        const stopTimes = data.stopTimes || [];
-        const now = Date.now();
-
-        const nextArrival = stopTimes
-          .filter(st => {
-            const arrTime = (st.arrival?.time || st.departure?.time);
-            if (!arrTime) return false;
-            const arrMs = parseInt(arrTime) * 1000;
-            return arrMs > now - 60000;
-          })
-          .sort((a, b) => {
-            const aTime = parseInt(a.arrival?.time || a.departure?.time);
-            const bTime = parseInt(b.arrival?.time || b.departure?.time);
-            return aTime - bTime;
-          })[0];
-
-        if (nextArrival) {
-          const arrTimeStr = nextArrival.arrival?.time || nextArrival.departure?.time;
-          const arrMs = parseInt(arrTimeStr) * 1000;
-          const minAway = Math.max(0, Math.round((arrMs - now) / 60000));
-          const timeStr = new Date(arrMs).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-          const routeId = nextArrival.trip?.route?.id;
-
-          return { nextTrain: `${minAway}m`, arrivalTime: timeStr, routeId };
-        }
-
-        return { nextTrain: '--', arrivalTime: '--', routeId: null };
-      } catch (e) {
-        return { nextTrain: '--', arrivalTime: '--', routeId: null };
+    async function fetchNextArrival(stationId, lines) {
+      // Use MTA API directly via mta-api.js
+      if (window.MtaApi) {
+        return await window.MtaApi.getNextArrival(stationId, lines || []);
       }
+      return { nextTrain: '--', arrivalTime: '--', routeId: null };
     }
 
     function rankOptions(options, weather) {
@@ -585,7 +539,7 @@
           );
 
           const [arrival, transitTime] = await Promise.all([
-            fetchNextArrival(stationId),
+            fetchNextArrival(stationId, station.lines),
             fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.googleKey)
           ]);
 
