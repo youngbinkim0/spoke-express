@@ -82,13 +82,14 @@ class ProtobufReader {
     return bytes;
   }
 
-  skip(wireType, length) {
+  skip(wireType) {
     if (wireType === 0) {
       this.readVarint();
     } else if (wireType === 1) {
       this.pos += 8;
     } else if (wireType === 2) {
-      this.pos += length || this.readVarint();
+      const len = this.readVarint();
+      this.pos += len;
     } else if (wireType === 5) {
       this.pos += 4;
     }
@@ -390,7 +391,7 @@ async function getGroupedArrivals(stationId, lines) {
     }
   }
 
-  return Array.from(groups.values()).sort((a, b) => a.line.localeCompare(b.line));
+  return Array.from(groups.values()).sort((a, b) => (a.line || '').localeCompare(b.line || ''));
 }
 
 // Export for use in other scripts
