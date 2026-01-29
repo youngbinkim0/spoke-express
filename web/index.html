@@ -365,15 +365,15 @@
       return [];
     }
 
-    async function fetchTransitTime(originLat, originLng, destLat, destLng, workerUrl) {
+    async function fetchTransitTime(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
       const dist = calculateDistance(originLat, originLng, destLat, destLng);
 
-      // If worker URL is configured, use live Google Directions
-      if (workerUrl) {
+      // If worker URL and API key are configured, use live Google Directions
+      if (workerUrl && googleKey) {
         try {
           const origin = `${originLat},${originLng}`;
           const dest = `${destLat},${destLng}`;
-          const url = `${workerUrl}/directions?origin=${origin}&destination=${dest}&mode=transit&departure_time=now`;
+          const url = `${workerUrl}/directions?origin=${origin}&destination=${dest}&mode=transit&departure_time=now&key=${googleKey}`;
 
           const response = await fetch(url);
           if (response.ok) {
@@ -541,7 +541,7 @@
 
           const [arrival, transitTime] = await Promise.all([
             fetchNextArrival(stationId, station.lines),
-            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl)
+            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
           const route = arrival.routeId || station.lines[0];

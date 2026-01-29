@@ -315,9 +315,14 @@
           <div class="help-text">Get free key at <a href="https://openweathermap.org/api" target="_blank">openweathermap.org</a></div>
         </div>
         <div class="input-group">
+          <label>Google API Key (optional)</label>
+          <input type="text" id="googleKey" class="api-input" placeholder="For live transit directions">
+          <div class="help-text">Get key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>. Enable Directions API.</div>
+        </div>
+        <div class="input-group">
           <label>Directions Worker URL (optional)</label>
           <input type="text" id="workerUrl" class="api-input" placeholder="https://commute-directions.your-account.workers.dev">
-          <div class="help-text">Cloudflare Worker for live transit times. See <code>cloudflare-worker/</code> folder to deploy. Optional - will use estimates without it.</div>
+          <div class="help-text">Cloudflare Worker to proxy Google Directions API. See <code>cloudflare-worker/</code> to deploy. Both this URL and Google API key are needed for live transit times.</div>
         </div>
       </div>
 
@@ -498,6 +503,7 @@
       const settings = loadSettings();
 
       document.getElementById('apiKey').value = settings.apiKey || '';
+      document.getElementById('googleKey').value = settings.googleKey || '';
       document.getElementById('workerUrl').value = settings.workerUrl || '';
       document.getElementById('homeAddress').value = settings.homeAddress || '';
       document.getElementById('homeLat').value = settings.homeLat || '';
@@ -628,6 +634,7 @@
 
       const settings = {
         apiKey: document.getElementById('apiKey').value.trim(),
+        googleKey: document.getElementById('googleKey').value.trim(),
         workerUrl: document.getElementById('workerUrl').value.trim(),
         homeAddress: document.getElementById('homeAddress').value.trim(),
         homeLat: parseFloat(document.getElementById('homeLat').value) || 0,

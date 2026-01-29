@@ -2,12 +2,12 @@
  * Cloudflare Worker - Google Directions API Proxy
  * Bypasses CORS restrictions for browser requests
  *
- * Deploy: npx wrangler deploy
- * Set secret: npx wrangler secret put GOOGLE_API_KEY
+ * Deploy once: npx wrangler deploy
+ * Then use with any Google API key passed from client
  */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -36,9 +36,17 @@ export default {
       const destination = url.searchParams.get('destination');
       const mode = url.searchParams.get('mode') || 'transit';
       const departureTime = url.searchParams.get('departure_time') || 'now';
+      const apiKey = url.searchParams.get('key');
 
       if (!origin || !destination) {
         return new Response(JSON.stringify({ error: 'Missing origin or destination' }), {
+          status: 400,
+          headers: corsHeaders({ 'Content-Type': 'application/json' }),
+        });
+      }
+
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: 'Missing API key' }), {
           status: 400,
           headers: corsHeaders({ 'Content-Type': 'application/json' }),
         });
@@ -50,7 +58,7 @@ export default {
       googleUrl.searchParams.set('destination', destination);
       googleUrl.searchParams.set('mode', mode);
       googleUrl.searchParams.set('departure_time', departureTime);
-      googleUrl.searchParams.set('key', env.GOOGLE_API_KEY);
+      googleUrl.searchParams.set('key', apiKey);
 
       const response = await fetch(googleUrl.toString());
       const data = await response.json();
