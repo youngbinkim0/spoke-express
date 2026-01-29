@@ -365,30 +365,31 @@
       return [];
     }
 
-    async function fetchTransitTime(originLat, originLng, destLat, destLng, googleKey) {
-      if (!googleKey) {
-        // Fallback estimate
-        const dist = calculateDistance(originLat, originLng, destLat, destLng);
-        return Math.ceil(dist * 4); // Rough estimate: 4 min per mile on subway
+    async function fetchTransitTime(originLat, originLng, destLat, destLng, workerUrl) {
+      const dist = calculateDistance(originLat, originLng, destLat, destLng);
+
+      // If worker URL is configured, use live Google Directions
+      if (workerUrl) {
+        try {
+          const origin = `${originLat},${originLng}`;
+          const dest = `${destLat},${destLng}`;
+          const url = `${workerUrl}/directions?origin=${origin}&destination=${dest}&mode=transit&departure_time=now`;
+
+          const response = await fetch(url);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'OK' && data.durationMinutes) {
+              return data.durationMinutes;
+            }
+          }
+        } catch (e) {
+          console.error('Worker error, using estimate:', e);
+        }
       }
 
-      try {
-        // Use Google Directions API via CORS proxy or direct if allowed
-        const origin = `${originLat},${originLng}`;
-        const dest = `${destLat},${destLng}`;
-
-        // Note: Google Directions API doesn't support CORS for browser requests
-        // We'll use a fallback calculation for now
-        // In production, you'd use a proxy or the Routes API with proper setup
-
-        const dist = calculateDistance(originLat, originLng, destLat, destLng);
-        // Better estimate: account for typical subway speed including stops
-        const avgSubwaySpeedMph = 17; // Including stops
-        return Math.ceil((dist / avgSubwaySpeedMph) * 60);
-      } catch (e) {
-        const dist = calculateDistance(originLat, originLng, destLat, destLng);
-        return Math.ceil(dist * 4);
-      }
+      // Fallback: distance-based estimate
+      const avgSubwaySpeedMph = 17; // Including stops
+      return Math.ceil((dist / avgSubwaySpeedMph) * 60);
     }
 
     async function fetchNextArrival(stationId, lines) {
@@ -540,7 +541,7 @@
 
           const [arrival, transitTime] = await Promise.all([
             fetchNextArrival(stationId, station.lines),
-            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.googleKey)
+            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl)
           ]);
 
           const route = arrival.routeId || station.lines[0];
