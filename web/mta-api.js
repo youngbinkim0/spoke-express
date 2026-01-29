@@ -394,10 +394,166 @@ async function getGroupedArrivals(stationId, lines) {
   return Array.from(groups.values()).sort((a, b) => (a.line || '').localeCompare(b.line || ''));
 }
 
+// Alert effects that impact service
+const ALERT_EFFECTS = {
+  1: 'NO_SERVICE', 2: 'REDUCED_SERVICE', 3: 'SIGNIFICANT_DELAYS',
+  4: 'DETOUR', 5: 'ADDITIONAL_SERVICE', 6: 'MODIFIED_SERVICE',
+  7: 'OTHER_EFFECT', 8: 'UNKNOWN_EFFECT', 9: 'STOP_MOVED'
+};
+
+function parseAlertFeed(buffer) {
+  const reader = new ProtobufReader(buffer);
+  const alerts = [];
+  while (reader.hasMore()) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 2 && wireType === 2) {
+      const length = reader.readVarint();
+      const endPos = reader.pos + length;
+      const alert = parseAlertEntity(reader, endPos);
+      if (alert) alerts.push(alert);
+      reader.pos = endPos;
+    } else {
+      reader.skip(wireType);
+    }
+  }
+  return alerts;
+}
+
+function parseAlertEntity(reader, endPos) {
+  let id = null, alert = null;
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 1 && wireType === 2) {
+      id = reader.readString(reader.readVarint());
+    } else if (fieldNumber === 5 && wireType === 2) {
+      const length = reader.readVarint();
+      const alertEnd = reader.pos + length;
+      alert = parseAlert(reader, alertEnd);
+      reader.pos = alertEnd;
+    } else {
+      reader.skip(wireType);
+    }
+  }
+  return alert ? { id, ...alert } : null;
+}
+
+function parseAlert(reader, endPos) {
+  const routeIds = [];
+  let effect = null, headerText = null, activePeriods = [];
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 1 && wireType === 2) {
+      const length = reader.readVarint();
+      const periodEnd = reader.pos + length;
+      const period = parseActivePeriod(reader, periodEnd);
+      if (period) activePeriods.push(period);
+      reader.pos = periodEnd;
+    } else if (fieldNumber === 5 && wireType === 2) {
+      const length = reader.readVarint();
+      const entityEnd = reader.pos + length;
+      const routeId = parseInformedEntity(reader, entityEnd);
+      if (routeId && !routeIds.includes(routeId)) routeIds.push(routeId);
+      reader.pos = entityEnd;
+    } else if (fieldNumber === 7 && wireType === 0) {
+      effect = reader.readVarint();
+    } else if (fieldNumber === 10 && wireType === 2) {
+      const length = reader.readVarint();
+      const textEnd = reader.pos + length;
+      headerText = parseTranslatedString(reader, textEnd);
+      reader.pos = textEnd;
+    } else {
+      reader.skip(wireType);
+    }
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const isActive = activePeriods.length === 0 || activePeriods.some(p => (!p.start || p.start <= now) && (!p.end || p.end >= now));
+  if (!isActive || !headerText) return null;
+  return { routeIds, effect: ALERT_EFFECTS[effect] || 'UNKNOWN', headerText };
+}
+
+function parseActivePeriod(reader, endPos) {
+  let start = null, end = null;
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 1 && wireType === 0) start = reader.readVarint();
+    else if (fieldNumber === 2 && wireType === 0) end = reader.readVarint();
+    else reader.skip(wireType);
+  }
+  return { start, end };
+}
+
+function parseInformedEntity(reader, endPos) {
+  let routeId = null;
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 5 && wireType === 2) {
+      routeId = reader.readString(reader.readVarint());
+    } else reader.skip(wireType);
+  }
+  return routeId;
+}
+
+function parseTranslatedString(reader, endPos) {
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 1 && wireType === 2) {
+      const length = reader.readVarint();
+      const transEnd = reader.pos + length;
+      const text = parseTranslation(reader, transEnd);
+      reader.pos = transEnd;
+      if (text) return text;
+    } else reader.skip(wireType);
+  }
+  return null;
+}
+
+function parseTranslation(reader, endPos) {
+  let text = null;
+  while (reader.pos < endPos) {
+    const tag = reader.readVarint();
+    const fieldNumber = tag >> 3;
+    const wireType = tag & 0x7;
+    if (fieldNumber === 1 && wireType === 2) {
+      text = reader.readString(reader.readVarint());
+    } else reader.skip(wireType);
+  }
+  return text;
+}
+
+async function fetchServiceAlerts(routeIds = []) {
+  try {
+    const url = MTA_BASE_URL + 'gtfs-alerts';
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const buffer = await response.arrayBuffer();
+    const alerts = parseAlertFeed(buffer);
+    if (routeIds.length > 0) {
+      return alerts.filter(a => a.routeIds.length === 0 || a.routeIds.some(r => routeIds.includes(r)));
+    }
+    return alerts;
+  } catch (e) {
+    console.error('Error fetching alerts:', e);
+    return [];
+  }
+}
+
 // Export for use in other scripts
 window.MtaApi = {
   getStationArrivals,
   getNextArrival,
   getGroupedArrivals,
+  fetchServiceAlerts,
   MTA_FEEDS
 };

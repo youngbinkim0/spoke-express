@@ -326,6 +326,12 @@
       return Math.ceil((distance / BIKE_SPEED_MPH) * 60 * 1.3);
     }
 
+    function estimateWalkTime(fromLat, fromLng, toLat, toLng) {
+      const distance = calculateDistance(fromLat, fromLng, toLat, toLng);
+      const WALK_SPEED_MPH = 3;
+      return Math.ceil((distance / WALK_SPEED_MPH) * 60 * 1.2);
+    }
+
     async function fetchWeather(lat, lng, apiKey) {
       if (!apiKey) {
         return { tempF: '--', conditions: 'No API key', isBad: false };
@@ -359,10 +365,24 @@
     }
 
     async function fetchAlerts() {
-      // MTA service status can be fetched from MTA's service status page
-      // For now, we'll return empty as the main alerts require parsing HTML
-      // In production, you could use a serverless function or the MTA status API
-      return [];
+      if (!window.MtaApi) return [];
+      const settings = loadSettings();
+      const routeIds = new Set();
+      for (const sid of (settings.bikeStations || [])) {
+        const s = getStation(sid);
+        if (s) s.lines.forEach(l => routeIds.add(l));
+      }
+      const dest = getStation(settings.destStation);
+      if (dest) dest.lines.forEach(l => routeIds.add(l));
+      try {
+        const alerts = await window.MtaApi.fetchServiceAlerts([...routeIds]);
+        return alerts
+          .filter(a => ['NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS'].includes(a.effect))
+          .slice(0, 3)
+          .map(a => ({ text: `${a.routeIds.join('/')} - ${a.headerText}`, isElevator: false }));
+      } catch (e) {
+        return [];
+      }
     }
 
     async function fetchTransitTime(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
@@ -530,6 +550,20 @@
         // Build commute options
         const options = [];
 
+        // Walk-only option for short commutes
+        const homeToWorkDist = calculateDistance(settings.homeLat, settings.homeLng, settings.workLat, settings.workLng);
+        if (homeToWorkDist < 2 && settings.workLat && settings.workLng) {
+          const walkTime = estimateWalkTime(settings.homeLat, settings.homeLng, settings.workLat, settings.workLng);
+          options.push({
+            type: 'walk_only',
+            summary: 'Walk to Work',
+            duration: walkTime,
+            nextTrain: 'N/A',
+            arrivalTime: new Date(Date.now() + walkTime * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            legs: [{ mode: 'walk', duration: walkTime, to: 'Work' }]
+          });
+        }
+
         for (const stationId of settings.bikeStations) {
           const station = getStation(stationId);
           if (!station) continue;
@@ -553,6 +587,33 @@
             arrivalTime: arrival.arrivalTime,
             legs: [
               { mode: 'bike', duration: bikeTime, to: station.name },
+              { mode: 'subway', duration: transitTime, to: destStation.name, route }
+            ]
+          });
+        }
+
+        // Transit-only options (walk to station)
+        for (const stationId of settings.bikeStations) {
+          const station = getStation(stationId);
+          if (!station) continue;
+
+          const walkTime = estimateWalkTime(settings.homeLat, settings.homeLng, station.lat, station.lng);
+          if (walkTime > 20) continue;
+
+          const [arrival, transitTime] = await Promise.all([
+            fetchNextArrival(stationId, station.lines),
+            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
+          ]);
+
+          const route = arrival.routeId || station.lines[0];
+          options.push({
+            type: 'transit_only',
+            summary: `Walk → ${route} → ${destStation.name}`,
+            duration: walkTime + transitTime,
+            nextTrain: arrival.nextTrain,
+            arrivalTime: arrival.arrivalTime,
+            legs: [
+              { mode: 'walk', duration: walkTime, to: station.name },
               { mode: 'subway', duration: transitTime, to: destStation.name, route }
             ]
           });

@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit
 
 object ApiClientFactory {
 
-    private const val TRANSITER_BASE_URL = "https://demo.transiter.dev/"
     private const val OPENWEATHER_BASE_URL = "https://api.openweathermap.org/"
 
     private val okHttpClient: OkHttpClient by lazy {
@@ -24,24 +23,12 @@ object ApiClientFactory {
             .build()
     }
 
-    private val transiterRetrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(TRANSITER_BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     private val weatherRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(OPENWEATHER_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    val transiterApi: TransiterApiService by lazy {
-        transiterRetrofit.create(TransiterApiService::class.java)
     }
 
     val weatherApi: WeatherApiService by lazy {
