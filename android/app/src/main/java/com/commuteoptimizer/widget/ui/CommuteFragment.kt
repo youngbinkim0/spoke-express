@@ -125,7 +125,7 @@ class CommuteFragment : Fragment() {
 
     private fun displayData(data: CommuteResponse) {
         // Weather
-        weatherTemp.text = "${data.weather.tempF}\u00B0F"
+        weatherTemp.text = if (data.weather.tempF != null) "${data.weather.tempF}\u00B0F" else "--"
         weatherConditions.text = data.weather.conditions
         weatherWarning.visibility = if (data.weather.isBad) View.VISIBLE else View.GONE
         currentTime.text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date())

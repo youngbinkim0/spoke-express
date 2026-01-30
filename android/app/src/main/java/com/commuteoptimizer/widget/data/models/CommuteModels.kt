@@ -45,7 +45,7 @@ data class Station(
 
 data class Weather(
     @SerializedName("temp_f")
-    val tempF: Int,
+    val tempF: Int?, // null when weather unavailable
     val conditions: String,
     @SerializedName("precipitation_type")
     val precipitationType: String, // "none", "rain", "snow", "mix"
