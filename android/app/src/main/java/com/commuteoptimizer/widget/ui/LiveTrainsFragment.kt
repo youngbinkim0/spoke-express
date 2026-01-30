@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.commuteoptimizer.widget.R
 import com.commuteoptimizer.widget.data.api.MtaApiService
@@ -16,9 +17,7 @@ import com.commuteoptimizer.widget.data.models.LocalStation
 import com.commuteoptimizer.widget.service.LocalDataSource
 import com.commuteoptimizer.widget.util.MtaColors
 import com.commuteoptimizer.widget.util.WidgetPreferences
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -26,7 +25,6 @@ import java.util.*
 
 class LiveTrainsFragment : Fragment() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val handler = Handler(Looper.getMainLooper())
     private val refreshInterval = 30000L
 
@@ -72,6 +70,11 @@ class LiveTrainsFragment : Fragment() {
         handler.removeCallbacks(refreshRunnable)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        handler.removeCallbacks(refreshRunnable)
+    }
+
     private fun loadData() {
         val ctx = context ?: return
         val prefs = WidgetPreferences(ctx)
@@ -85,7 +88,7 @@ class LiveTrainsFragment : Fragment() {
             return
         }
 
-        scope.launch {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) {
                 progress.visibility = View.VISIBLE
                 noStations.visibility = View.GONE
@@ -109,6 +112,8 @@ class LiveTrainsFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     swipeRefresh.isRefreshing = false
                     progress.visibility = View.GONE
+                    noStations.text = "Error loading trains: ${e.message}"
+                    noStations.visibility = View.VISIBLE
                 }
             }
         }
