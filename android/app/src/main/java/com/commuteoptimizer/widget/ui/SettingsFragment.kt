@@ -98,12 +98,25 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupStationChips() {
+        chipGroupStations.removeAllViews()
         val selectedStations = prefs.getSelectedStations().toSet()
-        val sortedStations = stations.sortedBy { it.name }
+
+        // Sort by distance from home if home is set, otherwise alphabetically
+        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
+            stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
+        } else {
+            stations.sortedBy { it.name }
+        }
 
         for (station in sortedStations) {
+            val distance = if (homeLat != 0.0 && homeLng != 0.0) {
+                calculateDistance(homeLat, homeLng, station.lat, station.lng)
+            } else null
+
+            val distanceText = distance?.let { " - %.1f mi".format(it) } ?: ""
+
             val chip = Chip(requireContext()).apply {
-                text = "${station.name} (${station.lines.joinToString(",")})"
+                text = "${station.name} (${station.lines.joinToString(",")})$distanceText"
                 isCheckable = true
                 isChecked = selectedStations.contains(station.id)
                 tag = station.id
@@ -122,6 +135,17 @@ class SettingsFragment : Fragment() {
             }
             chipGroupStations.addView(chip)
         }
+    }
+
+    private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val earthRadiusMiles = 3959.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLng = Math.toRadians(lng2 - lng1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return earthRadiusMiles * c
     }
 
     private fun setupClickListeners() {
@@ -156,6 +180,8 @@ class SettingsFragment : Fragment() {
                         homeLat = result.first
                         homeLng = result.second
                         textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
+                        // Re-sort stations by distance from new home location
+                        setupStationChips()
                     } else {
                         workLat = result.first
                         workLng = result.second
