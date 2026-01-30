@@ -28,7 +28,9 @@ data class Leg(
     val mode: String, // "bike", "walk", or "subway"
     val duration: Int,
     val to: String,
-    val route: String? = null
+    val route: String? = null,
+    val from: String? = null,
+    val numStops: Int? = null
 )
 
 data class Station(
