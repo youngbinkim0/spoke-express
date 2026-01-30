@@ -26,8 +26,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
-    private lateinit var inputApiKey: TextInputEditText
-    private lateinit var inputGoogleApiKey: TextInputEditText
+    private lateinit var textApiStatus: TextView
     private lateinit var inputHomeAddress: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
@@ -80,8 +79,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        inputApiKey = findViewById(R.id.input_api_key)
-        inputGoogleApiKey = findViewById(R.id.input_google_api_key)
+        textApiStatus = findViewById(R.id.text_api_status)
         inputHomeAddress = findViewById(R.id.input_home_address)
         inputWorkAddress = findViewById(R.id.input_work_address)
         textHomeCoords = findViewById(R.id.text_home_coords)
@@ -96,9 +94,16 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun loadExistingSettings() {
-        // Load API keys
-        prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
-        prefs.getGoogleApiKey()?.let { inputGoogleApiKey.setText(it) }
+        // Show API key status (keys are managed in main app Settings)
+        val hasWeatherKey = !prefs.getOpenWeatherApiKey().isNullOrBlank()
+        val hasGoogleKey = !prefs.getGoogleApiKey().isNullOrBlank()
+        val statusText = when {
+            hasWeatherKey && hasGoogleKey -> "API keys: ✓ Configured in Settings"
+            hasWeatherKey -> "API keys: Weather ✓, Google ✗ (set in Settings)"
+            hasGoogleKey -> "API keys: Weather ✗, Google ✓ (set in Settings)"
+            else -> "API keys: Not configured (set in main app Settings)"
+        }
+        textApiStatus.text = statusText
 
         // Load home location
         homeLat = prefs.getHomeLat()
@@ -210,8 +215,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfiguration() {
-        // Get API key (optional - widget will show error if not set)
-        val apiKey = inputApiKey.text?.toString()?.trim()
+        // API keys are managed in main app Settings, not here
 
         // Validate home location (required)
         if (homeLat == 0.0 || homeLng == 0.0) {
@@ -240,22 +244,13 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         }
 
         // Get optional settings
-        val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
         val showBikeOptions = switchBikeOptions.isChecked
 
-        // Save all settings
-        if (!apiKey.isNullOrBlank()) {
-            prefs.setOpenWeatherApiKey(apiKey)
-        }
+        // Save all settings (API keys are managed in main app Settings)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
         prefs.setBikeStations(selectedStations)
         prefs.setShowBikeOptions(showBikeOptions)
-
-        // Save optional settings if provided
-        if (!googleApiKey.isNullOrBlank()) {
-            prefs.setGoogleApiKey(googleApiKey)
-        }
 
         // Trigger initial widget update
         val intent = Intent(this, CommuteWidgetProvider::class.java).apply {
