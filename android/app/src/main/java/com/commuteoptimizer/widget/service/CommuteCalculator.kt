@@ -3,6 +3,8 @@ package com.commuteoptimizer.widget.service
 import android.content.Context
 import com.commuteoptimizer.widget.data.Result
 import com.commuteoptimizer.widget.data.api.ApiClientFactory
+import com.commuteoptimizer.widget.data.api.GoogleRoutesService
+import com.commuteoptimizer.widget.data.api.MtaAlertsService
 import com.commuteoptimizer.widget.data.api.MtaApiService
 import com.commuteoptimizer.widget.data.models.*
 import com.commuteoptimizer.widget.util.WidgetPreferences
@@ -11,8 +13,8 @@ import java.util.*
 
 /**
  * Main calculator that orchestrates API calls and builds commute options.
- * This replaces the need for a backend server.
  * Uses MTA GTFS-realtime API directly (no rate limits).
+ * Optionally uses Google Routes API via Cloudflare Worker for full transit routes.
  */
 class CommuteCalculator(private val context: Context) {
 
@@ -22,46 +24,56 @@ class CommuteCalculator(private val context: Context) {
 
     suspend fun calculateCommute(): Result<CommuteResponse> {
         try {
-            // Get user settings
             val homeLat = prefs.getHomeLat()
             val homeLng = prefs.getHomeLng()
             val workLat = prefs.getWorkLat()
             val workLng = prefs.getWorkLng()
             val selectedStations = prefs.getSelectedStations()
-            val destStationId = prefs.getDestStation()
             val apiKey = prefs.getOpenWeatherApiKey()
+            val googleApiKey = prefs.getGoogleApiKey()
+            val workerUrl = prefs.getWorkerUrl()
+            val showBikeOptions = prefs.getShowBikeOptions()
 
             if (homeLat == 0.0 || workLat == 0.0 || selectedStations.isEmpty()) {
                 return Result.Error("Please configure home, work, and stations in settings")
             }
 
-            // 1. Fetch weather
             val weather = fetchWeather(homeLat, homeLng, apiKey)
-
-            // 2. Load station data
             val stations = localDataSource.getStations()
             val stationMap = stations.associateBy { it.id }
 
-            // 3. Build commute options for each selected station
+            val destStation = findClosestStation(workLat, workLng, stations)
+                ?: return Result.Error("No station found near work location")
+
             val options = mutableListOf<CommuteOption>()
+
+            // Add walk-only option if work is close
+            val homeToWorkDist = DistanceCalculator.haversineDistance(homeLat, homeLng, workLat, workLng)
+            if (homeToWorkDist < 2.0) {
+                options.add(buildWalkOnlyOption(homeLat, homeLng, workLat, workLng))
+            }
 
             for ((index, stationId) in selectedStations.withIndex()) {
                 val station = stationMap[stationId] ?: continue
 
                 try {
-                    val option = buildCommuteOption(
-                        stationId = stationId,
-                        station = station,
-                        homeLat = homeLat,
-                        homeLng = homeLng,
-                        destStationId = destStationId,
-                        index = index
+                    if (showBikeOptions) {
+                        buildBikeToTransitOption(
+                            station, homeLat, homeLng, destStation, workLat, workLng,
+                            googleApiKey, workerUrl, index
+                        )?.let { options.add(it) }
+                    }
+
+                    val walkTime = DistanceCalculator.estimateWalkTime(
+                        homeLat, homeLng, station.lat, station.lng
                     )
-                    if (option != null) {
-                        options.add(option)
+                    if (walkTime <= 20) {
+                        buildTransitOnlyOption(
+                            station, homeLat, homeLng, destStation, workLat, workLng,
+                            googleApiKey, workerUrl, walkTime, index + 100
+                        )?.let { options.add(it) }
                     }
                 } catch (e: Exception) {
-                    // Skip this station on error, continue with others
                     continue
                 }
             }
@@ -70,14 +82,17 @@ class CommuteCalculator(private val context: Context) {
                 return Result.Error("No commute options available")
             }
 
-            // 4. Rank options
             val ranked = RankingService.rankOptions(options, weather)
 
-            // 5. Build response
+            val routeIds = selectedStations.flatMap { id ->
+                stationMap[id]?.lines ?: emptyList()
+            }.distinct()
+            val alerts = fetchAlerts(routeIds)
+
             val response = CommuteResponse(
-                options = ranked,
+                options = ranked.take(3),
                 weather = weather,
-                alerts = emptyList(),
+                alerts = alerts,
                 generatedAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
                     .apply { timeZone = TimeZone.getTimeZone("UTC") }
                     .format(Date())
@@ -90,18 +105,20 @@ class CommuteCalculator(private val context: Context) {
         }
     }
 
-    private suspend fun fetchWeather(lat: Double, lng: Double, apiKey: String?): Weather {
-        if (apiKey.isNullOrBlank()) {
-            return getDefaultWeather()
+    private fun findClosestStation(lat: Double, lng: Double, stations: List<LocalStation>): LocalStation? {
+        return stations.minByOrNull { station ->
+            DistanceCalculator.haversineDistance(lat, lng, station.lat, station.lng)
         }
+    }
+
+    private suspend fun fetchWeather(lat: Double, lng: Double, apiKey: String?): Weather {
+        if (apiKey.isNullOrBlank()) return getDefaultWeather()
 
         return try {
             val response = weatherApi.getWeather(lat, lng, apiKey = apiKey)
             if (response.isSuccessful && response.body() != null) {
                 parseWeatherResponse(response.body()!!)
-            } else {
-                getDefaultWeather()
-            }
+            } else getDefaultWeather()
         } catch (e: Exception) {
             getDefaultWeather()
         }
@@ -112,7 +129,6 @@ class CommuteCalculator(private val context: Context) {
         val weatherId = current.weather.firstOrNull()?.id ?: 800
         val weatherMain = current.weather.firstOrNull()?.main ?: "Clear"
 
-        // Determine precipitation type based on weather condition codes
         val precipitationType = when {
             weatherId in 200..599 -> "rain"
             weatherId in 600..610 -> "snow"
@@ -120,10 +136,7 @@ class CommuteCalculator(private val context: Context) {
             else -> "none"
         }
 
-        // Get precipitation probability from next hour
         val precipProbability = data.hourly?.firstOrNull()?.pop ?: 0.0
-
-        // Determine if weather is bad for biking
         val isBad = precipitationType != "none" || precipProbability > 0.5
 
         return Weather(
@@ -135,77 +148,111 @@ class CommuteCalculator(private val context: Context) {
         )
     }
 
-    private fun getDefaultWeather(): Weather {
-        return Weather(
-            tempF = 65,
-            conditions = "Unknown",
-            precipitationType = "none",
-            precipitationProbability = 0,
-            isBad = false
+    private fun getDefaultWeather() = Weather(65, "Unknown", "none", 0, false)
+
+    private suspend fun fetchAlerts(routeIds: List<String>): List<Alert> {
+        return try {
+            MtaAlertsService.fetchAlerts(routeIds)
+                .filter { it.effect in listOf("NO_SERVICE", "REDUCED_SERVICE", "SIGNIFICANT_DELAYS") }
+                .take(3)
+                .map { Alert(it.routeIds, it.effect, it.headerText) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun buildWalkOnlyOption(homeLat: Double, homeLng: Double, workLat: Double, workLng: Double): CommuteOption {
+        val walkTime = DistanceCalculator.estimateWalkTime(homeLat, homeLng, workLat, workLng)
+        val arrivalTime = Calendar.getInstance().apply { add(Calendar.MINUTE, walkTime) }
+        val arrivalTimeStr = SimpleDateFormat("h:mm a", Locale.US).format(arrivalTime.time)
+
+        return CommuteOption(
+            id = "walk_only", rank = 0, type = "walk_only",
+            durationMinutes = walkTime, summary = "Walk to Work",
+            legs = listOf(Leg(mode = "walk", duration = walkTime, to = "Work", route = null)),
+            nextTrain = "N/A", arrivalTime = arrivalTimeStr,
+            station = Station("", "Work", "", emptyList(), workLat, workLng, "")
         )
     }
 
-    private suspend fun buildCommuteOption(
-        stationId: String,
-        station: LocalStation,
-        homeLat: Double,
-        homeLng: Double,
-        destStationId: String,
-        index: Int
+    private suspend fun buildBikeToTransitOption(
+        station: LocalStation, homeLat: Double, homeLng: Double,
+        destStation: LocalStation, workLat: Double, workLng: Double,
+        googleApiKey: String?, workerUrl: String?, index: Int
     ): CommuteOption? {
-        // Calculate bike time to station
-        val bikeTime = DistanceCalculator.estimateBikeTime(
-            homeLat, homeLng,
-            station.lat, station.lng
-        )
+        val bikeTime = DistanceCalculator.estimateBikeTime(homeLat, homeLng, station.lat, station.lng)
+        val (nextTrainText, _, routeId) = getNextArrival(station.id, station.lines)
+        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
 
-        // Get next train arrival from MTA API
-        val (nextTrainText, arrivalTime, routeId) = getNextArrival(stationId, station.lines)
-
-        // Estimate transit time to destination
-        val transitTime = DistanceCalculator.estimateTransitTime(stationId, destStationId)
-
-        // Total duration
         val totalDuration = bikeTime + transitTime
+        val legs = mutableListOf(Leg(mode = "bike", duration = bikeTime, to = station.name, route = null))
+        legs.addAll(transitLegs)
 
-        // Build legs
-        val legs = listOf(
-            Leg(
-                mode = "bike",
-                duration = bikeTime,
-                to = station.name,
-                route = null
-            ),
-            Leg(
-                mode = "subway",
-                duration = transitTime,
-                to = "Work",
-                route = routeId ?: station.lines.firstOrNull()
-            )
-        )
-
-        // Build summary (e.g., "Bike → G")
-        val summary = "Bike → ${routeId ?: station.lines.firstOrNull() ?: "?"}"
+        val summary = buildSummary("Bike", transitLegs, routeId ?: station.lines.firstOrNull())
+        val arrivalTime = Calendar.getInstance().apply { add(Calendar.MINUTE, totalDuration) }
+        val arrivalTimeStr = SimpleDateFormat("h:mm a", Locale.US).format(arrivalTime.time)
 
         return CommuteOption(
-            id = "option_$index",
-            rank = 0, // Will be set by RankingService
-            type = "bike_to_transit",
-            durationMinutes = totalDuration,
-            summary = summary,
-            legs = legs,
-            nextTrain = nextTrainText,
-            arrivalTime = arrivalTime,
-            station = Station(
-                id = station.id,
-                name = station.name,
-                transiterId = station.id,
-                lines = station.lines,
-                lat = station.lat,
-                lng = station.lng,
-                borough = station.borough
-            )
+            id = "bike_$index", rank = 0, type = "bike_to_transit",
+            durationMinutes = totalDuration, summary = summary, legs = legs,
+            nextTrain = nextTrainText, arrivalTime = arrivalTimeStr,
+            station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
         )
+    }
+
+    private suspend fun buildTransitOnlyOption(
+        station: LocalStation, homeLat: Double, homeLng: Double,
+        destStation: LocalStation, workLat: Double, workLng: Double,
+        googleApiKey: String?, workerUrl: String?, walkTime: Int, index: Int
+    ): CommuteOption? {
+        val (nextTrainText, _, routeId) = getNextArrival(station.id, station.lines)
+        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
+
+        val totalDuration = walkTime + transitTime
+        val legs = mutableListOf(Leg(mode = "walk", duration = walkTime, to = station.name, route = null))
+        legs.addAll(transitLegs)
+
+        val summary = buildSummary("Walk", transitLegs, routeId ?: station.lines.firstOrNull())
+        val arrivalTime = Calendar.getInstance().apply { add(Calendar.MINUTE, totalDuration) }
+        val arrivalTimeStr = SimpleDateFormat("h:mm a", Locale.US).format(arrivalTime.time)
+
+        return CommuteOption(
+            id = "transit_$index", rank = 0, type = "transit_only",
+            durationMinutes = totalDuration, summary = summary, legs = legs,
+            nextTrain = nextTrainText, arrivalTime = arrivalTimeStr,
+            station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
+        )
+    }
+
+    private suspend fun getTransitRoute(
+        fromStation: LocalStation, toStation: LocalStation,
+        workLat: Double, workLng: Double,
+        googleApiKey: String?, workerUrl: String?
+    ): Pair<Int, List<Leg>> {
+        if (!googleApiKey.isNullOrBlank() && !workerUrl.isNullOrBlank()) {
+            try {
+                val result = GoogleRoutesService.getTransitRoute(
+                    workerUrl, googleApiKey, fromStation.lat, fromStation.lng, workLat, workLng
+                )
+                if (result.status == "OK" && result.durationMinutes != null) {
+                    val legs = result.transitSteps.map { step ->
+                        Leg(mode = "subway", duration = step.duration ?: 0, to = step.arrivalStop ?: "?", route = step.line)
+                    }
+                    return Pair(result.durationMinutes, legs.ifEmpty {
+                        listOf(Leg("subway", result.durationMinutes, toStation.name, fromStation.lines.firstOrNull()))
+                    })
+                }
+            } catch (e: Exception) { }
+        }
+
+        val transitTime = DistanceCalculator.estimateTransitTime(fromStation.id, toStation.id)
+        return Pair(transitTime, listOf(Leg("subway", transitTime, toStation.name, fromStation.lines.firstOrNull())))
+    }
+
+    private fun buildSummary(firstMode: String, transitLegs: List<Leg>, firstLine: String?): String {
+        val lines = transitLegs.mapNotNull { it.route }.distinct()
+        return if (lines.isNotEmpty()) "$firstMode → ${lines.joinToString(" → ")}"
+        else "$firstMode → ${firstLine ?: "?"}"
     }
 
     private suspend fun getNextArrival(stationId: String, lines: List<String>): Triple<String, String, String?> {
@@ -218,27 +265,18 @@ class CommuteCalculator(private val context: Context) {
     }
 }
 
-/**
- * Local data source for loading bundled station data.
- */
 class LocalDataSource(private val context: Context) {
-
     private var cachedStations: List<LocalStation>? = null
 
     fun getStations(): List<LocalStation> {
         cachedStations?.let { return it }
-
         return try {
             val json = context.assets.open("stations.json").bufferedReader().use { it.readText() }
             val stations = com.google.gson.Gson().fromJson(json, Array<LocalStation>::class.java).toList()
             cachedStations = stations
             stations
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
-    fun getStation(id: String): LocalStation? {
-        return getStations().find { it.id == id }
-    }
+    fun getStation(id: String): LocalStation? = getStations().find { it.id == id }
 }

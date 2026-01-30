@@ -31,6 +31,9 @@ class WidgetPreferences(context: Context) {
         private const val KEY_WORK_ADDRESS = "work_address"
         private const val KEY_SELECTED_STATIONS = "selected_stations"
         private const val KEY_DEST_STATION = "dest_station"
+        private const val KEY_SHOW_BIKE_OPTIONS = "show_bike_options"
+        private const val KEY_GOOGLE_API_KEY = "google_api_key"
+        private const val KEY_WORKER_URL = "worker_url"
 
         const val DEFAULT_API_URL = "http://192.168.1.100:8888"
     }
@@ -114,6 +117,36 @@ class WidgetPreferences(context: Context) {
 
     fun setDestStation(stationId: String) {
         prefs.edit().putString(KEY_DEST_STATION, stationId).apply()
+    }
+
+    // ========== Google API Key ==========
+
+    fun getGoogleApiKey(): String? {
+        return prefs.getString(KEY_GOOGLE_API_KEY, null)
+    }
+
+    fun setGoogleApiKey(apiKey: String) {
+        prefs.edit().putString(KEY_GOOGLE_API_KEY, apiKey).apply()
+    }
+
+    // ========== Worker URL ==========
+
+    fun getWorkerUrl(): String? {
+        return prefs.getString(KEY_WORKER_URL, null)
+    }
+
+    fun setWorkerUrl(url: String) {
+        prefs.edit().putString(KEY_WORKER_URL, url).apply()
+    }
+
+    // ========== Bike Toggle ==========
+
+    fun getShowBikeOptions(): Boolean {
+        return prefs.getBoolean(KEY_SHOW_BIKE_OPTIONS, true)
+    }
+
+    fun setShowBikeOptions(show: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_BIKE_OPTIONS, show).apply()
     }
 
     // ========== Widget-specific settings ==========

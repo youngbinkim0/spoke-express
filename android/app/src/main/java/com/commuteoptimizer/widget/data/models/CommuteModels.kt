@@ -54,6 +54,7 @@ data class Weather(
 )
 
 data class Alert(
-    val route: String,
-    val message: String
+    val routeIds: List<String>,
+    val effect: String,
+    val headerText: String
 )

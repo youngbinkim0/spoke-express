@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
 import com.commuteoptimizer.widget.data.models.LocalStation
 import com.commuteoptimizer.widget.service.LocalDataSource
@@ -26,6 +27,8 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
     private lateinit var inputApiKey: TextInputEditText
+    private lateinit var inputGoogleApiKey: TextInputEditText
+    private lateinit var inputWorkerUrl: TextInputEditText
     private lateinit var inputHomeAddress: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
@@ -33,7 +36,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     private lateinit var btnGeocodeHome: Button
     private lateinit var btnGeocodeWork: Button
     private lateinit var chipGroupStations: ChipGroup
-    private lateinit var spinnerDestStation: Spinner
+    private lateinit var switchBikeOptions: SwitchCompat
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
     private lateinit var textStatus: TextView
@@ -74,12 +77,13 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         initViews()
         loadExistingSettings()
         setupStationChips()
-        setupDestinationSpinner()
         setupClickListeners()
     }
 
     private fun initViews() {
         inputApiKey = findViewById(R.id.input_api_key)
+        inputGoogleApiKey = findViewById(R.id.input_google_api_key)
+        inputWorkerUrl = findViewById(R.id.input_worker_url)
         inputHomeAddress = findViewById(R.id.input_home_address)
         inputWorkAddress = findViewById(R.id.input_work_address)
         textHomeCoords = findViewById(R.id.text_home_coords)
@@ -87,15 +91,17 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         btnGeocodeHome = findViewById(R.id.btn_geocode_home)
         btnGeocodeWork = findViewById(R.id.btn_geocode_work)
         chipGroupStations = findViewById(R.id.chip_group_stations)
-        spinnerDestStation = findViewById(R.id.spinner_dest_station)
+        switchBikeOptions = findViewById(R.id.switch_bike_options)
         btnSave = findViewById(R.id.btn_save)
         btnCancel = findViewById(R.id.btn_cancel)
         textStatus = findViewById(R.id.text_status)
     }
 
     private fun loadExistingSettings() {
-        // Load API key
+        // Load API keys
         prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
+        prefs.getGoogleApiKey()?.let { inputGoogleApiKey.setText(it) }
+        prefs.getWorkerUrl()?.let { inputWorkerUrl.setText(it) }
 
         // Load home location
         homeLat = prefs.getHomeLat()
@@ -112,6 +118,9 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         if (workLat != 0.0) {
             textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
         }
+
+        // Load bike options preference
+        switchBikeOptions.isChecked = prefs.getShowBikeOptions()
     }
 
     private fun setupStationChips() {
@@ -147,20 +156,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
                 }
             }
             chipGroupStations.addView(chip)
-        }
-    }
-
-    private fun setupDestinationSpinner() {
-        val stationNames = stations.map { "${it.name} (${it.lines.joinToString(",")})" }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, stationNames)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerDestStation.adapter = adapter
-
-        // Select current destination
-        val currentDest = prefs.getDestStation()
-        val destIndex = stations.indexOfFirst { it.id == currentDest }
-        if (destIndex >= 0) {
-            spinnerDestStation.setSelection(destIndex)
         }
     }
 
@@ -251,20 +246,25 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             return
         }
 
-        // Get destination station
-        val destIndex = spinnerDestStation.selectedItemPosition
-        val destStation = if (destIndex >= 0 && destIndex < stations.size) {
-            stations[destIndex].id
-        } else {
-            "G22" // Default to Court Sq
-        }
+        // Get optional settings
+        val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
+        val workerUrl = inputWorkerUrl.text?.toString()?.trim()
+        val showBikeOptions = switchBikeOptions.isChecked
 
         // Save all settings
         prefs.setOpenWeatherApiKey(apiKey)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
         prefs.setSelectedStations(selectedStations)
-        prefs.setDestStation(destStation)
+        prefs.setShowBikeOptions(showBikeOptions)
+
+        // Save optional settings if provided
+        if (!googleApiKey.isNullOrBlank()) {
+            prefs.setGoogleApiKey(googleApiKey)
+        }
+        if (!workerUrl.isNullOrBlank()) {
+            prefs.setWorkerUrl(workerUrl)
+        }
 
         // Trigger initial widget update
         val intent = Intent(this, CommuteWidgetProvider::class.java).apply {
