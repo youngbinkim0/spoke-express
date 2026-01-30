@@ -30,7 +30,7 @@
     <string name="config_url_required">Please enter the API URL</string>
 
     <!-- Weather -->
-    <string name="weather_format">%d°F %s</string>
+    <string name="weather_format">%1$d°F %2$s</string>
 
     <!-- Modes -->
     <string name="mode_bike">Bike</string>
