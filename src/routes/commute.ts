@@ -14,6 +14,29 @@ import type { CommuteOption, CommuteResponse, Leg, Alert } from '../types/index.
 
 const MAX_WALK_MINUTES = 30; // Auto-include stations within 30min walk
 
+/**
+ * Deduplicate commute options by transit route signature.
+ * If multiple options use the same sequence of subway lines, keep only the fastest.
+ * This prevents showing "Bike → Station A → G" and "Bike → Station B → G" separately.
+ */
+function deduplicateByRoute(options: CommuteOption[]): CommuteOption[] {
+  const bySignature = new Map<string, CommuteOption>();
+
+  for (const option of options) {
+    // Build route signature: type + sequence of subway lines
+    const subwayLegs = option.legs.filter((leg) => leg.mode === 'subway' && leg.route);
+    const routeSequence = subwayLegs.map((leg) => leg.route).join('→');
+    const signature = `${option.type}_${routeSequence}`;
+
+    const existing = bySignature.get(signature);
+    if (!existing || option.duration_minutes < existing.duration_minutes) {
+      bySignature.set(signature, option);
+    }
+  }
+
+  return Array.from(bySignature.values());
+}
+
 const app = new Hono();
 
 app.get('/', async (c) => {
@@ -200,8 +223,11 @@ app.get('/', async (c) => {
     }
   }
 
+  // Deduplicate options by transit route signature (keep fastest for each unique route)
+  const deduplicatedOptions = deduplicateByRoute(options);
+
   // Rank options (weather-aware)
-  const rankedOptions = rankOptions(options, weather);
+  const rankedOptions = rankOptions(deduplicatedOptions, weather);
 
   // TODO: Fetch real MTA alerts
   const alerts: Alert[] = [];
