@@ -9,18 +9,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.commuteoptimizer.widget.R
 import com.commuteoptimizer.widget.data.CommuteRepository
 import com.commuteoptimizer.widget.data.Result
-import com.commuteoptimizer.widget.data.models.Alert
 import com.commuteoptimizer.widget.data.models.CommuteOption
 import com.commuteoptimizer.widget.data.models.CommuteResponse
 import com.commuteoptimizer.widget.util.MtaColors
 import com.commuteoptimizer.widget.util.WidgetPreferences
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -28,7 +26,6 @@ import java.util.*
 
 class CommuteFragment : Fragment() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val handler = Handler(Looper.getMainLooper())
     private val refreshInterval = 30000L
 
@@ -91,11 +88,16 @@ class CommuteFragment : Fragment() {
         handler.removeCallbacks(refreshRunnable)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        handler.removeCallbacks(refreshRunnable)
+    }
+
     private fun loadData() {
         val ctx = context ?: return
         val repository = CommuteRepository(ctx)
 
-        scope.launch {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) {
                 progress.visibility = View.VISIBLE
                 errorText.visibility = View.GONE
