@@ -124,6 +124,7 @@ object GoogleRoutesService {
             .replace(" Line", "")
             .replace(" Train", "")
             .replace("Exp", "")
+            .replace(Regex("^(\\d)X$"), "$1") // 6X -> 6, 7X -> 7 (express variants)
             .trim()
     }
 
