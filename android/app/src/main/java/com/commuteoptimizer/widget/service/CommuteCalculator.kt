@@ -31,7 +31,6 @@ class CommuteCalculator(private val context: Context) {
             val selectedStations = prefs.getBikeStations()
             val apiKey = prefs.getOpenWeatherApiKey()
             val googleApiKey = prefs.getGoogleApiKey()
-            val workerUrl = prefs.getWorkerUrl()
             val showBikeOptions = prefs.getShowBikeOptions()
 
             if (homeLat == 0.0 || workLat == 0.0 || selectedStations.isEmpty()) {
@@ -61,7 +60,7 @@ class CommuteCalculator(private val context: Context) {
                     if (showBikeOptions) {
                         buildBikeToTransitOption(
                             station, homeLat, homeLng, destStation, workLat, workLng,
-                            googleApiKey, workerUrl, index
+                            googleApiKey, index
                         )?.let { options.add(it) }
                     }
                 } catch (e: Exception) {
@@ -84,7 +83,7 @@ class CommuteCalculator(private val context: Context) {
                 try {
                     buildTransitOnlyOption(
                         station, homeLat, homeLng, destStation, workLat, workLng,
-                        googleApiKey, workerUrl, walkTime, index + 100
+                        googleApiKey, walkTime, index + 100
                     )?.let { options.add(it) }
                 } catch (e: Exception) {
                     continue
@@ -191,11 +190,11 @@ class CommuteCalculator(private val context: Context) {
     private suspend fun buildBikeToTransitOption(
         station: LocalStation, homeLat: Double, homeLng: Double,
         destStation: LocalStation, workLat: Double, workLng: Double,
-        googleApiKey: String?, workerUrl: String?, index: Int
+        googleApiKey: String?, index: Int
     ): CommuteOption? {
         val bikeTime = DistanceCalculator.estimateBikeTime(homeLat, homeLng, station.lat, station.lng)
         val nextArrival = getNextArrival(station.id, station.lines)
-        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
+        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
 
         // Include wait time like webapp: bikeTime + waitTime + transitTime
         val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
@@ -219,10 +218,10 @@ class CommuteCalculator(private val context: Context) {
     private suspend fun buildTransitOnlyOption(
         station: LocalStation, homeLat: Double, homeLng: Double,
         destStation: LocalStation, workLat: Double, workLng: Double,
-        googleApiKey: String?, workerUrl: String?, walkTime: Int, index: Int
+        googleApiKey: String?, walkTime: Int, index: Int
     ): CommuteOption? {
         val nextArrival = getNextArrival(station.id, station.lines)
-        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
+        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
 
         // Include wait time like webapp: walkTime + waitTime + transitTime
         val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
@@ -246,12 +245,12 @@ class CommuteCalculator(private val context: Context) {
     private suspend fun getTransitRoute(
         fromStation: LocalStation, toStation: LocalStation,
         workLat: Double, workLng: Double,
-        googleApiKey: String?, workerUrl: String?
+        googleApiKey: String?
     ): Pair<Int, List<Leg>> {
-        if (!googleApiKey.isNullOrBlank() && !workerUrl.isNullOrBlank()) {
+        if (!googleApiKey.isNullOrBlank()) {
             try {
                 val result = GoogleRoutesService.getTransitRoute(
-                    workerUrl, googleApiKey, fromStation.lat, fromStation.lng, workLat, workLng
+                    googleApiKey, fromStation.lat, fromStation.lng, workLat, workLng
                 )
                 if (result.status == "OK" && result.durationMinutes != null) {
                     val legs = result.transitSteps.map { step ->
