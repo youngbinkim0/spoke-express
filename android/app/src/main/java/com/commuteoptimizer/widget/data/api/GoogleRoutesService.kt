@@ -8,7 +8,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 /**
- * Service to call the Cloudflare Worker proxy for Google Routes API.
+ * Service to call Google Directions API directly for transit routes.
  * Returns full transit routes with all transfer details.
  */
 object GoogleRoutesService {
@@ -35,14 +35,13 @@ object GoogleRoutesService {
     )
 
     suspend fun getTransitRoute(
-        workerUrl: String,
         apiKey: String,
         originLat: Double,
         originLng: Double,
         destLat: Double,
         destLng: Double
     ): RouteResult = withContext(Dispatchers.IO) {
-        val url = "$workerUrl/directions" +
+        val url = "https://maps.googleapis.com/maps/api/directions/json" +
             "?origin=$originLat,$originLng" +
             "&destination=$destLat,$destLng" +
             "&mode=transit" +
@@ -65,23 +64,53 @@ object GoogleRoutesService {
                 return@withContext RouteResult(status, null, null, emptyList())
             }
 
-            val durationMinutes = json.optInt("durationMinutes", 0)
-            val distance = json.optString("distance", null)
+            val routes = json.optJSONArray("routes")
+            if (routes == null || routes.length() == 0) {
+                return@withContext RouteResult("NO_ROUTES", null, null, emptyList())
+            }
 
-            val stepsArray = json.optJSONArray("transitSteps") ?: return@withContext RouteResult(
+            val route = routes.getJSONObject(0)
+            val legs = route.optJSONArray("legs")
+            if (legs == null || legs.length() == 0) {
+                return@withContext RouteResult("NO_LEGS", null, null, emptyList())
+            }
+
+            val leg = legs.getJSONObject(0)
+            val durationSeconds = leg.optJSONObject("duration")?.optInt("value", 0) ?: 0
+            val durationMinutes = durationSeconds / 60
+            val distance = leg.optJSONObject("distance")?.optString("text", null)
+
+            val steps = leg.optJSONArray("steps") ?: return@withContext RouteResult(
                 status, durationMinutes, distance, emptyList()
             )
 
-            val transitSteps = (0 until stepsArray.length()).map { i ->
-                val step = stepsArray.getJSONObject(i)
-                TransitStep(
-                    line = cleanLineName(step.optString("line", "?")),
-                    vehicle = step.optString("vehicle", null),
-                    departureStop = step.optString("departureStop", null),
-                    arrivalStop = step.optString("arrivalStop", null),
-                    numStops = if (step.has("numStops")) step.optInt("numStops") else null,
-                    duration = if (step.has("duration")) step.optInt("duration") else null
-                )
+            val transitSteps = mutableListOf<TransitStep>()
+            for (i in 0 until steps.length()) {
+                val step = steps.getJSONObject(i)
+                val travelMode = step.optString("travel_mode", "")
+
+                if (travelMode == "TRANSIT") {
+                    val transitDetails = step.optJSONObject("transit_details") ?: continue
+                    val line = transitDetails.optJSONObject("line")
+                    val shortName = line?.optString("short_name", null)
+                        ?: line?.optString("name", "?")
+                        ?: "?"
+
+                    val vehicle = line?.optJSONObject("vehicle")?.optString("type", null)
+                    val departureStop = transitDetails.optJSONObject("departure_stop")?.optString("name", null)
+                    val arrivalStop = transitDetails.optJSONObject("arrival_stop")?.optString("name", null)
+                    val numStops = if (transitDetails.has("num_stops")) transitDetails.optInt("num_stops") else null
+                    val stepDuration = step.optJSONObject("duration")?.optInt("value", 0)?.let { it / 60 }
+
+                    transitSteps.add(TransitStep(
+                        line = cleanLineName(shortName),
+                        vehicle = vehicle,
+                        departureStop = departureStop,
+                        arrivalStop = arrivalStop,
+                        numStops = numStops,
+                        duration = stepDuration
+                    ))
+                }
             }
 
             RouteResult(status, durationMinutes, distance, transitSteps)
