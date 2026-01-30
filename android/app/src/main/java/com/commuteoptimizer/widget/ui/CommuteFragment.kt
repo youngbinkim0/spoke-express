@@ -232,8 +232,11 @@ class CommuteFragment : Fragment() {
                 row.addView(badge)
             }
 
+            // Build info text with optional from and numStops (like webapp)
+            val fromText = leg.from?.let { "From $it " } ?: ""
+            val stopsText = leg.numStops?.let { " ($it stops)" } ?: ""
             val info = TextView(context).apply {
-                text = "  \u2192 ${leg.to} (${leg.duration}m)"
+                text = "  ${fromText}\u2192 ${leg.to}${stopsText} (${leg.duration}m)"
                 setTextColor(Color.parseColor("#888888"))
                 textSize = 14f
             }

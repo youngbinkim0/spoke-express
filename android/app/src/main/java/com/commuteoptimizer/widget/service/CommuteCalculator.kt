@@ -53,6 +53,7 @@ class CommuteCalculator(private val context: Context) {
                 options.add(buildWalkOnlyOption(homeLat, homeLng, workLat, workLng))
             }
 
+            // Build bike-to-transit options for all selected stations
             for ((index, stationId) in selectedStations.withIndex()) {
                 val station = stationMap[stationId] ?: continue
 
@@ -63,16 +64,28 @@ class CommuteCalculator(private val context: Context) {
                             googleApiKey, workerUrl, index
                         )?.let { options.add(it) }
                     }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
 
-                    val walkTime = DistanceCalculator.estimateWalkTime(
-                        homeLat, homeLng, station.lat, station.lng
-                    )
-                    if (walkTime <= 20) {
-                        buildTransitOnlyOption(
-                            station, homeLat, homeLng, destStation, workLat, workLng,
-                            googleApiKey, workerUrl, walkTime, index + 100
-                        )?.let { options.add(it) }
-                    }
+            // Build transit-only (walk) options for top 3 closest stations (like webapp)
+            val walkableStations = selectedStations
+                .mapNotNull { stationId -> stationMap[stationId]?.let { stationId to it } }
+                .map { (stationId, station) ->
+                    val walkTime = DistanceCalculator.estimateWalkTime(homeLat, homeLng, station.lat, station.lng)
+                    Triple(stationId, station, walkTime)
+                }
+                .sortedBy { it.third } // Sort by walk time
+                .take(3) // Top 3 closest
+
+            for ((index, triple) in walkableStations.withIndex()) {
+                val (stationId, station, walkTime) = triple
+                try {
+                    buildTransitOnlyOption(
+                        station, homeLat, homeLng, destStation, workLat, workLng,
+                        googleApiKey, workerUrl, walkTime, index + 100
+                    )?.let { options.add(it) }
                 } catch (e: Exception) {
                     continue
                 }
@@ -169,7 +182,7 @@ class CommuteCalculator(private val context: Context) {
         return CommuteOption(
             id = "walk_only", rank = 0, type = "walk_only",
             durationMinutes = walkTime, summary = "Walk to Work",
-            legs = listOf(Leg(mode = "walk", duration = walkTime, to = "Work", route = null)),
+            legs = listOf(Leg(mode = "walk", duration = walkTime, to = "Work", route = null, from = "Home")),
             nextTrain = "N/A", arrivalTime = arrivalTimeStr,
             station = Station("", "Work", "", emptyList(), workLat, workLng, "")
         )
@@ -181,21 +194,24 @@ class CommuteCalculator(private val context: Context) {
         googleApiKey: String?, workerUrl: String?, index: Int
     ): CommuteOption? {
         val bikeTime = DistanceCalculator.estimateBikeTime(homeLat, homeLng, station.lat, station.lng)
-        val (nextTrainText, _, routeId) = getNextArrival(station.id, station.lines)
+        val nextArrival = getNextArrival(station.id, station.lines)
         val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
 
-        val totalDuration = bikeTime + transitTime
-        val legs = mutableListOf(Leg(mode = "bike", duration = bikeTime, to = station.name, route = null))
+        // Include wait time like webapp: bikeTime + waitTime + transitTime
+        val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
+        val totalDuration = bikeTime + waitTime + transitTime
+        val legs = mutableListOf(Leg(mode = "bike", duration = bikeTime, to = station.name, route = null, from = "Home"))
         legs.addAll(transitLegs)
 
-        val summary = buildSummary("Bike", transitLegs, routeId ?: station.lines.firstOrNull())
+        // Build summary with final stop like webapp: "Bike → G → Court Sq"
+        val summary = buildSummary("Bike", transitLegs, nextArrival.routeId ?: station.lines.firstOrNull(), destStation.name)
         val arrivalTime = Calendar.getInstance().apply { add(Calendar.MINUTE, totalDuration) }
         val arrivalTimeStr = SimpleDateFormat("h:mm a", Locale.US).format(arrivalTime.time)
 
         return CommuteOption(
             id = "bike_$index", rank = 0, type = "bike_to_transit",
             durationMinutes = totalDuration, summary = summary, legs = legs,
-            nextTrain = nextTrainText, arrivalTime = arrivalTimeStr,
+            nextTrain = nextArrival.nextTrainText, arrivalTime = arrivalTimeStr,
             station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
         )
     }
@@ -205,21 +221,24 @@ class CommuteCalculator(private val context: Context) {
         destStation: LocalStation, workLat: Double, workLng: Double,
         googleApiKey: String?, workerUrl: String?, walkTime: Int, index: Int
     ): CommuteOption? {
-        val (nextTrainText, _, routeId) = getNextArrival(station.id, station.lines)
+        val nextArrival = getNextArrival(station.id, station.lines)
         val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey, workerUrl)
 
-        val totalDuration = walkTime + transitTime
-        val legs = mutableListOf(Leg(mode = "walk", duration = walkTime, to = station.name, route = null))
+        // Include wait time like webapp: walkTime + waitTime + transitTime
+        val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
+        val totalDuration = walkTime + waitTime + transitTime
+        val legs = mutableListOf(Leg(mode = "walk", duration = walkTime, to = station.name, route = null, from = "Home"))
         legs.addAll(transitLegs)
 
-        val summary = buildSummary("Walk", transitLegs, routeId ?: station.lines.firstOrNull())
+        // Build summary with final stop like webapp: "Walk → G → Court Sq"
+        val summary = buildSummary("Walk", transitLegs, nextArrival.routeId ?: station.lines.firstOrNull(), destStation.name)
         val arrivalTime = Calendar.getInstance().apply { add(Calendar.MINUTE, totalDuration) }
         val arrivalTimeStr = SimpleDateFormat("h:mm a", Locale.US).format(arrivalTime.time)
 
         return CommuteOption(
             id = "transit_$index", rank = 0, type = "transit_only",
             durationMinutes = totalDuration, summary = summary, legs = legs,
-            nextTrain = nextTrainText, arrivalTime = arrivalTimeStr,
+            nextTrain = nextArrival.nextTrainText, arrivalTime = arrivalTimeStr,
             station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
         )
     }
@@ -236,31 +255,59 @@ class CommuteCalculator(private val context: Context) {
                 )
                 if (result.status == "OK" && result.durationMinutes != null) {
                     val legs = result.transitSteps.map { step ->
-                        Leg(mode = "subway", duration = step.duration ?: 0, to = step.arrivalStop ?: "?", route = step.line)
+                        Leg(
+                            mode = "subway",
+                            duration = step.duration ?: 0,
+                            to = step.arrivalStop ?: "?",
+                            route = step.line,
+                            from = step.departureStop,
+                            numStops = step.numStops
+                        )
                     }
                     return Pair(result.durationMinutes, legs.ifEmpty {
-                        listOf(Leg("subway", result.durationMinutes, toStation.name, fromStation.lines.firstOrNull()))
+                        listOf(Leg("subway", result.durationMinutes, toStation.name, fromStation.lines.firstOrNull(), fromStation.name, null))
                     })
                 }
             } catch (e: Exception) { }
         }
 
         val transitTime = DistanceCalculator.estimateTransitTime(fromStation.id, toStation.id)
-        return Pair(transitTime, listOf(Leg("subway", transitTime, toStation.name, fromStation.lines.firstOrNull())))
+        return Pair(transitTime, listOf(Leg("subway", transitTime, toStation.name, fromStation.lines.firstOrNull(), fromStation.name, null)))
     }
 
-    private fun buildSummary(firstMode: String, transitLegs: List<Leg>, firstLine: String?): String {
+    private fun buildSummary(firstMode: String, transitLegs: List<Leg>, firstLine: String?, finalStop: String): String {
         val lines = transitLegs.mapNotNull { it.route }.distinct()
-        return if (lines.isNotEmpty()) "$firstMode → ${lines.joinToString(" → ")}"
-        else "$firstMode → ${firstLine ?: "?"}"
+        val linesSummary = if (lines.isNotEmpty()) lines.joinToString(" → ") else (firstLine ?: "?")
+        // Get final destination from last leg or use provided finalStop
+        val destination = transitLegs.lastOrNull()?.to ?: finalStop
+        return "$firstMode → $linesSummary → $destination"
     }
 
-    private suspend fun getNextArrival(stationId: String, lines: List<String>): Triple<String, String, String?> {
+    data class NextArrival(
+        val nextTrainText: String,
+        val arrivalTime: String,
+        val routeId: String?,
+        val minutesAway: Int
+    )
+
+    private suspend fun getNextArrival(stationId: String, lines: List<String>): NextArrival {
         return try {
-            val result = MtaApiService.getNextArrival(stationId, lines)
-            Triple(result.nextTrain, result.arrivalTime, result.routeId)
+            val arrivals = MtaApiService.getStationArrivals(stationId, lines)
+            if (arrivals.isEmpty()) {
+                NextArrival("--", "--", null, 5) // Default 5 min wait if no data
+            } else {
+                val next = arrivals.first()
+                val arrivalDate = Date(next.arrivalTime * 1000)
+                val timeFormat = SimpleDateFormat("h:mm a", Locale.US)
+                NextArrival(
+                    nextTrainText = "${next.minutesAway}m",
+                    arrivalTime = timeFormat.format(arrivalDate),
+                    routeId = next.routeId,
+                    minutesAway = next.minutesAway
+                )
+            }
         } catch (e: Exception) {
-            Triple("--", "--", null)
+            NextArrival("--", "--", null, 5)
         }
     }
 }
