@@ -40,7 +40,10 @@ class SettingsFragment : Fragment() {
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
     private lateinit var textWorkCoords: TextView
-    private lateinit var chipGroupStations: ChipGroup
+    private lateinit var chipGroupBikeStations: ChipGroup
+    private lateinit var chipGroupLiveStations: ChipGroup
+    private lateinit var textBikeStationCount: TextView
+    private lateinit var textLiveStationCount: TextView
     private lateinit var switchBikeOptions: SwitchCompat
     private lateinit var textStatus: TextView
 
@@ -62,7 +65,8 @@ class SettingsFragment : Fragment() {
 
         initViews(view)
         loadExistingSettings()
-        setupStationChips()
+        setupBikeStationChips()
+        setupLiveStationChips()
         setupClickListeners()
     }
 
@@ -74,7 +78,10 @@ class SettingsFragment : Fragment() {
         inputWorkAddress = view.findViewById(R.id.input_work_address)
         textHomeCoords = view.findViewById(R.id.text_home_coords)
         textWorkCoords = view.findViewById(R.id.text_work_coords)
-        chipGroupStations = view.findViewById(R.id.chip_group_stations)
+        chipGroupBikeStations = view.findViewById(R.id.chip_group_bike_stations)
+        chipGroupLiveStations = view.findViewById(R.id.chip_group_live_stations)
+        textBikeStationCount = view.findViewById(R.id.text_bike_station_count)
+        textLiveStationCount = view.findViewById(R.id.text_live_station_count)
         switchBikeOptions = view.findViewById(R.id.switch_bike_options)
         textStatus = view.findViewById(R.id.text_status)
     }
@@ -97,9 +104,9 @@ class SettingsFragment : Fragment() {
         switchBikeOptions.isChecked = prefs.getShowBikeOptions()
     }
 
-    private fun setupStationChips() {
-        chipGroupStations.removeAllViews()
-        val selectedStations = prefs.getSelectedStations().toSet()
+    private fun setupBikeStationChips() {
+        chipGroupBikeStations.removeAllViews()
+        val selectedStations = prefs.getBikeStations().toSet()
 
         // Sort by distance from home if home is set, otherwise alphabetically
         val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
@@ -131,10 +138,83 @@ class SettingsFragment : Fragment() {
                     chipStrokeColor = android.content.res.ColorStateList.valueOf(
                         if (checked) lineColor else Color.LTGRAY
                     )
+                    updateBikeStationCount()
                 }
             }
-            chipGroupStations.addView(chip)
+            chipGroupBikeStations.addView(chip)
         }
+        updateBikeStationCount()
+    }
+
+    private fun setupLiveStationChips() {
+        chipGroupLiveStations.removeAllViews()
+        val selectedStations = prefs.getLiveStations().toSet()
+
+        // Sort by distance from home if home is set, otherwise alphabetically
+        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
+            stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
+        } else {
+            stations.sortedBy { it.name }
+        }
+
+        for (station in sortedStations) {
+            val distance = if (homeLat != 0.0 && homeLng != 0.0) {
+                calculateDistance(homeLat, homeLng, station.lat, station.lng)
+            } else null
+
+            val distanceText = distance?.let { " - %.1f mi".format(it) } ?: ""
+
+            val chip = Chip(requireContext()).apply {
+                text = "${station.name} (${station.lines.joinToString(",")})$distanceText"
+                isCheckable = true
+                isChecked = selectedStations.contains(station.id)
+                tag = station.id
+                setTextColor(Color.parseColor("#eeeeee"))
+                val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
+                if (isChecked) {
+                    chipStrokeWidth = 2f
+                    chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
+                }
+                setOnCheckedChangeListener { chip, checked ->
+                    // Enforce max 3 limit
+                    if (checked && getSelectedLiveStationCount() > 3) {
+                        chip.isChecked = false
+                        showStatus("Maximum 3 stations for Live Trains", true)
+                        return@setOnCheckedChangeListener
+                    }
+                    chipStrokeWidth = if (checked) 2f else 1f
+                    chipStrokeColor = android.content.res.ColorStateList.valueOf(
+                        if (checked) lineColor else Color.LTGRAY
+                    )
+                    updateLiveStationCount()
+                }
+            }
+            chipGroupLiveStations.addView(chip)
+        }
+        updateLiveStationCount()
+    }
+
+    private fun getSelectedLiveStationCount(): Int {
+        var count = 0
+        for (i in 0 until chipGroupLiveStations.childCount) {
+            val chip = chipGroupLiveStations.getChildAt(i) as? Chip
+            if (chip?.isChecked == true) count++
+        }
+        return count
+    }
+
+    private fun updateBikeStationCount() {
+        var count = 0
+        for (i in 0 until chipGroupBikeStations.childCount) {
+            val chip = chipGroupBikeStations.getChildAt(i) as? Chip
+            if (chip?.isChecked == true) count++
+        }
+        textBikeStationCount.text = "$count selected"
+    }
+
+    private fun updateLiveStationCount() {
+        val count = getSelectedLiveStationCount()
+        textLiveStationCount.text = "$count/3 selected"
     }
 
     private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
@@ -181,7 +261,8 @@ class SettingsFragment : Fragment() {
                         homeLng = result.second
                         textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
                         // Re-sort stations by distance from new home location
-                        setupStationChips()
+                        setupBikeStationChips()
+                        setupLiveStationChips()
                     } else {
                         workLat = result.first
                         workLng = result.second
@@ -230,16 +311,24 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        val selectedStations = mutableListOf<String>()
-        for (i in 0 until chipGroupStations.childCount) {
-            val chip = chipGroupStations.getChildAt(i) as? Chip
+        val bikeStations = mutableListOf<String>()
+        for (i in 0 until chipGroupBikeStations.childCount) {
+            val chip = chipGroupBikeStations.getChildAt(i) as? Chip
             if (chip?.isChecked == true) {
-                selectedStations.add(chip.tag as String)
+                bikeStations.add(chip.tag as String)
             }
         }
 
-        if (selectedStations.isEmpty()) {
-            showStatus("Please select at least one station", true)
+        val liveStations = mutableListOf<String>()
+        for (i in 0 until chipGroupLiveStations.childCount) {
+            val chip = chipGroupLiveStations.getChildAt(i) as? Chip
+            if (chip?.isChecked == true) {
+                liveStations.add(chip.tag as String)
+            }
+        }
+
+        if (bikeStations.isEmpty()) {
+            showStatus("Please select at least one bike-to station", true)
             return
         }
 
@@ -248,7 +337,8 @@ class SettingsFragment : Fragment() {
         if (!workerUrl.isNullOrBlank()) prefs.setWorkerUrl(workerUrl)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
-        prefs.setSelectedStations(selectedStations)
+        prefs.setBikeStations(bikeStations)
+        prefs.setLiveStations(liveStations)
         prefs.setShowBikeOptions(switchBikeOptions.isChecked)
 
         showStatus("Settings saved!", false)

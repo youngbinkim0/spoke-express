@@ -124,7 +124,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun setupStationChips() {
-        val selectedStations = prefs.getSelectedStations().toSet()
+        val selectedStations = prefs.getBikeStations().toSet()
 
         // Sort stations by name for easier selection
         val sortedStations = stations.sortedBy { it.name }
@@ -255,7 +255,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         prefs.setOpenWeatherApiKey(apiKey)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
-        prefs.setSelectedStations(selectedStations)
+        prefs.setBikeStations(selectedStations)
         prefs.setShowBikeOptions(showBikeOptions)
 
         // Save optional settings if provided
