@@ -4,36 +4,34 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingVertical="@dimen/item_spacing">
+    android:paddingVertical="6dp">
 
     <!-- Rank Badge -->
     <TextView
         android:id="@+id/option_rank"
-        android:layout_width="@dimen/rank_badge_size"
-        android:layout_height="@dimen/rank_badge_size"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:background="@drawable/rank_badge_background"
         android:gravity="center"
         android:textColor="#FFFFFF"
-        android:textSize="@dimen/widget_text_secondary"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
     <!-- Mode Icon -->
     <ImageView
         android:id="@+id/option_mode_icon"
-        android:layout_width="@dimen/mode_icon_size"
-        android:layout_height="@dimen/mode_icon_size"
-        android:layout_marginStart="@dimen/item_spacing"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="6dp"
         android:contentDescription="Mode" />
 
-    <!-- Route Summary (e.g., "Bike → G → L") -->
+    <!-- Summary + Arrival Time -->
     <LinearLayout
-        android:id="@+id/option_route_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/item_spacing"
         android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_marginHorizontal="6dp"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/option_summary"
@@ -42,8 +40,14 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/widget_text_primary"
-            android:textSize="@dimen/widget_text_primary" />
+            android:textSize="12sp" />
 
+        <TextView
+            android:id="@+id/option_arrival"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Duration -->
@@ -51,20 +55,19 @@
         android:id="@+id/option_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/item_spacing"
         android:textColor="@color/widget_text_primary"
-        android:textSize="@dimen/widget_text_primary"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
-    <!-- Next Train -->
+    <!-- Next Train Badge -->
     <TextView
         android:id="@+id/option_next_train"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:background="@drawable/next_train_background"
         android:paddingHorizontal="6dp"
         android:paddingVertical="2dp"
         android:textColor="#FFFFFF"
-        android:textSize="@dimen/widget_text_small" />
-
+        android:textSize="10sp" />
 </LinearLayout>

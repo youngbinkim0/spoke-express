@@ -168,6 +168,13 @@ class CommuteWidgetProvider : AppWidgetProvider() {
             if (weather.isBad) Color.parseColor("#F44336") else Color.parseColor("#757575")
         )
 
+        // Show alert indicator if there are alerts
+        if (data.alerts.isNotEmpty()) {
+            views.setViewVisibility(R.id.alert_indicator, android.view.View.VISIBLE)
+        } else {
+            views.setViewVisibility(R.id.alert_indicator, android.view.View.GONE)
+        }
+
         // Set refresh button click action
         val refreshIntent = Intent(context, CommuteWidgetProvider::class.java).apply {
             action = ACTION_REFRESH
@@ -241,6 +248,10 @@ class CommuteWidgetProvider : AppWidgetProvider() {
 
         // Set summary (simplified route description)
         views.setTextViewText(summaryId, option.summary)
+
+        // Set arrival time
+        val arrivalId = getNestedViewId(context, containerResId, "option_arrival")
+        views.setTextViewText(arrivalId, "Arrive: ${option.arrivalTime}")
 
         // Set duration
         views.setTextViewText(durationId, "${option.durationMinutes} min")

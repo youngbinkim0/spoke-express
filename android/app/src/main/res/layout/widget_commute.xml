@@ -34,6 +34,15 @@
             android:textSize="@dimen/widget_text_secondary" />
 
         <ImageView
+            android:id="@+id/alert_indicator"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_alert"
+            android:contentDescription="Service Alert"
+            android:visibility="gone" />
+
+        <ImageView
             android:id="@+id/btn_refresh"
             android:layout_width="@dimen/refresh_icon_size"
             android:layout_height="@dimen/refresh_icon_size"
