@@ -161,7 +161,8 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         // Set weather
         val weather = data.weather
         val weatherEmoji = MtaColors.getWeatherEmoji(weather.conditions, weather.precipitationType)
-        val weatherText = "${weather.tempF}°F $weatherEmoji"
+        val tempDisplay = weather.tempF?.let { "$it°F" } ?: "--"
+        val weatherText = "$tempDisplay $weatherEmoji"
         views.setTextViewText(R.id.widget_weather, weatherText)
         views.setTextColor(
             R.id.widget_weather,

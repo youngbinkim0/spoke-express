@@ -161,7 +161,7 @@ class CommuteCalculator(private val context: Context) {
         )
     }
 
-    private fun getDefaultWeather() = Weather(65, "Unknown", "none", 0, false)
+    private fun getDefaultWeather() = Weather(null, "Unknown", "none", 0, false)
 
     private suspend fun fetchAlerts(routeIds: List<String>): List<Alert> {
         return try {
