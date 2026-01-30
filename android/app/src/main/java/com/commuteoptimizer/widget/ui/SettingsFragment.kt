@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
@@ -45,7 +46,13 @@ class SettingsFragment : Fragment() {
     private lateinit var textLiveStationCount: TextView
     private lateinit var switchBikeOptions: SwitchCompat
     private lateinit var textStatus: TextView
+    private lateinit var bikeStationsHeader: View
+    private lateinit var bikeStationsExpandIcon: ImageView
+    private lateinit var liveStationsHeader: View
+    private lateinit var liveStationsExpandIcon: ImageView
 
+    private var bikeStationsExpanded = false
+    private var liveStationsExpanded = false
     private var homeLat: Double = 0.0
     private var homeLng: Double = 0.0
     private var workLat: Double = 0.0
@@ -82,6 +89,24 @@ class SettingsFragment : Fragment() {
         textLiveStationCount = view.findViewById(R.id.text_live_station_count)
         switchBikeOptions = view.findViewById(R.id.switch_bike_options)
         textStatus = view.findViewById(R.id.text_status)
+
+        // Collapsible section headers
+        bikeStationsHeader = view.findViewById(R.id.bike_stations_header)
+        bikeStationsExpandIcon = view.findViewById(R.id.bike_stations_expand_icon)
+        liveStationsHeader = view.findViewById(R.id.live_stations_header)
+        liveStationsExpandIcon = view.findViewById(R.id.live_stations_expand_icon)
+
+        bikeStationsHeader.setOnClickListener {
+            bikeStationsExpanded = !bikeStationsExpanded
+            chipGroupBikeStations.visibility = if (bikeStationsExpanded) View.VISIBLE else View.GONE
+            bikeStationsExpandIcon.rotation = if (bikeStationsExpanded) 180f else 0f
+        }
+
+        liveStationsHeader.setOnClickListener {
+            liveStationsExpanded = !liveStationsExpanded
+            chipGroupLiveStations.visibility = if (liveStationsExpanded) View.VISIBLE else View.GONE
+            liveStationsExpandIcon.rotation = if (liveStationsExpanded) 180f else 0f
+        }
     }
 
     private fun loadExistingSettings() {
