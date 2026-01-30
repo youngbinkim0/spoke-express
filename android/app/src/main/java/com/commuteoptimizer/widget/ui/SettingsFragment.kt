@@ -2,6 +2,7 @@ package com.commuteoptimizer.widget.ui
 
 import android.graphics.Color
 import android.location.Geocoder
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,8 @@ import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import com.commuteoptimizer.widget.R
 import com.commuteoptimizer.widget.data.models.LocalStation
 import com.commuteoptimizer.widget.service.LocalDataSource
@@ -141,22 +144,21 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
                     val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    @Suppress("DEPRECATION")
-                    geocoder.getFromLocationName(address, 1)?.firstOrNull()
+                    geocodeWithCompat(geocoder, address)
                 }
 
                 if (result != null) {
                     if (isHome) {
-                        homeLat = result.latitude
-                        homeLng = result.longitude
+                        homeLat = result.first
+                        homeLng = result.second
                         textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
                     } else {
-                        workLat = result.latitude
-                        workLng = result.longitude
+                        workLat = result.first
+                        workLng = result.second
                         textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
                     }
                     showStatus("Location found!", false)
@@ -165,6 +167,24 @@ class SettingsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 showStatus("Geocoding failed: ${e.message}", true)
+            }
+        }
+    }
+
+    private suspend fun geocodeWithCompat(geocoder: Geocoder, address: String): Pair<Double, Double>? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            suspendCoroutine { continuation ->
+                geocoder.getFromLocationName(address, 1) { addresses ->
+                    val result = addresses.firstOrNull()?.let {
+                        Pair(it.latitude, it.longitude)
+                    }
+                    continuation.resume(result)
+                }
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            geocoder.getFromLocationName(address, 1)?.firstOrNull()?.let {
+                Pair(it.latitude, it.longitude)
             }
         }
     }
