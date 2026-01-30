@@ -29,7 +29,7 @@ object DistanceCalculator {
 
     /**
      * Estimate bike travel time between two points.
-     * Adds 20% for NYC grid (non-straight routes) and 2 minutes for locking bike.
+     * Uses 30% padding to account for NYC grid, traffic, and locking (matches webapp).
      * @return Time in minutes
      */
     fun estimateBikeTime(
@@ -37,21 +37,14 @@ object DistanceCalculator {
         toLat: Double, toLng: Double
     ): Int {
         val distanceMiles = haversineDistance(fromLat, fromLng, toLat, toLng)
-
-        // Add 20% for NYC grid (non-straight routes)
-        val adjustedDistance = distanceMiles * 1.2
-
-        // Calculate time at average biking speed
-        val timeHours = adjustedDistance / BIKING_SPEED_MPH
-        val timeMinutes = ceil(timeHours * 60).toInt()
-
-        // Add 2 minutes for locking bike
-        return timeMinutes + 2
+        // Match webapp: ceil((distance / 10) * 60 * 1.3)
+        val timeHours = distanceMiles / BIKING_SPEED_MPH
+        return ceil(timeHours * 60 * 1.3).toInt()
     }
 
     /**
      * Estimate walking time between two points.
-     * Adds 10% for walking routes.
+     * Uses 20% padding for walking routes (matches webapp).
      * @return Time in minutes
      */
     fun estimateWalkTime(
@@ -59,13 +52,9 @@ object DistanceCalculator {
         toLat: Double, toLng: Double
     ): Int {
         val distanceMiles = haversineDistance(fromLat, fromLng, toLat, toLng)
-
-        // Add 10% for walking routes
-        val adjustedDistance = distanceMiles * 1.1
-
-        // Calculate time at average walking speed
-        val timeHours = adjustedDistance / WALKING_SPEED_MPH
-        return ceil(timeHours * 60).toInt()
+        // Match webapp: ceil((distance / 3) * 60 * 1.2)
+        val timeHours = distanceMiles / WALKING_SPEED_MPH
+        return ceil(timeHours * 60 * 1.2).toInt()
     }
 
     /**
