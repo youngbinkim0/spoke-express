@@ -23,76 +23,21 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Configure your commute settings"
+            android:text="Configure widget locations and stations"
             android:textColor="@color/widget_text_secondary"
             android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- OpenWeatherMap API Key -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Weather API Key"
-            android:textColor="@color/widget_text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
+            android:id="@+id/text_api_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="OpenWeatherMap API Key"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/input_api_key"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Get a free key at openweathermap.org"
+            android:text="API keys: Set in main app Settings"
             android:textColor="@color/widget_text_secondary"
             android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Google API Key -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Google API Key"
-            android:textColor="@color/widget_text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Google Maps API Key (optional)"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/input_google_api_key"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="For transit directions via Google Directions API"
-            android:textColor="@color/widget_text_secondary"
-            android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="24dp"
+            android:padding="8dp"
+            android:background="@drawable/card_background" />
 
         <!-- Home Address -->
         <TextView
