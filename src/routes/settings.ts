@@ -53,6 +53,7 @@ app.put('/', async (c) => {
       bikeToStations: body.bikeToStations ?? currentSettings.bikeToStations,
       walkToStations: body.walkToStations ?? currentSettings.walkToStations,
       destinationStation: body.destinationStation ?? currentSettings.destinationStation,
+      liveTrainStations: body.liveTrainStations ?? currentSettings.liveTrainStations,
     };
 
     saveSettings(newSettings);
