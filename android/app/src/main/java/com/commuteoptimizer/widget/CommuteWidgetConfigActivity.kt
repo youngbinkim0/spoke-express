@@ -28,7 +28,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private lateinit var inputApiKey: TextInputEditText
     private lateinit var inputGoogleApiKey: TextInputEditText
-    private lateinit var inputWorkerUrl: TextInputEditText
     private lateinit var inputHomeAddress: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
@@ -83,7 +82,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     private fun initViews() {
         inputApiKey = findViewById(R.id.input_api_key)
         inputGoogleApiKey = findViewById(R.id.input_google_api_key)
-        inputWorkerUrl = findViewById(R.id.input_worker_url)
         inputHomeAddress = findViewById(R.id.input_home_address)
         inputWorkAddress = findViewById(R.id.input_work_address)
         textHomeCoords = findViewById(R.id.text_home_coords)
@@ -101,7 +99,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         // Load API keys
         prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
         prefs.getGoogleApiKey()?.let { inputGoogleApiKey.setText(it) }
-        prefs.getWorkerUrl()?.let { inputWorkerUrl.setText(it) }
 
         // Load home location
         homeLat = prefs.getHomeLat()
@@ -213,20 +210,16 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfiguration() {
-        // Validate API key
+        // Get API key (optional - widget will show error if not set)
         val apiKey = inputApiKey.text?.toString()?.trim()
-        if (apiKey.isNullOrBlank()) {
-            showStatus("Please enter an OpenWeatherMap API key", isError = true)
-            return
-        }
 
-        // Validate home location
+        // Validate home location (required)
         if (homeLat == 0.0 || homeLng == 0.0) {
             showStatus("Please set your home location", isError = true)
             return
         }
 
-        // Validate work location
+        // Validate work location (required)
         if (workLat == 0.0 || workLng == 0.0) {
             showStatus("Please set your work location", isError = true)
             return
@@ -248,11 +241,12 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
         // Get optional settings
         val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
-        val workerUrl = inputWorkerUrl.text?.toString()?.trim()
         val showBikeOptions = switchBikeOptions.isChecked
 
         // Save all settings
-        prefs.setOpenWeatherApiKey(apiKey)
+        if (!apiKey.isNullOrBlank()) {
+            prefs.setOpenWeatherApiKey(apiKey)
+        }
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
         prefs.setBikeStations(selectedStations)
@@ -261,9 +255,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         // Save optional settings if provided
         if (!googleApiKey.isNullOrBlank()) {
             prefs.setGoogleApiKey(googleApiKey)
-        }
-        if (!workerUrl.isNullOrBlank()) {
-            prefs.setWorkerUrl(workerUrl)
         }
 
         // Trigger initial widget update
