@@ -3,6 +3,7 @@
     <string name="app_name">Commute Optimizer</string>
     <string name="widget_name">Commute Options</string>
     <string name="widget_description">Shows top 3 commute options with live train times</string>
+    <string name="widget_live_trains_description">Shows real-time train arrivals for your stations</string>
 
     <!-- Widget -->
     <string name="widget_title">Commute Options</string>

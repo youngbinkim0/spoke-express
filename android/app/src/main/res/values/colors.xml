@@ -1,30 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- App colors -->
-    <color name="primary">#1976D2</color>
-    <color name="primary_dark">#1565C0</color>
-    <color name="accent">#FF5722</color>
+    <!-- App colors - matching webapp -->
+    <color name="primary">#4ecca3</color>
+    <color name="primary_dark">#3db892</color>
+    <color name="accent">#4ecca3</color>
+
+    <!-- Background colors -->
+    <color name="background_dark">#1a1a2e</color>
+    <color name="card_background">#16213e</color>
+    <color name="card_header">#1a3a5c</color>
+    <color name="divider">#0f3460</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#eeeeee</color>
+    <color name="text_secondary">#888888</color>
+    <color name="text_muted">#555555</color>
 
     <!-- Widget colors -->
-    <color name="widget_background">#FFFFFF</color>
-    <color name="widget_background_dark">#1E1E1E</color>
-    <color name="widget_text_primary">#212121</color>
-    <color name="widget_text_secondary">#757575</color>
-    <color name="widget_divider">#E0E0E0</color>
+    <color name="widget_background">#16213e</color>
+    <color name="widget_text_primary">#eeeeee</color>
+    <color name="widget_text_secondary">#888888</color>
+    <color name="widget_divider">#0f3460</color>
 
     <!-- Rank badge colors -->
     <color name="rank_1">#FFD700</color>
     <color name="rank_2">#C0C0C0</color>
     <color name="rank_3">#CD7F32</color>
 
-    <!-- Mode colors -->
-    <color name="mode_bike">#4CAF50</color>
-    <color name="mode_walk">#2196F3</color>
-    <color name="mode_subway">#9C27B0</color>
+    <!-- Alert colors -->
+    <color name="alert_background">#ff6b6b22</color>
+    <color name="alert_border">#ff6b6b</color>
+    <color name="alert_text">#ff6b6b</color>
 
     <!-- Weather colors -->
-    <color name="weather_good">#4CAF50</color>
+    <color name="weather_good">#4ecca3</color>
     <color name="weather_bad">#F44336</color>
+
+    <!-- Arrival badge colors -->
+    <color name="arrival_soon">#4ecca3</color>
+    <color name="arrival_normal">#1a3a5c</color>
 
     <!-- MTA Line Colors (official) -->
     <color name="mta_1">#EE352E</color>

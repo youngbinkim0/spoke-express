@@ -60,6 +60,13 @@ object MtaApiService {
         val routeId: String?
     )
 
+    data class ArrivalGroup(
+        val line: String,
+        val direction: String,
+        val headsign: String,
+        val arrivals: List<Arrival>
+    )
+
     /**
      * Simple protobuf reader for GTFS-realtime format
      */
@@ -373,5 +380,41 @@ object MtaApiService {
             arrivalTime = timeFormat.format(arrivalDate),
             routeId = next.routeId
         )
+    }
+
+    /**
+     * Get grouped arrivals for display (like the arrivals page)
+     * Groups arrivals by route and direction
+     */
+    suspend fun getGroupedArrivals(stationId: String, lines: List<String>): List<ArrivalGroup> {
+        val arrivals = getStationArrivals(stationId, lines)
+
+        // Group by route and direction
+        val groups = mutableMapOf<String, MutableList<Arrival>>()
+
+        for (arrival in arrivals) {
+            val key = "${arrival.routeId}-${arrival.direction}"
+            if (!groups.containsKey(key)) {
+                groups[key] = mutableListOf()
+            }
+            val groupList = groups[key]!!
+            if (groupList.size < 3) {
+                groupList.add(arrival)
+            }
+        }
+
+        return groups.map { (key, groupArrivals) ->
+            val parts = key.split("-")
+            val line = parts[0]
+            val direction = parts.getOrElse(1) { "N" }
+            val headsign = if (direction == "N") "Northbound" else "Southbound"
+
+            ArrivalGroup(
+                line = line,
+                direction = direction,
+                headsign = headsign,
+                arrivals = groupArrivals
+            )
+        }.sortedBy { it.line }
     }
 }
