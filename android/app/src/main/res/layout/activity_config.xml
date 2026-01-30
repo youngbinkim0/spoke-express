@@ -89,40 +89,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="For bike directions via Google Routes API"
-            android:textColor="@color/widget_text_secondary"
-            android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Worker URL -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Worker URL"
-            android:textColor="@color/widget_text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Cloudflare Worker URL (optional)"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/input_worker_url"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textUri" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="For live transit directions"
+            android:text="For transit directions via Google Directions API"
             android:textColor="@color/widget_text_secondary"
             android:textSize="12sp"
             android:layout_marginBottom="24dp" />
