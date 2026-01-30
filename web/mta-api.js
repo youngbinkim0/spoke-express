@@ -361,6 +361,7 @@ async function getNextArrival(stationId, lines) {
 
   return {
     nextTrain: `${next.minutesAway}m`,
+    minutesAway: next.minutesAway,
     arrivalTime: timeStr,
     routeId: next.routeId
   };

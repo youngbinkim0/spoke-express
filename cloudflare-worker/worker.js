@@ -1,9 +1,9 @@
 /**
- * Cloudflare Worker - Google Directions API Proxy
+ * Cloudflare Worker - Google Routes API Proxy (Transit)
  * Bypasses CORS restrictions for browser requests
+ * Uses the newer Routes API instead of legacy Directions API
  *
- * Deploy once: npx wrangler deploy
- * Then use with any Google API key passed from client
+ * Deploy: npx wrangler deploy
  */
 
 export default {
@@ -35,7 +35,7 @@ export default {
       const origin = url.searchParams.get('origin');
       const destination = url.searchParams.get('destination');
       const mode = url.searchParams.get('mode') || 'transit';
-      const departureTime = url.searchParams.get('departure_time') || 'now';
+      const departureTime = url.searchParams.get('departure_time');
       const apiKey = url.searchParams.get('key');
 
       if (!origin || !destination) {
@@ -52,19 +52,56 @@ export default {
         });
       }
 
-      // Call Google Directions API
-      const googleUrl = new URL('https://maps.googleapis.com/maps/api/directions/json');
-      googleUrl.searchParams.set('origin', origin);
-      googleUrl.searchParams.set('destination', destination);
-      googleUrl.searchParams.set('mode', mode);
-      googleUrl.searchParams.set('departure_time', departureTime);
-      googleUrl.searchParams.set('key', apiKey);
+      // Parse origin/destination (format: "lat,lng")
+      const [originLat, originLng] = origin.split(',').map(Number);
+      const [destLat, destLng] = destination.split(',').map(Number);
 
-      const response = await fetch(googleUrl.toString());
+      // Build Routes API request body
+      const requestBody = {
+        origin: {
+          location: {
+            latLng: { latitude: originLat, longitude: originLng }
+          }
+        },
+        destination: {
+          location: {
+            latLng: { latitude: destLat, longitude: destLng }
+          }
+        },
+        travelMode: mode.toUpperCase(),
+        computeAlternativeRoutes: false,
+      };
+
+      // Add departure time if specified
+      if (departureTime && departureTime !== 'now') {
+        requestBody.departureTime = new Date(parseInt(departureTime) * 1000).toISOString();
+      } else {
+        // Default to now
+        requestBody.departureTime = new Date().toISOString();
+      }
+
+      // Add transit preferences if transit mode
+      if (mode.toLowerCase() === 'transit') {
+        requestBody.transitPreferences = {
+          routingPreference: 'FEWER_TRANSFERS'
+        };
+      }
+
+      // Call Google Routes API
+      const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.legs.steps.transitDetails,routes.legs.duration,routes.legs.distanceMeters'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
       const data = await response.json();
 
       // Extract relevant info
-      const result = parseDirectionsResponse(data);
+      const result = parseRoutesResponse(data);
 
       return new Response(JSON.stringify(result), {
         headers: corsHeaders({ 'Content-Type': 'application/json' }),
@@ -87,41 +124,63 @@ function corsHeaders(headers = {}) {
   };
 }
 
-function parseDirectionsResponse(data) {
-  if (data.status !== 'OK' || !data.routes?.length) {
+function parseRoutesResponse(data) {
+  if (data.error) {
     return {
-      status: data.status,
-      error: data.error_message || 'No routes found',
+      status: 'ERROR',
+      error: data.error.message || 'API error',
+      durationMinutes: null,
+    };
+  }
+
+  if (!data.routes?.length) {
+    return {
+      status: 'ZERO_RESULTS',
+      error: 'No routes found',
       durationMinutes: null,
     };
   }
 
   const route = data.routes[0];
-  const leg = route.legs[0];
+  const leg = route.legs?.[0];
 
-  // Extract transit details
-  const steps = leg.steps || [];
+  // Parse duration (format: "1234s")
+  const durationSeconds = parseInt(route.duration?.replace('s', '') || '0');
+  const durationMinutes = Math.round(durationSeconds / 60);
+
+  // Extract transit details from steps
+  const steps = leg?.steps || [];
   const transitSteps = steps
-    .filter(s => s.travel_mode === 'TRANSIT')
-    .map(s => ({
-      line: s.transit_details?.line?.short_name || s.transit_details?.line?.name,
-      vehicle: s.transit_details?.line?.vehicle?.type,
-      departureStop: s.transit_details?.departure_stop?.name,
-      arrivalStop: s.transit_details?.arrival_stop?.name,
-      numStops: s.transit_details?.num_stops,
-      duration: Math.round(s.duration?.value / 60),
-    }));
+    .filter(s => s.transitDetails)
+    .map(s => {
+      const td = s.transitDetails;
+      // Calculate duration from departure/arrival times
+      let duration = null;
+      if (td.stopDetails?.departureTime && td.stopDetails?.arrivalTime) {
+        const dep = new Date(td.stopDetails.departureTime).getTime();
+        const arr = new Date(td.stopDetails.arrivalTime).getTime();
+        duration = Math.round((arr - dep) / 60000); // minutes
+      }
+      return {
+        line: td.transitLine?.nameShort || td.transitLine?.name,
+        vehicle: td.transitLine?.vehicle?.type,
+        departureStop: td.stopDetails?.departureStop?.name,
+        arrivalStop: td.stopDetails?.arrivalStop?.name,
+        numStops: td.stopCount,
+        duration,
+        departureTime: td.stopDetails?.departureTime,
+        arrivalTime: td.stopDetails?.arrivalTime,
+      };
+    });
+
+  // Calculate distance
+  const distanceMeters = route.distanceMeters || 0;
+  const distanceMiles = (distanceMeters / 1609.34).toFixed(1);
 
   return {
     status: 'OK',
-    durationMinutes: Math.round(leg.duration?.value / 60),
-    durationInTraffic: leg.duration_in_traffic
-      ? Math.round(leg.duration_in_traffic.value / 60)
-      : null,
-    distance: leg.distance?.text,
-    departureTime: leg.departure_time?.text,
-    arrivalTime: leg.arrival_time?.text,
-    summary: route.summary,
+    durationMinutes,
+    distance: `${distanceMiles} mi`,
     transitSteps,
   };
 }

@@ -317,7 +317,7 @@
         <div class="input-group">
           <label>Google API Key (optional)</label>
           <input type="text" id="googleKey" class="api-input" placeholder="For live transit directions">
-          <div class="help-text">Get key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>. Enable Directions API.</div>
+          <div class="help-text">Get key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>. Enable Geocoding + Routes API.</div>
         </div>
         <div class="input-group">
           <label>Directions Worker URL (optional)</label>
@@ -383,16 +383,6 @@
         <div id="bikeStations" class="station-list"></div>
       </div>
 
-      <!-- Destination Station -->
-      <div class="card">
-        <h2>Destination Station</h2>
-        <p>Station closest to your work</p>
-        <div class="search-box">
-          <input type="text" id="destSearch" placeholder="Search stations..." oninput="filterDestinations()">
-        </div>
-        <select id="destStation"></select>
-      </div>
-
       <!-- Live Train Stations -->
       <div class="card">
         <h2>Live Train Stations</h2>
@@ -449,7 +439,8 @@
       const latInput = document.getElementById(`${type}Lat`);
       const lngInput = document.getElementById(`${type}Lng`);
       const statusEl = document.getElementById(`${type}GeoStatus`);
-      const apiKey = document.getElementById('apiKey').value.trim();
+      const googleKey = document.getElementById('googleKey').value.trim();
+      const owmKey = document.getElementById('apiKey').value.trim();
 
       const address = addressInput.value.trim();
 
@@ -459,34 +450,51 @@
         return;
       }
 
-      if (!apiKey) {
-        statusEl.className = 'geocode-status error';
-        statusEl.textContent = 'Please enter your OpenWeatherMap API key first.';
-        return;
-      }
-
       statusEl.className = 'geocode-status loading';
       statusEl.textContent = 'Looking up address...';
 
       try {
-        const url = `${GEOCODE_API}?q=${encodeURIComponent(address)}&limit=1&appid=${apiKey}`;
-        const response = await fetch(url);
+        let lat, lng, locationName;
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        // Use Google Geocoding if key available (more accurate), else OpenWeatherMap
+        if (googleKey) {
+          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleKey}`;
+          const response = await fetch(url);
+          const data = await response.json();
 
-        const data = await response.json();
+          if (data.status !== 'OK' || !data.results?.length) {
+            statusEl.className = 'geocode-status error';
+            statusEl.textContent = data.error_message || 'Address not found.';
+            return;
+          }
 
-        if (data.length === 0) {
+          const result = data.results[0];
+          lat = result.geometry.location.lat;
+          lng = result.geometry.location.lng;
+          locationName = result.formatted_address;
+        } else if (owmKey) {
+          const url = `${GEOCODE_API}?q=${encodeURIComponent(address)}&limit=1&appid=${owmKey}`;
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (data.length === 0) {
+            statusEl.className = 'geocode-status error';
+            statusEl.textContent = 'Address not found. Try adding city/state, or add Google API key for better results.';
+            return;
+          }
+
+          const result = data[0];
+          lat = result.lat;
+          lng = result.lon;
+          locationName = [result.name, result.state, result.country].filter(Boolean).join(', ');
+        } else {
           statusEl.className = 'geocode-status error';
-          statusEl.textContent = 'Address not found. Try adding city/state.';
+          statusEl.textContent = 'Please enter a Google or OpenWeatherMap API key first.';
           return;
         }
 
-        const result = data[0];
-        latInput.value = result.lat.toFixed(6);
-        lngInput.value = result.lon.toFixed(6);
-
-        const locationName = [result.name, result.state, result.country].filter(Boolean).join(', ');
+        latInput.value = lat.toFixed(6);
+        lngInput.value = lng.toFixed(6);
         statusEl.className = 'geocode-status success';
         statusEl.textContent = `Found: ${locationName}`;
 
@@ -561,20 +569,6 @@
         </label>
       `).join('');
 
-      // Destination dropdown
-      const destSelect = document.getElementById('destStation');
-      const destFilter = document.getElementById('destSearch').value.toLowerCase();
-      const destFiltered = stationsWithDist.filter(s =>
-        s.name.toLowerCase().includes(destFilter) ||
-        s.lines.some(l => l.toLowerCase().includes(destFilter))
-      );
-
-      destSelect.innerHTML = destFiltered.slice(0, 50).map(s => `
-        <option value="${s.id}" ${settings.destStation === s.id ? 'selected' : ''}>
-          ${s.name} (${s.lines.slice(0, 4).join('/')})
-        </option>
-      `).join('');
-
       // Live stations
       const liveContainer = document.getElementById('liveStations');
       const liveFiltered = stationsWithDist.filter(s =>
@@ -615,10 +609,6 @@
       }
     }
 
-    function filterDestinations() {
-      renderStations(loadSettings(), document.getElementById('bikeSearch').value, document.getElementById('liveSearch').value);
-    }
-
     function checkLiveLimit(checkbox) {
       const checked = document.querySelectorAll('input[name="liveStation"]:checked');
       if (checked.length > 3) {
@@ -644,7 +634,6 @@
         workLng: parseFloat(document.getElementById('workLng').value) || 0,
         bikeStations: Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
           .map(el => el.value),
-        destStation: document.getElementById('destStation').value,
         liveStations: Array.from(document.querySelectorAll('input[name="liveStation"]:checked'))
           .map(el => el.value).slice(0, 3)
       };

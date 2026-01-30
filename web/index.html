@@ -51,6 +51,27 @@
       color: #fff;
     }
 
+    .refresh-btn {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: #4ecca3;
+      color: #4ecca3;
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .weather-bar {
       background: #16213e;
       border-radius: 12px;
@@ -121,10 +142,80 @@
       border-radius: 12px;
       padding: 16px 20px;
       border-left: 4px solid #4ecca3;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .option-card:hover {
+      background: #1a3050;
     }
 
     .option-card.rank-1 {
       background: #1a3a5c;
+    }
+
+    .option-card.rank-1:hover {
+      background: #1f4268;
+    }
+
+    .option-card .expand-icon {
+      color: #666;
+      font-size: 0.8rem;
+      transition: transform 0.2s;
+    }
+
+    .option-card.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    .option-details-expanded {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #2a3f5f;
+    }
+
+    .option-card.expanded .option-details-expanded {
+      display: block;
+    }
+
+    .transfer-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1a2a4a;
+    }
+
+    .transfer-step:last-child {
+      border-bottom: none;
+    }
+
+    .transfer-step-icon {
+      width: 36px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .transfer-step-info {
+      flex: 1;
+    }
+
+    .transfer-step-line {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .transfer-step-stops {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .transfer-step-time {
+      font-size: 0.85rem;
+      color: #4ecca3;
+      text-align: right;
+      flex-shrink: 0;
     }
 
     .option-header {
@@ -205,6 +296,26 @@
       color: #fff;
     }
 
+    .filter-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: #888;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .filter-toggle input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .filter-toggle:hover {
+      color: #fff;
+    }
+
     .loading {
       text-align: center;
       padding: 40px;
@@ -256,6 +367,11 @@
     <header>
       <h1>Commute Options</h1>
       <div class="nav-links">
+        <label class="filter-toggle">
+          <input type="checkbox" id="bikeToggle" checked onchange="refreshNow()">
+          🚲 Bike
+        </label>
+        <button class="refresh-btn" onclick="refreshNow()">↻ Refresh</button>
         <a href="arrivals.html">Live Trains</a>
         <a href="settings.html">Settings</a>
       </div>
@@ -307,6 +423,20 @@
 
     function getStation(id) {
       return STATIONS.find(s => s.id === id);
+    }
+
+    function findNearestStation(lat, lng) {
+      if (!lat || !lng || STATIONS.length === 0) return null;
+      let nearest = null;
+      let minDist = Infinity;
+      for (const station of STATIONS) {
+        const dist = calculateDistance(lat, lng, station.lat, station.lng);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = station;
+        }
+      }
+      return nearest;
     }
 
     function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -372,7 +502,7 @@
         const s = getStation(sid);
         if (s) s.lines.forEach(l => routeIds.add(l));
       }
-      const dest = getStation(settings.destStation);
+      const dest = findNearestStation(settings.workLat, settings.workLng);
       if (dest) dest.lines.forEach(l => routeIds.add(l));
       try {
         const alerts = await window.MtaApi.fetchServiceAlerts([...routeIds]);
@@ -385,31 +515,33 @@
       }
     }
 
-    async function fetchTransitTime(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
-      const dist = calculateDistance(originLat, originLng, destLat, destLng);
-
-      // If worker URL and API key are configured, use live Google Directions
-      if (workerUrl && googleKey) {
-        try {
-          const origin = `${originLat},${originLng}`;
-          const dest = `${destLat},${destLng}`;
-          const url = `${workerUrl}/directions?origin=${origin}&destination=${dest}&mode=transit&departure_time=now&key=${googleKey}`;
-
-          const response = await fetch(url);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.status === 'OK' && data.durationMinutes) {
-              return data.durationMinutes;
-            }
-          }
-        } catch (e) {
-          console.error('Worker error, using estimate:', e);
-        }
+    async function fetchTransitRoute(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
+      // Require both worker URL and API key - no fallbacks
+      if (!workerUrl || !googleKey) {
+        return { error: 'missing_config' };
       }
 
-      // Fallback: distance-based estimate
-      const avgSubwaySpeedMph = 17; // Including stops
-      return Math.ceil((dist / avgSubwaySpeedMph) * 60);
+      try {
+        const origin = `${originLat},${originLng}`;
+        const dest = `${destLat},${destLng}`;
+        const url = `${workerUrl}/directions?origin=${origin}&destination=${dest}&mode=transit&departure_time=now&key=${googleKey}`;
+
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'OK' && data.durationMinutes) {
+            return {
+              duration: data.durationMinutes,
+              transitSteps: data.transitSteps || [],
+              distance: data.distance
+            };
+          }
+        }
+        return { error: 'api_error' };
+      } catch (e) {
+        console.error('Worker error:', e);
+        return { error: 'fetch_error' };
+      }
     }
 
     async function fetchNextArrival(stationId, lines) {
@@ -445,10 +577,17 @@
       }
     }
 
+    function cleanLineName(line) {
+      if (!line) return '';
+      // Remove "Line", "Train", "Express" suffixes and clean up
+      return line.replace(/\s*(Line|Train|Express|Local)$/i, '').trim();
+    }
+
     function renderLineBadge(line) {
-      const color = lineColors[line] || '#888';
-      const textColor = ['N', 'Q', 'R', 'W'].includes(line) ? '#000' : '#fff';
-      return `<span class="line-badge" style="background:${color};color:${textColor}">${line}</span>`;
+      const cleanLine = cleanLineName(line);
+      const color = lineColors[cleanLine] || '#888';
+      const textColor = ['N', 'Q', 'R', 'W'].includes(cleanLine) ? '#000' : '#fff';
+      return `<span class="line-badge" style="background:${color};color:${textColor}">${cleanLine}</span>`;
     }
 
     function renderOption(option) {
@@ -465,18 +604,46 @@
         return `<span class="leg">${legContent}</span>${arrow}`;
       }).join('');
 
+      // Build expanded details with transfer stops
+      const expandedHtml = option.legs.map(leg => {
+        const icon = getModeIcon(leg.mode);
+        let lineInfo = '';
+        let stopsInfo = '';
+
+        if (leg.route) {
+          lineInfo = renderLineBadge(leg.route);
+          stopsInfo = `${leg.from || ''} → ${leg.to}`;
+          if (leg.numStops) {
+            stopsInfo += ` (${leg.numStops} stops)`;
+          }
+        } else {
+          stopsInfo = `${leg.from || 'Home'} → ${leg.to}`;
+        }
+
+        return `
+          <div class="transfer-step">
+            <div class="transfer-step-icon">${icon} ${lineInfo}</div>
+            <div class="transfer-step-info">
+              <div class="transfer-step-stops">${stopsInfo}</div>
+            </div>
+            <div class="transfer-step-time">${leg.duration}m</div>
+          </div>
+        `;
+      }).join('');
+
       return `
-        <div class="option-card ${rankClass}">
+        <div class="option-card ${rankClass}" onclick="this.classList.toggle('expanded')">
           <div class="option-header">
             <span class="option-rank">${option.rank}</span>
             <span class="option-summary">${option.summary}</span>
-            <span class="option-duration">${option.duration}m</span>
+            <span class="option-duration">${option.duration}m <span class="expand-icon">▼</span></span>
           </div>
           <div class="option-details">
             <span>Next train: ${option.nextTrain}</span>
             <span>Arrive: ${option.arrivalTime}</span>
           </div>
           <div class="option-legs">${legsHtml}</div>
+          <div class="option-details-expanded">${expandedHtml}</div>
         </div>
       `;
     }
@@ -526,6 +693,17 @@
         return;
       }
 
+      // Require Google API key and Worker URL for transit routing
+      if (!settings.googleKey || !settings.workerUrl) {
+        content.innerHTML = `
+          <div class="no-options">
+            Missing API configuration.<br>
+            Please add your <strong>Google API Key</strong> and <strong>Worker URL</strong> in <a href="settings.html">Settings</a>.
+          </div>
+        `;
+        return;
+      }
+
       try {
         // Load stations if not loaded
         if (STATIONS.length === 0) {
@@ -538,11 +716,12 @@
           fetchAlerts()
         ]);
 
-        const destStation = getStation(settings.destStation);
+        // Find nearest station to work location
+        const destStation = findNearestStation(settings.workLat, settings.workLng);
         if (!destStation) {
           content.innerHTML = `
             ${renderWeather(weather)}
-            <div class="error">Destination station not found. Please reconfigure.</div>
+            <div class="error">Please set your work location in Settings.</div>
           `;
           return;
         }
@@ -573,49 +752,113 @@
             station.lat, station.lng
           );
 
-          const [arrival, transitTime] = await Promise.all([
+          const [arrival, transitRoute] = await Promise.all([
             fetchNextArrival(stationId, station.lines),
-            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
           const route = arrival.routeId || station.lines[0];
+          // Calculate actual arrival time at work
+          const waitTime = arrival.minutesAway || 5;
+          const totalTime = bikeTime + waitTime + transitRoute.duration;
+          const arriveAtWork = new Date(Date.now() + totalTime * 60000)
+            .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+          // Build legs: bike + transit steps (with transfers)
+          const legs = [{ mode: 'bike', duration: bikeTime, to: station.name, from: 'Home' }];
+          if (transitRoute.transitSteps && transitRoute.transitSteps.length > 0) {
+            // Use detailed transit steps from Routes API
+            for (const step of transitRoute.transitSteps) {
+              legs.push({
+                mode: 'subway',
+                duration: step.duration || Math.round(transitRoute.duration / transitRoute.transitSteps.length),
+                from: step.departureStop,
+                to: step.arrivalStop || 'Work',
+                route: step.line,
+                numStops: step.numStops
+              });
+            }
+          } else {
+            // Fallback: single leg
+            legs.push({ mode: 'subway', duration: transitRoute.duration, from: station.name, to: destStation.name, route });
+          }
+
+          // Build summary showing all lines (cleaned)
+          const linesSummary = transitRoute.transitSteps?.length > 0
+            ? transitRoute.transitSteps.map(s => cleanLineName(s.line)).join(' → ')
+            : route;
+          const finalStop = transitRoute.transitSteps?.length > 0
+            ? transitRoute.transitSteps[transitRoute.transitSteps.length - 1].arrivalStop
+            : destStation.name;
+
           options.push({
             type: 'bike_to_transit',
-            summary: `Bike → ${route} → ${destStation.name}`,
-            duration: bikeTime + transitTime,
+            summary: `Bike → ${linesSummary} → ${finalStop}`,
+            duration: totalTime,
             nextTrain: arrival.nextTrain,
-            arrivalTime: arrival.arrivalTime,
-            legs: [
-              { mode: 'bike', duration: bikeTime, to: station.name },
-              { mode: 'subway', duration: transitTime, to: destStation.name, route }
-            ]
+            arrivalTime: arriveAtWork,
+            legs
           });
         }
 
         // Transit-only options (walk to station)
-        for (const stationId of settings.bikeStations) {
-          const station = getStation(stationId);
-          if (!station) continue;
+        // Generate for closest stations (no walk time limit to ensure at least one option)
+        const walkableStations = settings.bikeStations
+          .map(id => ({ id, station: getStation(id) }))
+          .filter(s => s.station)
+          .map(s => ({
+            ...s,
+            walkTime: estimateWalkTime(settings.homeLat, settings.homeLng, s.station.lat, s.station.lng)
+          }))
+          .sort((a, b) => a.walkTime - b.walkTime)
+          .slice(0, 3); // Top 3 closest for walk options
 
-          const walkTime = estimateWalkTime(settings.homeLat, settings.homeLng, station.lat, station.lng);
-          if (walkTime > 20) continue;
+        for (const { id: stationId, station, walkTime } of walkableStations) {
 
-          const [arrival, transitTime] = await Promise.all([
+          const [arrival, transitRoute] = await Promise.all([
             fetchNextArrival(stationId, station.lines),
-            fetchTransitTime(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
           const route = arrival.routeId || station.lines[0];
+          // Calculate actual arrival time at work
+          const waitTime = arrival.minutesAway || 5;
+          const totalTime = walkTime + waitTime + transitRoute.duration;
+          const arriveAtWork = new Date(Date.now() + totalTime * 60000)
+            .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+          // Build legs: walk + transit steps (with transfers)
+          const legs = [{ mode: 'walk', duration: walkTime, to: station.name, from: 'Home' }];
+          if (transitRoute.transitSteps && transitRoute.transitSteps.length > 0) {
+            for (const step of transitRoute.transitSteps) {
+              legs.push({
+                mode: 'subway',
+                duration: step.duration || Math.round(transitRoute.duration / transitRoute.transitSteps.length),
+                from: step.departureStop,
+                to: step.arrivalStop || 'Work',
+                route: step.line,
+                numStops: step.numStops
+              });
+            }
+          } else {
+            legs.push({ mode: 'subway', duration: transitRoute.duration, from: station.name, to: destStation.name, route });
+          }
+
+          // Build summary showing all lines (cleaned)
+          const linesSummary = transitRoute.transitSteps?.length > 0
+            ? transitRoute.transitSteps.map(s => cleanLineName(s.line)).join(' → ')
+            : route;
+          const finalStop = transitRoute.transitSteps?.length > 0
+            ? transitRoute.transitSteps[transitRoute.transitSteps.length - 1].arrivalStop
+            : destStation.name;
+
           options.push({
             type: 'transit_only',
-            summary: `Walk → ${route} → ${destStation.name}`,
-            duration: walkTime + transitTime,
+            summary: `Walk → ${linesSummary} → ${finalStop}`,
+            duration: totalTime,
             nextTrain: arrival.nextTrain,
-            arrivalTime: arrival.arrivalTime,
-            legs: [
-              { mode: 'walk', duration: walkTime, to: station.name },
-              { mode: 'subway', duration: transitTime, to: destStation.name, route }
-            ]
+            arrivalTime: arriveAtWork,
+            legs
           });
         }
 
@@ -634,11 +877,33 @@
         // Rank options
         const ranked = rankOptions(options, weather);
 
+        // Check bike toggle
+        const showBike = document.getElementById('bikeToggle')?.checked ?? true;
+        let filteredOptions = showBike
+          ? ranked
+          : ranked.filter(o => o.type !== 'bike_to_transit');
+
+        // Ensure at least one non-bike option is shown when bike is enabled
+        let topOptions = filteredOptions.slice(0, 5);
+        if (showBike) {
+          const hasNonBike = topOptions.some(o => o.type !== 'bike_to_transit');
+          if (!hasNonBike) {
+            const firstNonBike = ranked.find(o => o.type !== 'bike_to_transit');
+            if (firstNonBike) {
+              topOptions.pop();
+              topOptions.push(firstNonBike);
+            }
+          }
+        }
+
+        // Re-rank after filtering
+        topOptions = topOptions.map((o, i) => ({ ...o, rank: i + 1 }));
+
         content.innerHTML = `
           ${renderWeather(weather)}
           ${renderAlerts(alerts)}
           <div class="options-list">
-            ${ranked.slice(0, 5).map(renderOption).join('')}
+            ${topOptions.map(renderOption).join('')}
           </div>
         `;
       } catch (error) {
@@ -649,6 +914,15 @@
           </div>
         `;
       }
+    }
+
+    async function refreshNow() {
+      const btn = document.querySelector('.refresh-btn');
+      btn.disabled = true;
+      btn.textContent = '↻ Loading...';
+      await loadCommute();
+      btn.disabled = false;
+      btn.textContent = '↻ Refresh';
     }
 
     // Initial load

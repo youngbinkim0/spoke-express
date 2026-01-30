@@ -51,6 +51,27 @@
       color: #fff;
     }
 
+    .refresh-btn {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: #4ecca3;
+      color: #4ecca3;
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .stations-list {
       display: flex;
       flex-direction: column;
@@ -234,6 +255,7 @@
     <header>
       <h1>Live Train Times</h1>
       <div class="nav-links">
+        <button class="refresh-btn" onclick="refreshNow()">↻ Refresh</button>
         <a href="index.html">Commute</a>
         <a href="settings.html">Settings</a>
       </div>
@@ -423,6 +445,15 @@
           </div>
         `;
       }
+    }
+
+    async function refreshNow() {
+      const btn = document.querySelector('.refresh-btn');
+      btn.disabled = true;
+      btn.textContent = '↻ Loading...';
+      await loadArrivals();
+      btn.disabled = false;
+      btn.textContent = '↻ Refresh';
     }
 
     loadStations().then(loadArrivals);

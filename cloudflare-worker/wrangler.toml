@@ -1,6 +1,7 @@
 name = "commute-directions"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
 
 # After deploying, set your API key:
 # npx wrangler secret put GOOGLE_API_KEY
