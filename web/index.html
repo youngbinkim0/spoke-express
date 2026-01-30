@@ -580,7 +580,10 @@
     function cleanLineName(line) {
       if (!line) return '';
       // Remove "Line", "Train", "Express" suffixes and clean up
-      return line.replace(/\s*(Line|Train|Express|Local)$/i, '').trim();
+      let cleaned = line.replace(/\s*(Line|Train|Express|Local)$/i, '').trim();
+      // Handle express train suffixes (6X -> 6, 7X -> 7)
+      cleaned = cleaned.replace(/^(\d)X$/, '$1');
+      return cleaned;
     }
 
     function renderLineBadge(line) {
