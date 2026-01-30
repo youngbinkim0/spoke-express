@@ -30,6 +30,8 @@ class WidgetPreferences(context: Context) {
         private const val KEY_WORK_LNG = "work_lng"
         private const val KEY_WORK_ADDRESS = "work_address"
         private const val KEY_SELECTED_STATIONS = "selected_stations"
+        private const val KEY_BIKE_STATIONS = "bike_stations"
+        private const val KEY_LIVE_STATIONS = "live_stations"
         private const val KEY_DEST_STATION = "dest_station"
         private const val KEY_SHOW_BIKE_OPTIONS = "show_bike_options"
         private const val KEY_GOOGLE_API_KEY = "google_api_key"
@@ -92,10 +94,13 @@ class WidgetPreferences(context: Context) {
             .apply()
     }
 
-    // ========== Selected Stations ==========
+    // ========== Bike-to Stations (for commute routing) ==========
 
-    fun getSelectedStations(): List<String> {
-        val json = prefs.getString(KEY_SELECTED_STATIONS, null) ?: return emptyList()
+    fun getBikeStations(): List<String> {
+        // Try new key first, fall back to legacy key for migration
+        val json = prefs.getString(KEY_BIKE_STATIONS, null)
+            ?: prefs.getString(KEY_SELECTED_STATIONS, null)
+            ?: return emptyList()
         return try {
             val type = object : TypeToken<List<String>>() {}.type
             gson.fromJson(json, type)
@@ -104,10 +109,36 @@ class WidgetPreferences(context: Context) {
         }
     }
 
-    fun setSelectedStations(stations: List<String>) {
+    fun setBikeStations(stations: List<String>) {
         val json = gson.toJson(stations)
-        prefs.edit().putString(KEY_SELECTED_STATIONS, json).apply()
+        prefs.edit().putString(KEY_BIKE_STATIONS, json).apply()
     }
+
+    // ========== Live Train Stations (max 3, for live trains screen) ==========
+
+    fun getLiveStations(): List<String> {
+        val json = prefs.getString(KEY_LIVE_STATIONS, null) ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<String>>() {}.type
+            val stations: List<String> = gson.fromJson(json, type)
+            stations.take(3) // Enforce max 3
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun setLiveStations(stations: List<String>) {
+        val json = gson.toJson(stations.take(3)) // Enforce max 3
+        prefs.edit().putString(KEY_LIVE_STATIONS, json).apply()
+    }
+
+    // ========== Legacy Selected Stations (alias for backward compatibility) ==========
+
+    @Deprecated("Use getBikeStations() instead", ReplaceWith("getBikeStations()"))
+    fun getSelectedStations(): List<String> = getBikeStations()
+
+    @Deprecated("Use setBikeStations() instead", ReplaceWith("setBikeStations(stations)"))
+    fun setSelectedStations(stations: List<String>) = setBikeStations(stations)
 
     // ========== Destination Station ==========
 
@@ -194,6 +225,6 @@ class WidgetPreferences(context: Context) {
     fun isConfigured(): Boolean {
         return getHomeLat() != 0.0 &&
                getWorkLat() != 0.0 &&
-               getSelectedStations().isNotEmpty()
+               getBikeStations().isNotEmpty()
     }
 }

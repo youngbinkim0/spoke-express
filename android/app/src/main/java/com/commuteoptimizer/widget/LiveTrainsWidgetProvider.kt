@@ -51,7 +51,7 @@ class LiveTrainsWidgetProvider : AppWidgetProvider() {
         val prefs = WidgetPreferences(context)
         val localDataSource = LocalDataSource(context)
 
-        val liveStations = prefs.getSelectedStations()
+        val liveStations = prefs.getLiveStations()
         if (liveStations.isEmpty()) {
             val views = RemoteViews(context.packageName, R.layout.widget_error)
             views.setTextViewText(R.id.error_message, "No stations configured")

@@ -80,7 +80,7 @@ class LiveTrainsFragment : Fragment() {
         val prefs = WidgetPreferences(ctx)
         val localDataSource = LocalDataSource(ctx)
 
-        val stationIds = prefs.getSelectedStations()
+        val stationIds = prefs.getLiveStations()
         if (stationIds.isEmpty()) {
             stationsContainer.visibility = View.GONE
             noStations.visibility = View.VISIBLE

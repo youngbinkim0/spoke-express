@@ -28,7 +28,7 @@ class CommuteCalculator(private val context: Context) {
             val homeLng = prefs.getHomeLng()
             val workLat = prefs.getWorkLat()
             val workLng = prefs.getWorkLng()
-            val selectedStations = prefs.getSelectedStations()
+            val selectedStations = prefs.getBikeStations()
             val apiKey = prefs.getOpenWeatherApiKey()
             val googleApiKey = prefs.getGoogleApiKey()
             val workerUrl = prefs.getWorkerUrl()
