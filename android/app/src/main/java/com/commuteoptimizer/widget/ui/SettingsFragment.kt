@@ -35,7 +35,6 @@ class SettingsFragment : Fragment() {
 
     private lateinit var inputApiKey: TextInputEditText
     private lateinit var inputGoogleApiKey: TextInputEditText
-    private lateinit var inputWorkerUrl: TextInputEditText
     private lateinit var inputHomeAddress: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
@@ -73,7 +72,6 @@ class SettingsFragment : Fragment() {
     private fun initViews(view: View) {
         inputApiKey = view.findViewById(R.id.input_api_key)
         inputGoogleApiKey = view.findViewById(R.id.input_google_api_key)
-        inputWorkerUrl = view.findViewById(R.id.input_worker_url)
         inputHomeAddress = view.findViewById(R.id.input_home_address)
         inputWorkAddress = view.findViewById(R.id.input_work_address)
         textHomeCoords = view.findViewById(R.id.text_home_coords)
@@ -89,7 +87,6 @@ class SettingsFragment : Fragment() {
     private fun loadExistingSettings() {
         prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
         prefs.getGoogleApiKey()?.let { inputGoogleApiKey.setText(it) }
-        prefs.getWorkerUrl()?.let { inputWorkerUrl.setText(it) }
 
         homeLat = prefs.getHomeLat()
         homeLng = prefs.getHomeLng()
@@ -299,7 +296,6 @@ class SettingsFragment : Fragment() {
     private fun saveSettings() {
         val apiKey = inputApiKey.text?.toString()?.trim()
         val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
-        val workerUrl = inputWorkerUrl.text?.toString()?.trim()
 
         if (homeLat == 0.0 || homeLng == 0.0) {
             showStatus("Please set your home location", true)
@@ -334,7 +330,6 @@ class SettingsFragment : Fragment() {
 
         if (!apiKey.isNullOrBlank()) prefs.setOpenWeatherApiKey(apiKey)
         if (!googleApiKey.isNullOrBlank()) prefs.setGoogleApiKey(googleApiKey)
-        if (!workerUrl.isNullOrBlank()) prefs.setWorkerUrl(workerUrl)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
         prefs.setBikeStations(bikeStations)
