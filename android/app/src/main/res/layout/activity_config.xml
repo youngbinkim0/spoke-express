@@ -135,15 +135,49 @@
 
         </LinearLayout>
 
-        <!-- Nearby Stations -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Nearby Stations (Collapsible) -->
+        <LinearLayout
+            android:id="@+id/stations_header"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Nearby Stations"
-            android:textColor="@color/widget_text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="8dp"
+            android:background="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nearby Stations"
+                    android:textColor="@color/widget_text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_station_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 selected"
+                    android:textColor="@color/widget_text_secondary"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/stations_expand_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_expand"
+                android:contentDescription="Expand"
+                app:tint="@color/widget_text_secondary" />
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
@@ -158,6 +192,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
+            android:visibility="gone"
             app:singleSelection="false" />
 
         <!-- Bike Options Toggle -->
