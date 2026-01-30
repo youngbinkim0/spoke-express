@@ -149,7 +149,9 @@ class LiveTrainsFragment : Fragment() {
 
             // Directions
             val directionsContainer = stationView.findViewById<LinearLayout>(R.id.directions_container)
-            for (group in groups) {
+            // Sort groups: Northbound first, then Southbound
+            val sortedGroups = groups.sortedBy { if (it.direction == "N") 0 else 1 }
+            for (group in sortedGroups) {
                 val dirView = layoutInflater.inflate(R.layout.item_direction, directionsContainer, false)
 
                 val arrow = when (group.direction) {
@@ -159,6 +161,25 @@ class LiveTrainsFragment : Fragment() {
                 }
                 dirView.findViewById<TextView>(R.id.direction_arrow).text = arrow
                 dirView.findViewById<TextView>(R.id.headsign).text = group.headsign
+
+                // Add line badge to distinguish which train
+                val lineBadgeContainer = dirView.findViewById<LinearLayout>(R.id.line_badge_container)
+                if (lineBadgeContainer != null) {
+                    val badge = TextView(context).apply {
+                        text = group.line
+                        textSize = 11f
+                        setTextColor(MtaColors.getTextColorForLine(group.line))
+                        setBackgroundColor(MtaColors.getLineColor(group.line))
+                        setPadding(8, 4, 8, 4)
+                        val params = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                        params.marginEnd = 8
+                        layoutParams = params
+                    }
+                    lineBadgeContainer.addView(badge)
+                }
 
                 val arrivalsContainer = dirView.findViewById<LinearLayout>(R.id.arrivals_container)
                 for (arrival in group.arrivals.take(3)) {
