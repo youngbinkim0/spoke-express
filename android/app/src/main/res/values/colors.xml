@@ -40,6 +40,11 @@
     <color name="arrival_soon">#4ecca3</color>
     <color name="arrival_normal">#1a3a5c</color>
 
+    <!-- Mode colors -->
+    <color name="mode_bike">#4ecca3</color>
+    <color name="mode_subway">#0039A6</color>
+    <color name="mode_walk">#888888</color>
+
     <!-- MTA Line Colors (official) -->
     <color name="mta_1">#EE352E</color>
     <color name="mta_2">#EE352E</color>
