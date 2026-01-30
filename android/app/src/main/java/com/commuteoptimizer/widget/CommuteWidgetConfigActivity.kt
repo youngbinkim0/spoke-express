@@ -20,9 +20,14 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
 import java.util.*
+import kotlin.math.*
 
 class CommuteWidgetConfigActivity : AppCompatActivity() {
+    companion object {
+        private const val TAG = "WidgetConfig"
+    }
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -38,11 +43,15 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
     private lateinit var textStatus: TextView
+    private lateinit var stationsHeader: View
+    private lateinit var stationsExpandIcon: ImageView
+    private lateinit var textStationCount: TextView
 
     private lateinit var prefs: WidgetPreferences
     private lateinit var localDataSource: LocalDataSource
     private lateinit var stations: List<LocalStation>
 
+    private var stationsExpanded = false
     private var homeLat: Double = 0.0
     private var homeLng: Double = 0.0
     private var workLat: Double = 0.0
@@ -50,6 +59,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate started")
 
         // Set result to CANCELED in case the user backs out
         setResult(RESULT_CANCELED)
@@ -59,6 +69,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         prefs = WidgetPreferences(this)
         localDataSource = LocalDataSource(this)
         stations = localDataSource.getStations()
+        Log.d(TAG, "Loaded ${stations.size} stations")
 
         // Find the widget ID from the intent
         appWidgetId = intent.extras?.getInt(
@@ -66,16 +77,24 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
+        Log.d(TAG, "Widget ID: $appWidgetId")
+
         // If the widget ID is invalid, finish
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            Log.e(TAG, "Invalid widget ID, finishing")
             finish()
             return
         }
 
-        initViews()
-        loadExistingSettings()
-        setupStationChips()
-        setupClickListeners()
+        try {
+            initViews()
+            loadExistingSettings()
+            setupStationChips()
+            setupClickListeners()
+            Log.d(TAG, "onCreate completed successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onCreate: ${e.message}", e)
+        }
     }
 
     private fun initViews() {
@@ -91,6 +110,16 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         btnSave = findViewById(R.id.btn_save)
         btnCancel = findViewById(R.id.btn_cancel)
         textStatus = findViewById(R.id.text_status)
+        stationsHeader = findViewById(R.id.stations_header)
+        stationsExpandIcon = findViewById(R.id.stations_expand_icon)
+        textStationCount = findViewById(R.id.text_station_count)
+
+        // Set up collapsible station section
+        stationsHeader.setOnClickListener {
+            stationsExpanded = !stationsExpanded
+            chipGroupStations.visibility = if (stationsExpanded) View.VISIBLE else View.GONE
+            stationsExpandIcon.rotation = if (stationsExpanded) 180f else 0f
+        }
     }
 
     private fun loadExistingSettings() {
@@ -126,17 +155,29 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun setupStationChips() {
+        chipGroupStations.removeAllViews()
         val selectedStations = prefs.getBikeStations().toSet()
 
-        // Sort stations by name for easier selection
-        val sortedStations = stations.sortedBy { it.name }
+        // Sort by distance from home if home is set, otherwise alphabetically
+        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
+            stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
+        } else {
+            stations.sortedBy { it.name }
+        }
 
         for (station in sortedStations) {
+            val distance = if (homeLat != 0.0 && homeLng != 0.0) {
+                calculateDistance(homeLat, homeLng, station.lat, station.lng)
+            } else null
+
+            val distanceText = distance?.let { " - %.1f mi".format(it) } ?: ""
+
             val chip = Chip(this).apply {
-                text = "${station.name} (${station.lines.joinToString(",")})"
+                text = "${station.name} (${station.lines.joinToString(",")})$distanceText"
                 isCheckable = true
                 isChecked = selectedStations.contains(station.id)
                 tag = station.id
+                setTextColor(Color.parseColor("#eeeeee"))
 
                 // Color the chip based on primary line
                 val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
@@ -155,10 +196,32 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
                         chipStrokeWidth = 1f
                         chipStrokeColor = android.content.res.ColorStateList.valueOf(Color.LTGRAY)
                     }
+                    updateStationCount()
                 }
             }
             chipGroupStations.addView(chip)
         }
+        updateStationCount()
+    }
+
+    private fun updateStationCount() {
+        var count = 0
+        for (i in 0 until chipGroupStations.childCount) {
+            val chip = chipGroupStations.getChildAt(i) as? Chip
+            if (chip?.isChecked == true) count++
+        }
+        textStationCount.text = "$count selected"
+    }
+
+    private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val earthRadiusMiles = 3959.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLng = Math.toRadians(lng2 - lng1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLng / 2) * sin(dLng / 2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return earthRadiusMiles * c
     }
 
     private fun setupClickListeners() {
@@ -199,6 +262,8 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
                         homeLat = result.latitude
                         homeLng = result.longitude
                         textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
+                        // Re-sort stations by distance from new home location
+                        setupStationChips()
                     } else {
                         workLat = result.latitude
                         workLng = result.longitude
@@ -215,16 +280,20 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfiguration() {
+        Log.d(TAG, "saveConfiguration called")
+
         // API keys are managed in main app Settings, not here
 
         // Validate home location (required)
         if (homeLat == 0.0 || homeLng == 0.0) {
+            Log.d(TAG, "Validation failed: no home location")
             showStatus("Please set your home location", isError = true)
             return
         }
 
         // Validate work location (required)
         if (workLat == 0.0 || workLng == 0.0) {
+            Log.d(TAG, "Validation failed: no work location")
             showStatus("Please set your work location", isError = true)
             return
         }
@@ -239,32 +308,43 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         }
 
         if (selectedStations.isEmpty()) {
+            Log.d(TAG, "Validation failed: no stations selected")
             showStatus("Please select at least one station", isError = true)
             return
         }
 
-        // Get optional settings
-        val showBikeOptions = switchBikeOptions.isChecked
+        Log.d(TAG, "Validation passed, saving ${selectedStations.size} stations")
 
-        // Save all settings (API keys are managed in main app Settings)
-        prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
-        prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
-        prefs.setBikeStations(selectedStations)
-        prefs.setShowBikeOptions(showBikeOptions)
+        try {
+            // Get optional settings
+            val showBikeOptions = switchBikeOptions.isChecked
 
-        // Trigger initial widget update
-        val intent = Intent(this, CommuteWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+            // Save all settings (API keys are managed in main app Settings)
+            prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
+            prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
+            prefs.setBikeStations(selectedStations)
+            prefs.setShowBikeOptions(showBikeOptions)
+
+            Log.d(TAG, "Settings saved, triggering widget update for ID: $appWidgetId")
+
+            // Trigger initial widget update
+            val intent = Intent(this, CommuteWidgetProvider::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+            }
+            sendBroadcast(intent)
+
+            // Return success
+            val resultValue = Intent().apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            Log.d(TAG, "Setting result OK and finishing")
+            setResult(RESULT_OK, resultValue)
+            finish()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving configuration: ${e.message}", e)
+            showStatus("Error: ${e.message}", isError = true)
         }
-        sendBroadcast(intent)
-
-        // Return success
-        val resultValue = Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-        }
-        setResult(RESULT_OK, resultValue)
-        finish()
     }
 
     private fun showStatus(message: String, isError: Boolean) {
