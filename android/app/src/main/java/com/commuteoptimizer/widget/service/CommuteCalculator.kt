@@ -94,7 +94,10 @@ class CommuteCalculator(private val context: Context) {
                 return Result.Error("No commute options available")
             }
 
-            val ranked = RankingService.rankOptions(options, weather)
+            // Deduplicate options by transit route signature (keep fastest for each unique route)
+            val deduplicated = deduplicateByRoute(options)
+
+            val ranked = RankingService.rankOptions(deduplicated, weather)
 
             val routeIds = selectedStations.flatMap { id ->
                 stationMap[id]?.lines ?: emptyList()
@@ -308,5 +311,28 @@ class CommuteCalculator(private val context: Context) {
         } catch (e: Exception) {
             NextArrival("--", "--", null, 5)
         }
+    }
+
+    /**
+     * Deduplicate commute options by transit route signature.
+     * If multiple options use the same sequence of subway lines, keep only the fastest.
+     * This prevents showing "Bike → Station A → G" and "Bike → Station B → G" separately.
+     */
+    private fun deduplicateByRoute(options: List<CommuteOption>): List<CommuteOption> {
+        val bySignature = mutableMapOf<String, CommuteOption>()
+
+        for (option in options) {
+            // Build route signature: type + sequence of subway lines
+            val subwayLegs = option.legs.filter { it.mode == "subway" && it.route != null }
+            val routeSequence = subwayLegs.mapNotNull { it.route }.joinToString("→")
+            val signature = "${option.type}_$routeSequence"
+
+            val existing = bySignature[signature]
+            if (existing == null || option.durationMinutes < existing.durationMinutes) {
+                bySignature[signature] = option
+            }
+        }
+
+        return bySignature.values.toList()
     }
 }
