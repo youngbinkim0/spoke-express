@@ -165,25 +165,37 @@ class CommuteFragment : Fragment() {
         val legsContainer = view.findViewById<LinearLayout>(R.id.legs_container)
         legsContainer.removeAllViews()
         for ((index, leg) in option.legs.withIndex()) {
+            // Add mode icon
             val icon = when (leg.mode) {
                 "bike" -> "\uD83D\uDEB2"
                 "walk" -> "\uD83D\uDEB6"
                 else -> "\uD83D\uDE87"
             }
-            val legText = TextView(context).apply {
-                text = if (leg.route != null) "$icon ${leg.route}" else icon
+            val iconText = TextView(context).apply {
+                text = icon
                 textSize = 14f
-                setTextColor(Color.parseColor("#eeeeee"))
-                setPadding(0, 0, 8, 0)
+                setPadding(0, 0, 4, 0)
             }
-            legsContainer.addView(legText)
+            legsContainer.addView(iconText)
 
+            // Add line badge for subway legs
+            if (leg.route != null) {
+                val badge = TextView(context).apply {
+                    text = " ${leg.route} "
+                    textSize = 12f
+                    setTextColor(MtaColors.getTextColorForLine(leg.route))
+                    setBackgroundColor(MtaColors.getLineColor(leg.route))
+                    setPadding(8, 2, 8, 2)
+                }
+                legsContainer.addView(badge)
+            }
+
+            // Add arrow between legs
             if (index < option.legs.size - 1) {
                 val arrow = TextView(context).apply {
-                    text = "\u2192"
+                    text = " \u2192 "
                     textSize = 14f
                     setTextColor(Color.parseColor("#888888"))
-                    setPadding(0, 0, 8, 0)
                 }
                 legsContainer.addView(arrow)
             }
