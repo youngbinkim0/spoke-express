@@ -177,6 +177,12 @@ function normalizeRouteName(name: string): string {
   // Remove common prefixes/suffixes
   name = name.trim();
 
+  // Handle express train suffixes (6X -> 6, 7X -> 7)
+  const expressMatch = name.match(/^(\d)X$/);
+  if (expressMatch) {
+    return expressMatch[1];
+  }
+
   // Map common variations
   const mappings: Record<string, string> = {
     'Lexington Avenue Express': '4',
