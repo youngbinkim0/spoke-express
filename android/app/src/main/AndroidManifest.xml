@@ -36,6 +36,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Live Trains Widget Configuration Activity -->
+        <activity
+            android:name=".LiveTrainsConfigActivity"
+            android:exported="true"
+            android:label="Live Trains Config"
+            android:theme="@style/Theme.CommuteOptimizer">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Commute Widget Provider -->
         <receiver
             android:name=".CommuteWidgetProvider"
@@ -66,6 +77,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_live_trains_info" />
+        </receiver>
+
+        <!-- Test Widget Provider (for debugging) -->
+        <receiver
+            android:name=".TestWidgetProvider"
+            android:exported="true"
+            android:label="Test Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_test_info" />
         </receiver>
 
     </application>

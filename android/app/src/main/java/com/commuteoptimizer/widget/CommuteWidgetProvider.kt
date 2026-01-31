@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.util.Log
 import android.widget.RemoteViews
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -33,6 +34,7 @@ class CommuteWidgetProvider : AppWidgetProvider() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
+        private const val TAG = "CommuteWidget"
         const val ACTION_REFRESH = "com.commuteoptimizer.widget.ACTION_REFRESH"
         private const val WORK_NAME = "commute_widget_update"
 
@@ -54,18 +56,21 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.d(TAG, "onUpdate called with ${appWidgetIds.size} widgets: ${appWidgetIds.toList()}")
         for (widgetId in appWidgetIds) {
             updateWidget(context, appWidgetManager, widgetId)
         }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d(TAG, "onReceive: action=${intent.action}")
         super.onReceive(context, intent)
 
         if (intent.action == ACTION_REFRESH) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, CommuteWidgetProvider::class.java)
             val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            Log.d(TAG, "ACTION_REFRESH for widgets: ${widgetIds.toList()}")
 
             for (widgetId in widgetIds) {
                 // Show loading state
@@ -117,27 +122,46 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         widgetId: Int
     ) {
+        Log.d(TAG, "updateWidget called for widgetId: $widgetId")
         val prefs = WidgetPreferences(context)
         val repository = CommuteRepository(context)
 
         // Check if widget is configured
         if (!repository.isConfigured()) {
+            Log.d(TAG, "Widget $widgetId not configured, showing error")
             val views = buildErrorViews(context, "Tap to configure widget", widgetId)
             appWidgetManager.updateAppWidget(widgetId, views)
             return
         }
 
+        Log.d(TAG, "Widget $widgetId is configured, fetching commute options")
         scope.launch {
-            when (val result = repository.getCommuteOptions()) {
-                is Result.Success -> {
-                    prefs.setLastUpdate(widgetId, System.currentTimeMillis())
-                    val views = buildWidgetViews(context, result.data, widgetId)
-                    appWidgetManager.updateAppWidget(widgetId, views)
+            try {
+                when (val result = repository.getCommuteOptions(widgetId)) {
+                    is Result.Success -> {
+                        Log.d(TAG, "Widget $widgetId got ${result.data.options.size} options")
+                        prefs.setLastUpdate(widgetId, System.currentTimeMillis())
+                        try {
+                            val views = buildWidgetViews(context, result.data, widgetId)
+                            Log.d(TAG, "Widget $widgetId calling updateAppWidget")
+                            appWidgetManager.updateAppWidget(widgetId, views)
+                            Log.d(TAG, "Widget $widgetId updateAppWidget completed")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Widget $widgetId failed to build/update views: ${e.message}", e)
+                            val errorViews = buildErrorViews(context, "View error: ${e.message}", widgetId)
+                            appWidgetManager.updateAppWidget(widgetId, errorViews)
+                        }
+                    }
+                    is Result.Error -> {
+                        Log.e(TAG, "Widget $widgetId error: ${result.message}")
+                        val views = buildErrorViews(context, result.message, widgetId)
+                        appWidgetManager.updateAppWidget(widgetId, views)
+                    }
                 }
-                is Result.Error -> {
-                    val views = buildErrorViews(context, result.message, widgetId)
-                    appWidgetManager.updateAppWidget(widgetId, views)
-                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Widget $widgetId exception: ${e.message}", e)
+                val views = buildErrorViews(context, "Error: ${e.message}", widgetId)
+                appWidgetManager.updateAppWidget(widgetId, views)
             }
         }
     }
@@ -156,7 +180,15 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         data: CommuteResponse,
         widgetId: Int
     ): RemoteViews {
+        Log.d(TAG, "buildWidgetViews started for widget $widgetId")
         val views = RemoteViews(context.packageName, R.layout.widget_commute)
+        Log.d(TAG, "RemoteViews created")
+
+        // Set widget title to "Origin → Destination"
+        val prefs = WidgetPreferences(context)
+        val originName = prefs.getWidgetOriginName(widgetId)
+        val destName = prefs.getWidgetDestinationName(widgetId)
+        views.setTextViewText(R.id.widget_title, "$originName → $destName")
 
         // Set weather
         val weather = data.weather
@@ -190,44 +222,66 @@ class CommuteWidgetProvider : AppWidgetProvider() {
 
         // Set options
         val options = data.options.take(3)
-        val optionViewIds = listOf(
-            Triple(R.id.option_1, "option_1", 0),
-            Triple(R.id.option_2, "option_2", 1),
-            Triple(R.id.option_3, "option_3", 2)
-        )
 
-        for ((containerResName, _, index) in optionViewIds) {
-            if (index < options.size) {
-                bindOptionRow(context, views, containerResName, options[index])
-            } else {
-                // Hide unused option rows
-                views.setViewVisibility(containerResName, android.view.View.GONE)
-            }
+        // Option 1
+        if (options.size > 0) {
+            bindOption1(views, options[0])
+        } else {
+            views.setViewVisibility(R.id.option_1, android.view.View.GONE)
+        }
+
+        // Option 2
+        if (options.size > 1) {
+            bindOption2(views, options[1])
+        } else {
+            views.setViewVisibility(R.id.option_2, android.view.View.GONE)
+        }
+
+        // Option 3
+        if (options.size > 2) {
+            bindOption3(views, options[2])
+        } else {
+            views.setViewVisibility(R.id.option_3, android.view.View.GONE)
         }
 
         // Set last updated time
-        val prefs = WidgetPreferences(context)
         val lastUpdate = prefs.getLastUpdate(widgetId)
         val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
         val updateText = "Updated ${timeFormat.format(Date(lastUpdate))}"
         views.setTextViewText(R.id.widget_updated, updateText)
 
+        Log.d(TAG, "buildWidgetViews completed for widget $widgetId")
         return views
     }
 
-    private fun bindOptionRow(
-        context: Context,
-        views: RemoteViews,
-        containerResId: Int,
-        option: CommuteOption
-    ) {
-        // Get the view IDs within the included layout
-        val rankId = getNestedViewId(context, containerResId, "option_rank")
-        val modeIconId = getNestedViewId(context, containerResId, "option_mode_icon")
-        val summaryId = getNestedViewId(context, containerResId, "option_summary")
-        val durationId = getNestedViewId(context, containerResId, "option_duration")
-        val nextTrainId = getNestedViewId(context, containerResId, "option_next_train")
+    private fun bindOption1(views: RemoteViews, option: CommuteOption) {
+        bindOptionViews(views, option,
+            R.id.option_1_rank, R.id.option_1_mode_icon, R.id.option_1_summary,
+            R.id.option_1_arrival, R.id.option_1_duration, R.id.option_1_next_train)
+    }
 
+    private fun bindOption2(views: RemoteViews, option: CommuteOption) {
+        bindOptionViews(views, option,
+            R.id.option_2_rank, R.id.option_2_mode_icon, R.id.option_2_summary,
+            R.id.option_2_arrival, R.id.option_2_duration, R.id.option_2_next_train)
+    }
+
+    private fun bindOption3(views: RemoteViews, option: CommuteOption) {
+        bindOptionViews(views, option,
+            R.id.option_3_rank, R.id.option_3_mode_icon, R.id.option_3_summary,
+            R.id.option_3_arrival, R.id.option_3_duration, R.id.option_3_next_train)
+    }
+
+    private fun bindOptionViews(
+        views: RemoteViews,
+        option: CommuteOption,
+        rankId: Int,
+        modeIconId: Int,
+        summaryId: Int,
+        arrivalId: Int,
+        durationId: Int,
+        nextTrainId: Int
+    ) {
         // Set rank badge
         views.setTextViewText(rankId, option.rank.toString())
         val rankColor = when (option.rank) {
@@ -251,7 +305,6 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(summaryId, option.summary)
 
         // Set arrival time
-        val arrivalId = getNestedViewId(context, containerResId, "option_arrival")
         views.setTextViewText(arrivalId, "Arrive: ${option.arrivalTime}")
 
         // Set duration
@@ -270,11 +323,6 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         val textColor = subwayLeg?.route?.let { MtaColors.getTextColorForLine(it) }
             ?: Color.WHITE
         views.setTextColor(nextTrainId, textColor)
-    }
-
-    private fun getNestedViewId(context: Context, containerId: Int, viewName: String): Int {
-        // For included layouts, we access views directly by their IDs
-        return context.resources.getIdentifier(viewName, "id", context.packageName)
     }
 
     private fun buildErrorViews(

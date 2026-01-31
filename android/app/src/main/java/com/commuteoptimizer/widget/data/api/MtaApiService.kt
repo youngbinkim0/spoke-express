@@ -68,6 +68,17 @@ object MtaApiService {
     )
 
     /**
+     * Clean express train variants (6X -> 6, 7X -> 7, FX -> F, etc.)
+     */
+    private fun cleanExpressLine(line: String): String {
+        return if (line.length == 2 && line.endsWith("X")) {
+            line.dropLast(1)
+        } else {
+            line
+        }
+    }
+
+    /**
      * Simple protobuf reader for GTFS-realtime format
      */
     private class ProtobufReader(data: ByteArray) {
@@ -405,7 +416,8 @@ object MtaApiService {
 
         return groups.map { (key, groupArrivals) ->
             val parts = key.split("-")
-            val line = parts[0]
+            val rawLine = parts[0]
+            val line = cleanExpressLine(rawLine) // FX -> F, 6X -> 6, etc.
             val direction = parts.getOrElse(1) { "N" }
             val headsign = if (direction == "N") "Northbound" else "Southbound"
 

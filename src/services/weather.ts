@@ -4,20 +4,18 @@ import NodeCache from 'node-cache';
 
 const cache = new NodeCache({ stdTTL: config.cacheTtl.weather });
 
+// Response from OpenWeatherMap Current Weather API 2.5 (Free tier)
 interface OpenWeatherResponse {
-  current: {
+  main: {
     temp: number;
-    weather: Array<{
-      id: number;
-      main: string;
-      description: string;
-    }>;
   };
-  hourly: Array<{
-    pop: number; // Probability of precipitation
-    rain?: { '1h': number };
-    snow?: { '1h': number };
+  weather: Array<{
+    id: number;
+    main: string;
+    description: string;
   }>;
+  rain?: { '1h'?: number; '3h'?: number };
+  snow?: { '1h'?: number; '3h'?: number };
 }
 
 export async function getWeather(lat: number, lng: number): Promise<Weather> {
@@ -31,7 +29,8 @@ export async function getWeather(lat: number, lng: number): Promise<Weather> {
     return getDefaultWeather();
   }
 
-  const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&units=imperial&exclude=minutely,daily,alerts&appid=${config.openWeatherApiKey}`;
+  // Using free 2.5 API instead of paid 3.0 One Call API
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=imperial&appid=${config.openWeatherApiKey}`;
 
   try {
     const response = await fetch(url);
@@ -52,9 +51,8 @@ export async function getWeather(lat: number, lng: number): Promise<Weather> {
 }
 
 function parseWeatherResponse(data: OpenWeatherResponse): Weather {
-  const current = data.current;
-  const weatherId = current.weather[0]?.id || 800;
-  const weatherMain = current.weather[0]?.main || 'Clear';
+  const weatherId = data.weather[0]?.id || 800;
+  const weatherMain = data.weather[0]?.main || 'Clear';
 
   // Determine precipitation type based on weather condition codes
   // https://openweathermap.org/weather-conditions
@@ -67,17 +65,18 @@ function parseWeatherResponse(data: OpenWeatherResponse): Weather {
     precipitationType = 'mix';
   }
 
-  // Get precipitation probability from next hour
-  const precipProbability = data.hourly[0]?.pop || 0;
+  // Check if there's active rain or snow
+  const hasRain = (data.rain?.['1h'] || data.rain?.['3h'] || 0) > 0;
+  const hasSnow = (data.snow?.['1h'] || data.snow?.['3h'] || 0) > 0;
 
   // Determine if weather is bad for biking
-  const isBad = precipitationType !== 'none' || precipProbability > 0.5;
+  const isBad = precipitationType !== 'none' || hasRain || hasSnow;
 
   return {
-    temp_f: Math.round(current.temp),
+    temp_f: Math.round(data.main.temp),
     conditions: weatherMain,
     precipitation_type: precipitationType,
-    precipitation_probability: precipProbability,
+    precipitation_probability: isBad ? 1 : 0,
     is_bad: isBad,
   };
 }

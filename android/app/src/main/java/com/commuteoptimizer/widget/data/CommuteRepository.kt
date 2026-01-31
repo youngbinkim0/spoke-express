@@ -15,8 +15,8 @@ class CommuteRepository(context: Context) {
     private val calculator = CommuteCalculator(context)
     private val prefs = WidgetPreferences(context)
 
-    suspend fun getCommuteOptions(): Result<CommuteResponse> {
-        return calculator.calculateCommute()
+    suspend fun getCommuteOptions(widgetId: Int = -1): Result<CommuteResponse> {
+        return calculator.calculateCommute(widgetId)
     }
 
     fun isConfigured(): Boolean {

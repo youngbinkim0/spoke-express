@@ -177,10 +177,10 @@ function normalizeRouteName(name: string): string {
   // Remove common prefixes/suffixes
   name = name.trim();
 
-  // Handle express train suffixes (6X -> 6, 7X -> 7)
-  const expressMatch = name.match(/^(\d)X$/);
+  // Handle express train suffixes (6X -> 6, 7X -> 7, FX -> F, etc.)
+  const expressMatch = name.match(/^([A-Z0-9])X$/i);
   if (expressMatch) {
-    return expressMatch[1];
+    return expressMatch[1].toUpperCase();
   }
 
   // Map common variations

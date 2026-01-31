@@ -190,6 +190,77 @@ class WidgetPreferences(context: Context) {
         prefs.edit().putLong(KEY_LAST_UPDATE + widgetId, timestamp).apply()
     }
 
+    // Per-widget origin (allows different widgets for different starting points)
+    fun getWidgetOriginName(widgetId: Int): String {
+        return prefs.getString("widget_origin_name_$widgetId", null)
+            ?: getHomeAddress()
+            ?: "Home"
+    }
+
+    fun getWidgetOriginLat(widgetId: Int): Double {
+        val lat = prefs.getFloat("widget_origin_lat_$widgetId", Float.MIN_VALUE)
+        return if (lat == Float.MIN_VALUE) getHomeLat() else lat.toDouble()
+    }
+
+    fun getWidgetOriginLng(widgetId: Int): Double {
+        val lng = prefs.getFloat("widget_origin_lng_$widgetId", Float.MIN_VALUE)
+        return if (lng == Float.MIN_VALUE) getHomeLng() else lng.toDouble()
+    }
+
+    fun setWidgetOrigin(widgetId: Int, name: String, lat: Double, lng: Double) {
+        prefs.edit()
+            .putString("widget_origin_name_$widgetId", name)
+            .putFloat("widget_origin_lat_$widgetId", lat.toFloat())
+            .putFloat("widget_origin_lng_$widgetId", lng.toFloat())
+            .apply()
+    }
+
+    fun hasWidgetOrigin(widgetId: Int): Boolean {
+        return prefs.contains("widget_origin_lat_$widgetId")
+    }
+
+    // Per-widget destination (allows different widgets for different destinations)
+    fun getWidgetDestinationName(widgetId: Int): String {
+        return prefs.getString("widget_dest_name_$widgetId", null)
+            ?: getWorkAddress()
+            ?: "Work"
+    }
+
+    fun getWidgetDestinationLat(widgetId: Int): Double {
+        val lat = prefs.getFloat("widget_dest_lat_$widgetId", Float.MIN_VALUE)
+        return if (lat == Float.MIN_VALUE) getWorkLat() else lat.toDouble()
+    }
+
+    fun getWidgetDestinationLng(widgetId: Int): Double {
+        val lng = prefs.getFloat("widget_dest_lng_$widgetId", Float.MIN_VALUE)
+        return if (lng == Float.MIN_VALUE) getWorkLng() else lng.toDouble()
+    }
+
+    fun setWidgetDestination(widgetId: Int, name: String, lat: Double, lng: Double) {
+        prefs.edit()
+            .putString("widget_dest_name_$widgetId", name)
+            .putFloat("widget_dest_lat_$widgetId", lat.toFloat())
+            .putFloat("widget_dest_lng_$widgetId", lng.toFloat())
+            .apply()
+    }
+
+    fun hasWidgetDestination(widgetId: Int): Boolean {
+        return prefs.contains("widget_dest_lat_$widgetId")
+    }
+
+    // Per-widget station for Live Trains widget
+    fun getLiveTrainsWidgetStation(widgetId: Int): String? {
+        return prefs.getString("live_trains_station_$widgetId", null)
+    }
+
+    fun setLiveTrainsWidgetStation(widgetId: Int, stationId: String) {
+        prefs.edit().putString("live_trains_station_$widgetId", stationId).apply()
+    }
+
+    fun hasLiveTrainsWidgetStation(widgetId: Int): Boolean {
+        return prefs.contains("live_trains_station_$widgetId")
+    }
+
     // ========== Legacy API URL (for backwards compatibility) ==========
 
     fun getApiUrl(widgetId: Int): String {
@@ -206,6 +277,13 @@ class WidgetPreferences(context: Context) {
         prefs.edit()
             .remove(KEY_API_URL + widgetId)
             .remove(KEY_LAST_UPDATE + widgetId)
+            .remove("widget_origin_name_$widgetId")
+            .remove("widget_origin_lat_$widgetId")
+            .remove("widget_origin_lng_$widgetId")
+            .remove("widget_dest_name_$widgetId")
+            .remove("widget_dest_lat_$widgetId")
+            .remove("widget_dest_lng_$widgetId")
+            .remove("live_trains_station_$widgetId")
             .apply()
     }
 
