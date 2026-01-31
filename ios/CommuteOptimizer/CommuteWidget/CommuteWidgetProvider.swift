@@ -1,0 +1,75 @@
+import WidgetKit
+import SwiftUI
+
+struct CommuteWidgetProvider: TimelineProvider {
+    private let calculator = CommuteCalculator()
+    private let settingsManager = SettingsManager()
+
+    func placeholder(in context: Context) -> CommuteEntry {
+        CommuteEntry.placeholder
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (CommuteEntry) -> Void) {
+        if context.isPreview {
+            completion(CommuteEntry.placeholder)
+            return
+        }
+
+        settingsManager.loadFromDefaults()
+
+        if !settingsManager.isConfigured {
+            completion(CommuteEntry.error("Open app to configure"))
+            return
+        }
+
+        Task {
+            do {
+                let response = try await calculator.calculateCommute(settings: settingsManager)
+                let entry = CommuteEntry(
+                    date: Date(),
+                    options: response.options,
+                    weather: response.weather,
+                    isLoading: false,
+                    errorMessage: nil
+                )
+                completion(entry)
+            } catch {
+                completion(CommuteEntry.error("Failed to load"))
+            }
+        }
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CommuteEntry>) -> Void) {
+        settingsManager.loadFromDefaults()
+
+        if !settingsManager.isConfigured {
+            let entry = CommuteEntry.error("Open app to configure")
+            let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(60 * 60)))
+            completion(timeline)
+            return
+        }
+
+        Task {
+            do {
+                let response = try await calculator.calculateCommute(settings: settingsManager)
+                let entry = CommuteEntry(
+                    date: Date(),
+                    options: response.options,
+                    weather: response.weather,
+                    isLoading: false,
+                    errorMessage: nil
+                )
+
+                // Refresh every 15 minutes
+                let nextUpdate = Date().addingTimeInterval(15 * 60)
+                let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+                completion(timeline)
+            } catch {
+                let entry = CommuteEntry.error("Failed to load")
+                let nextUpdate = Date().addingTimeInterval(5 * 60)  // Retry sooner on error
+                let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+                completion(timeline)
+            }
+        }
+    }
+}
