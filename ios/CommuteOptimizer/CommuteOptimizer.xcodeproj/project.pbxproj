@@ -1,0 +1,770 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08E3962A5B5D515C3A28ADC9 /* MtaApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */; };
+		1463E7F774EC42C532C0AB6C /* CommuteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F43213585FBCC698B6C9B5 /* CommuteWidget.swift */; };
+		195433E80C93C8303B874EB9 /* MtaApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */; };
+		21EC6AA2A7ABF7394BDFB88D /* StationPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF6F7111483CCE8E99AA552 /* StationPickerView.swift */; };
+		23A2114F3A56D723797C8FEB /* StationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCA7EB7B31AA446D176CA33 /* StationCard.swift */; };
+		2758CB8FA39FD26A5F54EF26 /* ModeIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87E57947B382E8FBCAB43DB2 /* ModeIcon.swift */; };
+		2A4320CE35D140CCB93A745B /* DistanceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */; };
+		2CE42A85C2FFFC0F0222FCD7 /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
+		3BC701376CFEEE3297F87045 /* ArrivalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */; };
+		3C865593F20E88EF4D48E962 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
+		3D6FC55F2F63ED51F1582D5F /* StationsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF60417720D055FE703CFBF4 /* StationsDataSource.swift */; };
+		3F7CA76436C8D8AAACF62586 /* StationsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF60417720D055FE703CFBF4 /* StationsDataSource.swift */; };
+		43D510F4096345078A80A783 /* RankingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E50CC28D3262005EDB073E /* RankingService.swift */; };
+		48821001BC475744C402B35B /* WeatherHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524E331C863DE6385393651C /* WeatherHeaderView.swift */; };
+		48927C527E8EAA0FD9515EB7 /* LocalStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FD70EE19A6783DCAB687EB /* LocalStation.swift */; };
+		4E56AD3B6780890A5621A3CA /* CommuteOptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */; };
+		548DFD375408C0FB4765F4ED /* CommuteModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62DDAA0AAA73345A136B97 /* CommuteModels.swift */; };
+		5CEEA04331A4D45DA23E9B04 /* LocalStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FD70EE19A6783DCAB687EB /* LocalStation.swift */; };
+		5E8AEB8C5D4383EAA6F7BF7D /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */; };
+		634275D0DEE6D4A3BFFC2E84 /* CommuteOptimizerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */; };
+		638BA7AE7ED47E1F2EB7EC8B /* CommuteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1395B251B1F0F9B4DE87482 /* CommuteView.swift */; };
+		663D414A74B713973E6BBDEE /* ProtobufReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21F59FB5E386354BF84822E /* ProtobufReader.swift */; };
+		7205EA5E115FE31CFC722705 /* GoogleRoutesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */; };
+		72BFE5682482484E1C011DE4 /* ArrivalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */; };
+		78C68E274FA8CDCA16394BFA /* CommuteWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		79AB893B5EAD6D6F08E60813 /* DistanceCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */; };
+		7B160703FC6C8CC7A9ED91E9 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */; };
+		7F394E0AFF84A3E10996F521 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A01DE7487111B2CFFCD8FE0 /* SettingsView.swift */; };
+		8D6CCEE450A9E2A86F8AAC83 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB4829A8C65BB8224AD97F1C /* ContentView.swift */; };
+		906292575113B29D693FE9B4 /* RankingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F532E441F7519E34FD33A546 /* RankingServiceTests.swift */; };
+		971930CE40BB9A69531CB966 /* RankingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E50CC28D3262005EDB073E /* RankingService.swift */; };
+		9B3234F798C5FFAF90440360 /* WeatherApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */; };
+		A88D834DEB640BFC9AFB1056 /* ProtobufReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21F59FB5E386354BF84822E /* ProtobufReader.swift */; };
+		AB39CC183E341C819980709A /* LineBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94068CA57238404C43862F5D /* LineBadge.swift */; };
+		ABBD801B533D3084BE7B0A3F /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
+		B5CC6B410EB7662C7B73C14F /* DistanceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */; };
+		B904C38CD62903902641B68A /* CommuteWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6568531D8830B44080C04A17 /* CommuteWidgetView.swift */; };
+		BC3FB6DC2F44764C6FBC5BC0 /* CommuteModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62DDAA0AAA73345A136B97 /* CommuteModels.swift */; };
+		BCE33A6895D1AD54955BDB37 /* GoogleRoutesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */; };
+		BFA84263880E2896FEAEA1E1 /* LiveTrainsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */; };
+		C104C51CDCE3F9093FA91D63 /* WeatherApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */; };
+		D15CDC2C0C71B9BC10D2A9CB /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
+		DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */ = {isa = PBXBuildFile; fileRef = 9D93BF4A058005CD2AB4AFDF /* stations.json */; };
+		E080FCC67DC1551501C9990C /* CommuteCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */; };
+		E31B6185D3DE7E6D112BC8D7 /* CommuteCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */; };
+		E6529A633CB15339A0370B0F /* CommuteWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */; };
+		F776CD5560D7212D3DD0EEF1 /* ProtobufReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE804B7DBD6E040634ED3EC5 /* ProtobufReaderTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		99B42D5FDB22D45095266124 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EBC2B758CB2B07585D407C4B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D143FBE68D04228ECD1DD17;
+			remoteInfo = CommuteWidgetExtension;
+		};
+		B45F5916BA2645EAE305330B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EBC2B758CB2B07585D407C4B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D16C11C7C97D74B905F2D837;
+			remoteInfo = CommuteOptimizer;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F4F33B9D2CD124027943B8DD /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				78C68E274FA8CDCA16394BFA /* CommuteWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceCalculatorTests.swift; sourceTree = "<group>"; };
+		158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptionCard.swift; sourceTree = "<group>"; };
+		20FD70EE19A6783DCAB687EB /* LocalStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStation.swift; sourceTree = "<group>"; };
+		23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CommuteOptimizerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteCalculator.swift; sourceTree = "<group>"; };
+		2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetProvider.swift; sourceTree = "<group>"; };
+		38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherApiService.swift; sourceTree = "<group>"; };
+		4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptimizerApp.swift; sourceTree = "<group>"; };
+		524E331C863DE6385393651C /* WeatherHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHeaderView.swift; sourceTree = "<group>"; };
+		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		64E50CC28D3262005EDB073E /* RankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingService.swift; sourceTree = "<group>"; };
+		6568531D8830B44080C04A17 /* CommuteWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetView.swift; sourceTree = "<group>"; };
+		6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrainsView.swift; sourceTree = "<group>"; };
+		6A01DE7487111B2CFFCD8FE0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		87E57947B382E8FBCAB43DB2 /* ModeIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeIcon.swift; sourceTree = "<group>"; };
+		94068CA57238404C43862F5D /* LineBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineBadge.swift; sourceTree = "<group>"; };
+		97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceCalculator.swift; sourceTree = "<group>"; };
+		9A62DDAA0AAA73345A136B97 /* CommuteModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteModels.swift; sourceTree = "<group>"; };
+		9D93BF4A058005CD2AB4AFDF /* stations.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = stations.json; sourceTree = "<group>"; };
+		AAF6F7111483CCE8E99AA552 /* StationPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationPickerView.swift; sourceTree = "<group>"; };
+		AB4829A8C65BB8224AD97F1C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B1395B251B1F0F9B4DE87482 /* CommuteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteView.swift; sourceTree = "<group>"; };
+		B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleRoutesService.swift; sourceTree = "<group>"; };
+		BDCA7EB7B31AA446D176CA33 /* StationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationCard.swift; sourceTree = "<group>"; };
+		BFAA7101C4CE798422BC562D /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
+		D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaApiService.swift; sourceTree = "<group>"; };
+		D21F59FB5E386354BF84822E /* ProtobufReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtobufReader.swift; sourceTree = "<group>"; };
+		D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CommuteWidget.entitlements; sourceTree = "<group>"; };
+		D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CommuteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
+		E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalModels.swift; sourceTree = "<group>"; };
+		EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaColors.swift; sourceTree = "<group>"; };
+		EE804B7DBD6E040634ED3EC5 /* ProtobufReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtobufReaderTests.swift; sourceTree = "<group>"; };
+		F532E441F7519E34FD33A546 /* RankingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingServiceTests.swift; sourceTree = "<group>"; };
+		F5F43213585FBCC698B6C9B5 /* CommuteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidget.swift; sourceTree = "<group>"; };
+		FA0B08698E89FB457D627520 /* CommuteOptimizer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CommuteOptimizer.entitlements; sourceTree = "<group>"; };
+		FF60417720D055FE703CFBF4 /* StationsDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationsDataSource.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		3D9E19B5E1391C38579A2F6A /* SettingsTab */ = {
+			isa = PBXGroup;
+			children = (
+				6A01DE7487111B2CFFCD8FE0 /* SettingsView.swift */,
+				AAF6F7111483CCE8E99AA552 /* StationPickerView.swift */,
+			);
+			path = SettingsTab;
+			sourceTree = "<group>";
+		};
+		58C3B1266DCE79FE44E2791E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9D93BF4A058005CD2AB4AFDF /* stations.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		600A4B71E5378812C074B26C /* LiveTrainsTab */ = {
+			isa = PBXGroup;
+			children = (
+				6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */,
+				BDCA7EB7B31AA446D176CA33 /* StationCard.swift */,
+			);
+			path = LiveTrainsTab;
+			sourceTree = "<group>";
+		};
+		7C95E2E7A9BF3554A26E897C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */,
+				97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */,
+				B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */,
+				D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */,
+				64E50CC28D3262005EDB073E /* RankingService.swift */,
+				38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		83A5CE57B402D222C1216081 /* CommuteOptimizer */ = {
+			isa = PBXGroup;
+			children = (
+				FA0B08698E89FB457D627520 /* CommuteOptimizer.entitlements */,
+				EEBCBA047F75BFD062FC8237 /* App */,
+				BF4BAED22E6CDC6C759E3F5A /* Models */,
+				58C3B1266DCE79FE44E2791E /* Resources */,
+				7C95E2E7A9BF3554A26E897C /* Services */,
+				F54949477EB810EA3C063000 /* Utilities */,
+				C4B333DDF1E0D1965B631BA9 /* Views */,
+			);
+			path = CommuteOptimizer;
+			sourceTree = "<group>";
+		};
+		8E514D71339EC77DAE7104CF /* CommuteWidget */ = {
+			isa = PBXGroup;
+			children = (
+				D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */,
+				F5F43213585FBCC698B6C9B5 /* CommuteWidget.swift */,
+				2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */,
+				6568531D8830B44080C04A17 /* CommuteWidgetView.swift */,
+			);
+			path = CommuteWidget;
+			sourceTree = "<group>";
+		};
+		9A945D62BBFF70F9E3F65075 /* CommuteOptimizerTests */ = {
+			isa = PBXGroup;
+			children = (
+				062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */,
+				EE804B7DBD6E040634ED3EC5 /* ProtobufReaderTests.swift */,
+				F532E441F7519E34FD33A546 /* RankingServiceTests.swift */,
+			);
+			path = CommuteOptimizerTests;
+			sourceTree = "<group>";
+		};
+		B28ABE52BFAE07B594AD1601 /* CommuteTab */ = {
+			isa = PBXGroup;
+			children = (
+				158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */,
+				B1395B251B1F0F9B4DE87482 /* CommuteView.swift */,
+				524E331C863DE6385393651C /* WeatherHeaderView.swift */,
+			);
+			path = CommuteTab;
+			sourceTree = "<group>";
+		};
+		BF4BAED22E6CDC6C759E3F5A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */,
+				9A62DDAA0AAA73345A136B97 /* CommuteModels.swift */,
+				20FD70EE19A6783DCAB687EB /* LocalStation.swift */,
+				BFAA7101C4CE798422BC562D /* WeatherModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C4B333DDF1E0D1965B631BA9 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B28ABE52BFAE07B594AD1601 /* CommuteTab */,
+				600A4B71E5378812C074B26C /* LiveTrainsTab */,
+				3D9E19B5E1391C38579A2F6A /* SettingsTab */,
+				F5D030B6D9D2EA80D5F8C879 /* Shared */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C6EA62F72F11D095230AD4AC = {
+			isa = PBXGroup;
+			children = (
+				83A5CE57B402D222C1216081 /* CommuteOptimizer */,
+				9A945D62BBFF70F9E3F65075 /* CommuteOptimizerTests */,
+				8E514D71339EC77DAE7104CF /* CommuteWidget */,
+				DFF647AA37C9AFB9D168F175 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DFF647AA37C9AFB9D168F175 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */,
+				23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */,
+				D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EEBCBA047F75BFD062FC8237 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */,
+				AB4829A8C65BB8224AD97F1C /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F54949477EB810EA3C063000 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */,
+				D21F59FB5E386354BF84822E /* ProtobufReader.swift */,
+				E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */,
+				FF60417720D055FE703CFBF4 /* StationsDataSource.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		F5D030B6D9D2EA80D5F8C879 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				94068CA57238404C43862F5D /* LineBadge.swift */,
+				87E57947B382E8FBCAB43DB2 /* ModeIcon.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7D143FBE68D04228ECD1DD17 /* CommuteWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A9969E81D619C268B099F1D /* Build configuration list for PBXNativeTarget "CommuteWidgetExtension" */;
+			buildPhases = (
+				FD87339050D9B2AB69000E52 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CommuteWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = CommuteWidgetExtension;
+			productReference = D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		97B0FAF32F660E68B9C74999 /* CommuteOptimizerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D00A02BD437E4FD81491D859 /* Build configuration list for PBXNativeTarget "CommuteOptimizerTests" */;
+			buildPhases = (
+				C09A4523F615872D63557528 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E3C04725762AB9BCF2D2DFC8 /* PBXTargetDependency */,
+			);
+			name = CommuteOptimizerTests;
+			packageProductDependencies = (
+			);
+			productName = CommuteOptimizerTests;
+			productReference = 23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D16C11C7C97D74B905F2D837 /* CommuteOptimizer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABF869F4F843CDDCE8FB4C36 /* Build configuration list for PBXNativeTarget "CommuteOptimizer" */;
+			buildPhases = (
+				AEF9BE8EA36D560CF4DB4B6E /* Sources */,
+				207889F4F5E002B03BD1A3D9 /* Resources */,
+				F4F33B9D2CD124027943B8DD /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A7F0C41E7A3DF6710336B8C9 /* PBXTargetDependency */,
+			);
+			name = CommuteOptimizer;
+			packageProductDependencies = (
+			);
+			productName = CommuteOptimizer;
+			productReference = 5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EBC2B758CB2B07585D407C4B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					7D143FBE68D04228ECD1DD17 = {
+						DevelopmentTeam = "";
+					};
+					97B0FAF32F660E68B9C74999 = {
+						DevelopmentTeam = "";
+					};
+					D16C11C7C97D74B905F2D837 = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = 2E0AD9D87614DC77FC348075 /* Build configuration list for PBXProject "CommuteOptimizer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C6EA62F72F11D095230AD4AC;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D16C11C7C97D74B905F2D837 /* CommuteOptimizer */,
+				97B0FAF32F660E68B9C74999 /* CommuteOptimizerTests */,
+				7D143FBE68D04228ECD1DD17 /* CommuteWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		207889F4F5E002B03BD1A3D9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AEF9BE8EA36D560CF4DB4B6E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				72BFE5682482484E1C011DE4 /* ArrivalModels.swift in Sources */,
+				E31B6185D3DE7E6D112BC8D7 /* CommuteCalculator.swift in Sources */,
+				BC3FB6DC2F44764C6FBC5BC0 /* CommuteModels.swift in Sources */,
+				634275D0DEE6D4A3BFFC2E84 /* CommuteOptimizerApp.swift in Sources */,
+				4E56AD3B6780890A5621A3CA /* CommuteOptionCard.swift in Sources */,
+				638BA7AE7ED47E1F2EB7EC8B /* CommuteView.swift in Sources */,
+				8D6CCEE450A9E2A86F8AAC83 /* ContentView.swift in Sources */,
+				2A4320CE35D140CCB93A745B /* DistanceCalculator.swift in Sources */,
+				BCE33A6895D1AD54955BDB37 /* GoogleRoutesService.swift in Sources */,
+				AB39CC183E341C819980709A /* LineBadge.swift in Sources */,
+				BFA84263880E2896FEAEA1E1 /* LiveTrainsView.swift in Sources */,
+				5CEEA04331A4D45DA23E9B04 /* LocalStation.swift in Sources */,
+				2758CB8FA39FD26A5F54EF26 /* ModeIcon.swift in Sources */,
+				195433E80C93C8303B874EB9 /* MtaApiService.swift in Sources */,
+				2CE42A85C2FFFC0F0222FCD7 /* MtaColors.swift in Sources */,
+				A88D834DEB640BFC9AFB1056 /* ProtobufReader.swift in Sources */,
+				971930CE40BB9A69531CB966 /* RankingService.swift in Sources */,
+				7B160703FC6C8CC7A9ED91E9 /* SettingsManager.swift in Sources */,
+				7F394E0AFF84A3E10996F521 /* SettingsView.swift in Sources */,
+				23A2114F3A56D723797C8FEB /* StationCard.swift in Sources */,
+				21EC6AA2A7ABF7394BDFB88D /* StationPickerView.swift in Sources */,
+				3F7CA76436C8D8AAACF62586 /* StationsDataSource.swift in Sources */,
+				C104C51CDCE3F9093FA91D63 /* WeatherApiService.swift in Sources */,
+				48821001BC475744C402B35B /* WeatherHeaderView.swift in Sources */,
+				3C865593F20E88EF4D48E962 /* WeatherModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C09A4523F615872D63557528 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79AB893B5EAD6D6F08E60813 /* DistanceCalculatorTests.swift in Sources */,
+				F776CD5560D7212D3DD0EEF1 /* ProtobufReaderTests.swift in Sources */,
+				906292575113B29D693FE9B4 /* RankingServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FD87339050D9B2AB69000E52 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BC701376CFEEE3297F87045 /* ArrivalModels.swift in Sources */,
+				E080FCC67DC1551501C9990C /* CommuteCalculator.swift in Sources */,
+				548DFD375408C0FB4765F4ED /* CommuteModels.swift in Sources */,
+				1463E7F774EC42C532C0AB6C /* CommuteWidget.swift in Sources */,
+				E6529A633CB15339A0370B0F /* CommuteWidgetProvider.swift in Sources */,
+				B904C38CD62903902641B68A /* CommuteWidgetView.swift in Sources */,
+				B5CC6B410EB7662C7B73C14F /* DistanceCalculator.swift in Sources */,
+				7205EA5E115FE31CFC722705 /* GoogleRoutesService.swift in Sources */,
+				48927C527E8EAA0FD9515EB7 /* LocalStation.swift in Sources */,
+				08E3962A5B5D515C3A28ADC9 /* MtaApiService.swift in Sources */,
+				D15CDC2C0C71B9BC10D2A9CB /* MtaColors.swift in Sources */,
+				663D414A74B713973E6BBDEE /* ProtobufReader.swift in Sources */,
+				43D510F4096345078A80A783 /* RankingService.swift in Sources */,
+				5E8AEB8C5D4383EAA6F7BF7D /* SettingsManager.swift in Sources */,
+				3D6FC55F2F63ED51F1582D5F /* StationsDataSource.swift in Sources */,
+				9B3234F798C5FFAF90440360 /* WeatherApiService.swift in Sources */,
+				ABBD801B533D3084BE7B0A3F /* WeatherModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A7F0C41E7A3DF6710336B8C9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D143FBE68D04228ECD1DD17 /* CommuteWidgetExtension */;
+			targetProxy = 99B42D5FDB22D45095266124 /* PBXContainerItemProxy */;
+		};
+		E3C04725762AB9BCF2D2DFC8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D16C11C7C97D74B905F2D837 /* CommuteOptimizer */;
+			targetProxy = B45F5916BA2645EAE305330B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		160193E5DB9C59923D2A856D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CommuteWidget/CommuteWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_CFBundleDisplayName = CommuteWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.app.widget;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2E4BA71CDDA1A20A6423DA98 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.CommuteOptimizerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CommuteOptimizer.app/CommuteOptimizer";
+			};
+			name = Debug;
+		};
+		4D5C6F22EAF20A08BE8D0753 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.CommuteOptimizerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CommuteOptimizer.app/CommuteOptimizer";
+			};
+			name = Release;
+		};
+		7463F069C4A391C9B0203325 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CommuteWidget/CommuteWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_CFBundleDisplayName = CommuteWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.app.widget;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		79AC3E816392EE80DD79AF2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		9D57126CF873D81D21A166C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CommuteOptimizer/CommuteOptimizer.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EF197B922101A0F04A7234D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		F1BE9D081B1254391B66FE78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CommuteOptimizer/CommuteOptimizer.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commuteoptimizer.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0A9969E81D619C268B099F1D /* Build configuration list for PBXNativeTarget "CommuteWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				160193E5DB9C59923D2A856D /* Debug */,
+				7463F069C4A391C9B0203325 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2E0AD9D87614DC77FC348075 /* Build configuration list for PBXProject "CommuteOptimizer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EF197B922101A0F04A7234D0 /* Debug */,
+				79AC3E816392EE80DD79AF2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ABF869F4F843CDDCE8FB4C36 /* Build configuration list for PBXNativeTarget "CommuteOptimizer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D57126CF873D81D21A166C5 /* Debug */,
+				F1BE9D081B1254391B66FE78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D00A02BD437E4FD81491D859 /* Build configuration list for PBXNativeTarget "CommuteOptimizerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E4BA71CDDA1A20A6423DA98 /* Debug */,
+				4D5C6F22EAF20A08BE8D0753 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EBC2B758CB2B07585D407C4B /* Project object */;
+}
