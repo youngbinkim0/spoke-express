@@ -1911,16 +1911,21 @@ private func deduplicateOptions(_ options: [CommuteOption]) -> [CommuteOption] {
 
 ### 2. Express Train Normalization (MtaApiService)
 
-Normalize express train variants to base line:
+Normalize express train variants to base line. **Apply in getGroupedArrivals() when building ArrivalGroups:**
 
 ```swift
-private func normalizeRouteId(_ routeId: String) -> String {
+private func cleanExpressLine(_ line: String) -> String {
     // Express variants: 6X→6, 7X→7, FX→F, etc.
-    if routeId.hasSuffix("X") {
-        return String(routeId.dropLast())
+    // Match Android: line.length == 2 && line.endsWith("X")
+    if line.count == 2 && line.hasSuffix("X") {
+        return String(line.dropLast())
     }
-    return routeId
+    return line
 }
+
+// In getGroupedArrivals(), when building ArrivalGroup:
+let cleanedLine = cleanExpressLine(rawLine)
+return ArrivalGroup(line: cleanedLine, direction: direction, arrivals: groupArrivals)
 ```
 
 ### 3. Weather API - Use Free Tier (WeatherApiService)
@@ -1953,26 +1958,50 @@ struct MainWeather: Codable {
 
 struct RainInfo: Codable {
     let oneHour: Double?
+    let threeHour: Double?
     enum CodingKeys: String, CodingKey {
         case oneHour = "1h"
+        case threeHour = "3h"
     }
 }
 
 struct SnowInfo: Codable {
     let oneHour: Double?
+    let threeHour: Double?
     enum CodingKeys: String, CodingKey {
         case oneHour = "1h"
+        case threeHour = "3h"
     }
 }
 
-// Also check for active precipitation:
+// Also check for active precipitation (match Android exactly):
 private func parseResponse(_ response: OpenWeatherResponse) -> Weather {
     let weatherId = response.weather.first?.id ?? 800
-    let hasActiveRain = (response.rain?.oneHour ?? 0) > 0
-    let hasActiveSnow = (response.snow?.oneHour ?? 0) > 0
+    let weatherMain = response.weather.first?.main ?? "Clear"
 
-    let isBad = (weatherId >= 200 && weatherId < 700) || hasActiveRain || hasActiveSnow
-    // ...
+    // Determine precipitation type from weather ID
+    let precipitationType: PrecipitationType = {
+        switch weatherId {
+        case 200..<600: return .rain
+        case 600..<611: return .snow
+        case 611..<700: return .mix
+        default: return .none
+        }
+    }()
+
+    // Check for active precipitation (1h or 3h fallback like Android)
+    let hasActiveRain = (response.rain?.oneHour ?? response.rain?.threeHour ?? 0) > 0
+    let hasActiveSnow = (response.snow?.oneHour ?? response.snow?.threeHour ?? 0) > 0
+
+    let isBad = precipitationType != .none || hasActiveRain || hasActiveSnow
+
+    return Weather(
+        tempF: Int(response.main.temp),
+        conditions: weatherMain,
+        precipitationType: precipitationType,
+        precipitationProbability: isBad ? 100 : 0,
+        isBad: isBad
+    )
 }
 ```
 
@@ -1990,23 +2019,84 @@ var displayText: String {
 
 ### 5. Per-Widget Settings (SettingsManager)
 
-Add widget-specific settings with global fallback:
+Add widget-specific settings with global fallback. **Match Android exactly:**
 
 ```swift
-// Per-widget keys
+// Per-widget origin (allows different widgets for different starting points)
+func getWidgetOriginName(_ widgetId: String) -> String {
+    defaults.string(forKey: "widget_origin_name_\(widgetId)")
+        ?? homeAddress.isEmpty ? "Home" : homeAddress
+}
+
 func getWidgetOriginLat(_ widgetId: String) -> Double {
-    defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double ?? homeLat
+    // Use sentinel value pattern like Android (Float.MIN_VALUE check)
+    let lat = defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double
+    return lat ?? homeLat  // Fall back to global home
 }
 
 func getWidgetOriginLng(_ widgetId: String) -> Double {
-    defaults.object(forKey: "widget_origin_lng_\(widgetId)") as? Double ?? homeLng
+    let lng = defaults.object(forKey: "widget_origin_lng_\(widgetId)") as? Double
+    return lng ?? homeLng  // Fall back to global home
 }
 
-func getWidgetOriginName(_ widgetId: String) -> String {
-    defaults.string(forKey: "widget_origin_name_\(widgetId)") ?? (homeAddress.isEmpty ? "Home" : homeAddress)
+func setWidgetOrigin(_ widgetId: String, name: String, lat: Double, lng: Double) {
+    defaults.set(name, forKey: "widget_origin_name_\(widgetId)")
+    defaults.set(lat, forKey: "widget_origin_lat_\(widgetId)")
+    defaults.set(lng, forKey: "widget_origin_lng_\(widgetId)")
 }
 
-// Similar for destination...
+func hasWidgetOrigin(_ widgetId: String) -> Bool {
+    defaults.object(forKey: "widget_origin_lat_\(widgetId)") != nil
+}
+
+// Per-widget destination
+func getWidgetDestinationName(_ widgetId: String) -> String {
+    defaults.string(forKey: "widget_dest_name_\(widgetId)")
+        ?? workAddress.isEmpty ? "Work" : workAddress
+}
+
+func getWidgetDestinationLat(_ widgetId: String) -> Double {
+    let lat = defaults.object(forKey: "widget_dest_lat_\(widgetId)") as? Double
+    return lat ?? workLat  // Fall back to global work
+}
+
+func getWidgetDestinationLng(_ widgetId: String) -> Double {
+    let lng = defaults.object(forKey: "widget_dest_lng_\(widgetId)") as? Double
+    return lng ?? workLng  // Fall back to global work
+}
+
+func setWidgetDestination(_ widgetId: String, name: String, lat: Double, lng: Double) {
+    defaults.set(name, forKey: "widget_dest_name_\(widgetId)")
+    defaults.set(lat, forKey: "widget_dest_lat_\(widgetId)")
+    defaults.set(lng, forKey: "widget_dest_lng_\(widgetId)")
+}
+
+func hasWidgetDestination(_ widgetId: String) -> Bool {
+    defaults.object(forKey: "widget_dest_lat_\(widgetId)") != nil
+}
+
+// Per-widget station for Live Trains widget
+func getLiveTrainsWidgetStation(_ widgetId: String) -> String? {
+    defaults.string(forKey: "live_trains_station_\(widgetId)")
+}
+
+func setLiveTrainsWidgetStation(_ widgetId: String, stationId: String) {
+    defaults.set(stationId, forKey: "live_trains_station_\(widgetId)")
+}
+
+// Cleanup widget data
+func clearWidgetData(_ widgetId: String) {
+    let keys = [
+        "widget_origin_name_\(widgetId)",
+        "widget_origin_lat_\(widgetId)",
+        "widget_origin_lng_\(widgetId)",
+        "widget_dest_name_\(widgetId)",
+        "widget_dest_lat_\(widgetId)",
+        "widget_dest_lng_\(widgetId)",
+        "live_trains_station_\(widgetId)"
+    ]
+    keys.forEach { defaults.removeObject(forKey: $0) }
+}
 ```
 
 ### 6. UI Enhancements
@@ -2050,21 +2140,47 @@ HStack {
 
 ## Verification Checklist
 
-- [ ] Bike time formula: `ceil((d/10)*60*1.3)` matches Android
-- [ ] Walk time formula: `ceil((d/3)*60*1.2)` matches Android
+### Core Calculations (MUST match Android exactly)
+- [ ] Bike time formula: `ceil((d/10)*60*1.3)` - 30% padding
+- [ ] Walk time formula: `ceil((d/3)*60*1.2)` - 20% padding
+- [ ] Haversine distance uses R = 3959 miles
+- [ ] Total duration = bikeTime + waitTime + transitTime (wait time included!)
+- [ ] Default 5-minute wait if no MTA arrival data
+
+### Ranking & Deduplication
 - [ ] Ranking demotes bike when weather.isBad AND bike is #1
-- [ ] **Route deduplication before ranking**
-- [ ] **Express train normalization (6X→6, etc.)**
-- [ ] **Weather uses free API (/data/2.5/weather)**
-- [ ] **Active precipitation check (rain.1h/snow.1h > 0)**
-- [ ] **"Now" displayed for ≤0 minute arrivals**
-- [ ] **Green badge for ≤2 min arrivals**
+- [ ] **Route deduplication by signature before ranking**
+- [ ] Signature format: `{type}_{routeSequence}` (e.g., "bike_to_transit_G")
+
+### MTA Integration
 - [ ] MTA arrivals parse from live GTFS-Realtime feeds
-- [ ] Widget refreshes every 15 minutes
-- [ ] **Per-widget settings with global fallback**
-- [ ] Settings persist via App Groups
-- [ ] CLGeocoder resolves addresses
-- [ ] All 23 MTA line colors match official values
+- [ ] **Express train normalization (6X→6, 7X→7, FX→F)**
+- [ ] Line-to-feed mapping matches Android (gtfs, gtfs-ace, gtfs-bdfm, gtfs-g, etc.)
+- [ ] User-Agent header: "NYC-Commute-Optimizer/1.0"
+
+### Weather
+- [ ] **Weather uses free API (/data/2.5/weather, NOT 3.0)**
+- [ ] **Active precipitation check (rain.1h OR rain.3h OR snow.1h OR snow.3h > 0)**
+- [ ] isBad = precipitationType != .none OR hasActiveRain OR hasActiveSnow
+
+### UI Features
+- [ ] **"Now" displayed for ≤0 minute arrivals**
+- [ ] **Green badge for ≤2 min arrivals in Live Trains**
 - [ ] **Collapsible station selectors in settings**
 - [ ] **Station count display (X selected, X/3 selected)**
 - [ ] **Line badge in Live Trains direction rows**
+- [ ] Summary format: "Mode → Lines → FinalStop"
+
+### Widget & Settings
+- [ ] Widget refreshes every 15 minutes
+- [ ] **Per-widget origin/destination with global fallback**
+- [ ] **Per-widget Live Trains station**
+- [ ] **clearWidgetData() removes all widget-specific keys**
+- [ ] Settings persist via App Groups (group.com.commuteoptimizer)
+- [ ] CLGeocoder resolves addresses
+- [ ] Live stations enforced max 3
+
+### Visual
+- [ ] All 23 MTA line colors match official values
+- [ ] Yellow lines (N, Q, R, W) use black text
+- [ ] Rank badges: gold #FFD700, silver #C0C0C0, bronze #CD7F32
