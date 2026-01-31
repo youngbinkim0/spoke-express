@@ -22,12 +22,14 @@ class CommuteCalculator(private val context: Context) {
     private val weatherApi = ApiClientFactory.weatherApi
     private val localDataSource = LocalDataSource(context)
 
-    suspend fun calculateCommute(): Result<CommuteResponse> {
+    suspend fun calculateCommute(widgetId: Int = -1): Result<CommuteResponse> {
         try {
-            val homeLat = prefs.getHomeLat()
-            val homeLng = prefs.getHomeLng()
-            val workLat = prefs.getWorkLat()
-            val workLng = prefs.getWorkLng()
+            // Use per-widget origin if widgetId is provided, otherwise fall back to global
+            val homeLat = if (widgetId >= 0) prefs.getWidgetOriginLat(widgetId) else prefs.getHomeLat()
+            val homeLng = if (widgetId >= 0) prefs.getWidgetOriginLng(widgetId) else prefs.getHomeLng()
+            // Use per-widget destination if widgetId is provided, otherwise fall back to global
+            val workLat = if (widgetId >= 0) prefs.getWidgetDestinationLat(widgetId) else prefs.getWorkLat()
+            val workLng = if (widgetId >= 0) prefs.getWidgetDestinationLng(widgetId) else prefs.getWorkLng()
             val selectedStations = prefs.getBikeStations()
             val apiKey = prefs.getOpenWeatherApiKey()
             val googleApiKey = prefs.getGoogleApiKey()
@@ -127,22 +129,30 @@ class CommuteCalculator(private val context: Context) {
     }
 
     private suspend fun fetchWeather(lat: Double, lng: Double, apiKey: String?): Weather {
-        if (apiKey.isNullOrBlank()) return getDefaultWeather()
+        if (apiKey.isNullOrBlank()) {
+            android.util.Log.w("CommuteCalc", "No OpenWeather API key configured")
+            return getDefaultWeather()
+        }
 
         return try {
+            android.util.Log.d("CommuteCalc", "Fetching weather for $lat, $lng")
             val response = weatherApi.getWeather(lat, lng, apiKey = apiKey)
             if (response.isSuccessful && response.body() != null) {
+                android.util.Log.d("CommuteCalc", "Weather fetched successfully: ${response.body()?.main?.temp}")
                 parseWeatherResponse(response.body()!!)
-            } else getDefaultWeather()
+            } else {
+                android.util.Log.e("CommuteCalc", "Weather API error: ${response.code()} - ${response.errorBody()?.string()}")
+                getDefaultWeather()
+            }
         } catch (e: Exception) {
+            android.util.Log.e("CommuteCalc", "Weather fetch exception: ${e.message}", e)
             getDefaultWeather()
         }
     }
 
     private fun parseWeatherResponse(data: OpenWeatherResponse): Weather {
-        val current = data.current
-        val weatherId = current.weather.firstOrNull()?.id ?: 800
-        val weatherMain = current.weather.firstOrNull()?.main ?: "Clear"
+        val weatherId = data.weather.firstOrNull()?.id ?: 800
+        val weatherMain = data.weather.firstOrNull()?.main ?: "Clear"
 
         val precipitationType = when {
             weatherId in 200..599 -> "rain"
@@ -151,14 +161,16 @@ class CommuteCalculator(private val context: Context) {
             else -> "none"
         }
 
-        val precipProbability = data.hourly?.firstOrNull()?.pop ?: 0.0
-        val isBad = precipitationType != "none" || precipProbability > 0.5
+        // Check if there's active rain or snow from the response
+        val hasRain = (data.rain?.oneHour ?: data.rain?.threeHour ?: 0.0) > 0
+        val hasSnow = (data.snow?.oneHour ?: data.snow?.threeHour ?: 0.0) > 0
+        val isBad = precipitationType != "none" || hasRain || hasSnow
 
         return Weather(
-            tempF = current.temp.toInt(),
+            tempF = data.main.temp.toInt(),
             conditions = weatherMain,
             precipitationType = precipitationType,
-            precipitationProbability = (precipProbability * 100).toInt(),
+            precipitationProbability = if (isBad) 100 else 0,
             isBad = isBad
         )
     }

@@ -124,8 +124,9 @@ object GoogleRoutesService {
             .replace(" Line", "")
             .replace(" Train", "")
             .replace("Exp", "")
-            .replace(Regex("^(\\d)X$"), "$1") // 6X -> 6, 7X -> 7 (express variants)
+            .replace(Regex("^([A-Za-z0-9])X$"), "$1") // 6X -> 6, 7X -> 7, FX -> F (express variants)
             .trim()
+            .uppercase()
     }
 
     private fun errorResult(error: String) = RouteResult("ERROR", null, null, emptyList())

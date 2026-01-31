@@ -2,40 +2,36 @@ package com.commuteoptimizer.widget.data.models
 
 import com.google.gson.annotations.SerializedName
 
-// Response from OpenWeatherMap One Call API 3.0
+// Response from OpenWeatherMap Current Weather API 2.5 (Free tier)
 data class OpenWeatherResponse(
-    val lat: Double,
-    val lon: Double,
-    val current: CurrentWeather,
-    val hourly: List<HourlyWeather>? = null
+    val main: MainWeather,
+    val weather: List<WeatherCondition>,
+    val rain: RainInfo? = null,
+    val snow: SnowInfo? = null
 )
 
-data class CurrentWeather(
+data class MainWeather(
     val temp: Double,
-    val weather: List<WeatherCondition>
+    val humidity: Int? = null
 )
 
 data class WeatherCondition(
     val id: Int,
     val main: String,
-    val description: String,
-    val icon: String
-)
-
-data class HourlyWeather(
-    val dt: Long,
-    val temp: Double,
-    val pop: Double = 0.0,  // Probability of precipitation (0-1)
-    val rain: RainInfo? = null,
-    val snow: SnowInfo? = null
+    val description: String? = null,
+    val icon: String? = null
 )
 
 data class RainInfo(
     @SerializedName("1h")
-    val oneHour: Double? = null
+    val oneHour: Double? = null,
+    @SerializedName("3h")
+    val threeHour: Double? = null
 )
 
 data class SnowInfo(
     @SerializedName("1h")
-    val oneHour: Double? = null
+    val oneHour: Double? = null,
+    @SerializedName("3h")
+    val threeHour: Double? = null
 )

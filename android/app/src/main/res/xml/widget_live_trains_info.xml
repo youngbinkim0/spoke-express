@@ -4,7 +4,7 @@
     android:minHeight="110dp"
     android:updatePeriodMillis="900000"
     android:initialLayout="@layout/widget_loading"
-    android:configure="com.commuteoptimizer.widget.CommuteWidgetConfigActivity"
+    android:configure="com.commuteoptimizer.widget.LiveTrainsConfigActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewLayout="@layout/widget_live_trains"

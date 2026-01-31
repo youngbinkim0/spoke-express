@@ -581,8 +581,8 @@
       if (!line) return '';
       // Remove "Line", "Train", "Express" suffixes and clean up
       let cleaned = line.replace(/\s*(Line|Train|Express|Local)$/i, '').trim();
-      // Handle express train suffixes (6X -> 6, 7X -> 7)
-      cleaned = cleaned.replace(/^(\d)X$/, '$1');
+      // Handle express train suffixes (6X -> 6, 7X -> 7, FX -> F, etc.)
+      cleaned = cleaned.replace(/^([A-Z0-9])X$/i, '$1').toUpperCase();
       return cleaned;
     }
 

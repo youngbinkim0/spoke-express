@@ -32,7 +32,9 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
     private lateinit var textApiStatus: TextView
+    private lateinit var inputOriginName: TextInputEditText
     private lateinit var inputHomeAddress: TextInputEditText
+    private lateinit var inputDestName: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
     private lateinit var textWorkCoords: TextView
@@ -99,7 +101,9 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private fun initViews() {
         textApiStatus = findViewById(R.id.text_api_status)
+        inputOriginName = findViewById(R.id.input_origin_name)
         inputHomeAddress = findViewById(R.id.input_home_address)
+        inputDestName = findViewById(R.id.input_dest_name)
         inputWorkAddress = findViewById(R.id.input_work_address)
         textHomeCoords = findViewById(R.id.text_home_coords)
         textWorkCoords = findViewById(R.id.text_work_coords)
@@ -134,18 +138,36 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
         }
         textApiStatus.text = statusText
 
-        // Load home location
-        homeLat = prefs.getHomeLat()
-        homeLng = prefs.getHomeLng()
-        prefs.getHomeAddress()?.let { inputHomeAddress.setText(it) }
+        // Load origin (per-widget, falls back to global home location)
+        if (prefs.hasWidgetOrigin(appWidgetId)) {
+            // Load widget-specific origin
+            homeLat = prefs.getWidgetOriginLat(appWidgetId)
+            homeLng = prefs.getWidgetOriginLng(appWidgetId)
+            inputOriginName.setText(prefs.getWidgetOriginName(appWidgetId))
+        } else {
+            // Fall back to global home location for new widgets
+            homeLat = prefs.getHomeLat()
+            homeLng = prefs.getHomeLng()
+            prefs.getHomeAddress()?.let { inputHomeAddress.setText(it) }
+            inputOriginName.setText("Home")
+        }
         if (homeLat != 0.0) {
             textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
         }
 
-        // Load work location
-        workLat = prefs.getWorkLat()
-        workLng = prefs.getWorkLng()
-        prefs.getWorkAddress()?.let { inputWorkAddress.setText(it) }
+        // Load destination (per-widget, falls back to global work location)
+        if (prefs.hasWidgetDestination(appWidgetId)) {
+            // Load widget-specific destination
+            workLat = prefs.getWidgetDestinationLat(appWidgetId)
+            workLng = prefs.getWidgetDestinationLng(appWidgetId)
+            inputDestName.setText(prefs.getWidgetDestinationName(appWidgetId))
+        } else {
+            // Fall back to global work location for new widgets
+            workLat = prefs.getWorkLat()
+            workLng = prefs.getWorkLng()
+            prefs.getWorkAddress()?.let { inputWorkAddress.setText(it) }
+            inputDestName.setText("Work")
+        }
         if (workLat != 0.0) {
             textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
         }
@@ -284,17 +306,33 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
         // API keys are managed in main app Settings, not here
 
-        // Validate home location (required)
+        // Validate origin location (required)
         if (homeLat == 0.0 || homeLng == 0.0) {
-            Log.d(TAG, "Validation failed: no home location")
-            showStatus("Please set your home location", isError = true)
+            Log.d(TAG, "Validation failed: no origin location")
+            showStatus("Please set your origin location", isError = true)
             return
         }
 
-        // Validate work location (required)
+        // Validate origin name
+        val originName = inputOriginName.text?.toString()?.trim()
+        if (originName.isNullOrEmpty()) {
+            Log.d(TAG, "Validation failed: no origin name")
+            showStatus("Please enter an origin name", isError = true)
+            return
+        }
+
+        // Validate destination location (required)
         if (workLat == 0.0 || workLng == 0.0) {
-            Log.d(TAG, "Validation failed: no work location")
-            showStatus("Please set your work location", isError = true)
+            Log.d(TAG, "Validation failed: no destination location")
+            showStatus("Please set your destination location", isError = true)
+            return
+        }
+
+        // Validate destination name
+        val destName = inputDestName.text?.toString()?.trim()
+        if (destName.isNullOrEmpty()) {
+            Log.d(TAG, "Validation failed: no destination name")
+            showStatus("Please enter a destination name", isError = true)
             return
         }
 
@@ -319,8 +357,13 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             // Get optional settings
             val showBikeOptions = switchBikeOptions.isChecked
 
-            // Save all settings (API keys are managed in main app Settings)
+            // Save origin per widget (allows different origins per widget)
+            prefs.setWidgetOrigin(appWidgetId, originName, homeLat, homeLng)
+            // Also save as global home location for backwards compatibility
             prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
+            // Save destination per widget (allows different destinations per widget)
+            prefs.setWidgetDestination(appWidgetId, destName, workLat, workLng)
+            // Also save as global work location for backwards compatibility
             prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
             prefs.setBikeStations(selectedStations)
             prefs.setShowBikeOptions(showBikeOptions)

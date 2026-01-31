@@ -47,14 +47,23 @@ class LiveTrainsWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        val prefs = WidgetPreferences(context)
+        for (widgetId in appWidgetIds) {
+            prefs.clearWidgetData(widgetId)
+        }
+    }
+
     private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
         val prefs = WidgetPreferences(context)
         val localDataSource = LocalDataSource(context)
 
-        val liveStations = prefs.getLiveStations()
-        if (liveStations.isEmpty()) {
+        // Get station for this specific widget
+        val stationId = prefs.getLiveTrainsWidgetStation(widgetId)
+        if (stationId == null) {
             val views = RemoteViews(context.packageName, R.layout.widget_error)
-            views.setTextViewText(R.id.error_message, "No stations configured")
+            views.setTextViewText(R.id.error_message, "Tap to configure")
             appWidgetManager.updateAppWidget(widgetId, views)
             return
         }
@@ -73,21 +82,38 @@ class LiveTrainsWidgetProvider : AppWidgetProvider() {
                 )
                 views.setOnClickPendingIntent(R.id.btn_refresh, refreshPendingIntent)
 
-                // Fetch arrivals for first station
-                val stationId = liveStations.first()
+                // Fetch arrivals for this widget's station
                 val station = localDataSource.getStation(stationId)
+
+                // Set station name as widget title
+                val stationName = station?.name ?: "Unknown Station"
+                views.setTextViewText(R.id.widget_title, stationName)
+
                 val arrivals = MtaApiService.getGroupedArrivals(stationId, station?.lines ?: emptyList())
 
-                val trainRowIds = listOf(R.id.train_1, R.id.train_2, R.id.train_3, R.id.train_4)
-
-                arrivals.take(4).forEachIndexed { index, group ->
-                    val rowId = trainRowIds[index]
-                    bindTrainRow(context, views, rowId, group)
+                // Bind each row with unique IDs
+                if (arrivals.size > 0) {
+                    bindTrainRow1(views, arrivals[0])
+                } else {
+                    views.setViewVisibility(R.id.train_1, View.GONE)
                 }
 
-                // Hide unused rows
-                for (i in arrivals.size until 4) {
-                    views.setViewVisibility(trainRowIds[i], View.GONE)
+                if (arrivals.size > 1) {
+                    bindTrainRow2(views, arrivals[1])
+                } else {
+                    views.setViewVisibility(R.id.train_2, View.GONE)
+                }
+
+                if (arrivals.size > 2) {
+                    bindTrainRow3(views, arrivals[2])
+                } else {
+                    views.setViewVisibility(R.id.train_3, View.GONE)
+                }
+
+                if (arrivals.size > 3) {
+                    bindTrainRow4(views, arrivals[3])
+                } else {
+                    views.setViewVisibility(R.id.train_4, View.GONE)
                 }
 
                 // Set update time
@@ -103,13 +129,36 @@ class LiveTrainsWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun bindTrainRow(context: Context, views: RemoteViews, rowId: Int, group: MtaApiService.ArrivalGroup) {
-        val lineBadgeId = context.resources.getIdentifier("line_badge", "id", context.packageName)
-        val directionId = context.resources.getIdentifier("direction_arrow", "id", context.packageName)
-        val headsignId = context.resources.getIdentifier("headsign", "id", context.packageName)
-        val arrival1Id = context.resources.getIdentifier("arrival_1", "id", context.packageName)
-        val arrival2Id = context.resources.getIdentifier("arrival_2", "id", context.packageName)
+    private fun bindTrainRow1(views: RemoteViews, group: MtaApiService.ArrivalGroup) {
+        bindTrainRowWithIds(views, R.id.train_1, R.id.train_1_line_badge, R.id.train_1_direction,
+            R.id.train_1_headsign, R.id.train_1_arrival_1, R.id.train_1_arrival_2, group)
+    }
 
+    private fun bindTrainRow2(views: RemoteViews, group: MtaApiService.ArrivalGroup) {
+        bindTrainRowWithIds(views, R.id.train_2, R.id.train_2_line_badge, R.id.train_2_direction,
+            R.id.train_2_headsign, R.id.train_2_arrival_1, R.id.train_2_arrival_2, group)
+    }
+
+    private fun bindTrainRow3(views: RemoteViews, group: MtaApiService.ArrivalGroup) {
+        bindTrainRowWithIds(views, R.id.train_3, R.id.train_3_line_badge, R.id.train_3_direction,
+            R.id.train_3_headsign, R.id.train_3_arrival_1, R.id.train_3_arrival_2, group)
+    }
+
+    private fun bindTrainRow4(views: RemoteViews, group: MtaApiService.ArrivalGroup) {
+        bindTrainRowWithIds(views, R.id.train_4, R.id.train_4_line_badge, R.id.train_4_direction,
+            R.id.train_4_headsign, R.id.train_4_arrival_1, R.id.train_4_arrival_2, group)
+    }
+
+    private fun bindTrainRowWithIds(
+        views: RemoteViews,
+        rowId: Int,
+        lineBadgeId: Int,
+        directionId: Int,
+        headsignId: Int,
+        arrival1Id: Int,
+        arrival2Id: Int,
+        group: MtaApiService.ArrivalGroup
+    ) {
         views.setViewVisibility(rowId, View.VISIBLE)
         views.setTextViewText(lineBadgeId, group.line)
         views.setInt(lineBadgeId, "setBackgroundColor", MtaColors.getLineColor(group.line))

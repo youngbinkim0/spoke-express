@@ -4,7 +4,45 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- MTA-style white circular badge -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,27c-11.05,0 -20,1.25 -20,10v23.75C34,64.33 37.67,68 41.5,68L39,70.5V72h5.58l3.75,-3.75h11.35l3.75,3.75H69v-1.5L66.5,68c3.83,0 7,-3.67 7,-7.25V37c0,-8.75 -8.95,-10 -20,-10zM41.5,62.5c-2.08,0 -3.75,-1.67 -3.75,-3.75s1.67,-3.75 3.75,-3.75 3.75,1.67 3.75,3.75 -1.67,3.75 -3.75,3.75zM51.5,50h-12.5V37h12.5v13zM66.5,62.5c-2.08,0 -3.75,-1.67 -3.75,-3.75s1.67,-3.75 3.75,-3.75 3.75,1.67 3.75,3.75 -1.67,3.75 -3.75,3.75zM69,50h-12.5V37H69v13z"/>
+        android:pathData="M54,20a34,34 0,1 0,0 68a34,34 0,1 0,0 -68z"/>
+
+    <!-- Subway train (top) - simplified MTA style -->
+    <path
+        android:fillColor="#1a1a2e"
+        android:pathData="M54,30c-8,0 -14,1 -14,6v14c0,2.5 2,4.5 4.5,4.5l-2,2v1h4l2,-2h11l2,2h4v-1l-2,-2c2.5,0 4.5,-2 4.5,-4.5V36c0,-5 -6,-6 -14,-6z"/>
+    <!-- Train windows -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,46v-8h8v8zM56,46v-8h8v8z"/>
+    <!-- Train wheels -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,52a2,2 0,1 0,4 0a2,2 0,1 0,-4 0z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,52a2,2 0,1 0,4 0a2,2 0,1 0,-4 0z"/>
+
+    <!-- Plus sign / connector -->
+    <path
+        android:fillColor="#6CBE45"
+        android:pathData="M52,60h4v4h-4zM50,62h8v2h-8z"/>
+
+    <!-- Bike (bottom) - simplified -->
+    <path
+        android:fillColor="#1a1a2e"
+        android:pathData="M43,76a5,5 0,1 1,0 -10a5,5 0,1 1,0 10zM43,74a3,3 0,1 0,0 -6a3,3 0,1 0,0 6z"/>
+    <path
+        android:fillColor="#1a1a2e"
+        android:pathData="M65,76a5,5 0,1 1,0 -10a5,5 0,1 1,0 10zM65,74a3,3 0,1 0,0 -6a3,3 0,1 0,0 6z"/>
+    <!-- Bike frame -->
+    <path
+        android:fillColor="#1a1a2e"
+        android:strokeWidth="2"
+        android:strokeColor="#1a1a2e"
+        android:pathData="M43,71l8,-5l6,0l0,-3l3,0l-2,3l7,5M51,66l4,5"/>
+
 </vector>
