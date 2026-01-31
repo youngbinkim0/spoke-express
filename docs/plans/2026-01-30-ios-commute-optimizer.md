@@ -1872,13 +1872,199 @@ The remaining tasks follow the same TDD pattern for:
 
 ---
 
+---
+
+## CRITICAL UPDATES (Post-Android Review)
+
+These features were added to Android after the initial iOS plan was written. **iOS must implement these for full parity:**
+
+### 1. Route Deduplication (CommuteCalculator)
+
+Before ranking, deduplicate options by route signature to prevent showing the same transit route from multiple bike stations:
+
+```swift
+// Add after building all options, before ranking
+private func deduplicateOptions(_ options: [CommuteOption]) -> [CommuteOption] {
+    var seen: [String: CommuteOption] = [:]
+
+    for option in options {
+        // Build route signature: "bike_to_transit_G" or "transit_only_A→6"
+        let routeSequence = option.legs
+            .filter { $0.mode == .subway }
+            .compactMap { $0.route }
+            .joined(separator: "→")
+        let signature = "\(option.type.rawValue)_\(routeSequence)"
+
+        // Keep fastest option for each signature
+        if let existing = seen[signature] {
+            if option.durationMinutes < existing.durationMinutes {
+                seen[signature] = option
+            }
+        } else {
+            seen[signature] = option
+        }
+    }
+
+    return Array(seen.values)
+}
+```
+
+### 2. Express Train Normalization (MtaApiService)
+
+Normalize express train variants to base line:
+
+```swift
+private func normalizeRouteId(_ routeId: String) -> String {
+    // Express variants: 6X→6, 7X→7, FX→F, etc.
+    if routeId.hasSuffix("X") {
+        return String(routeId.dropLast())
+    }
+    return routeId
+}
+```
+
+### 3. Weather API - Use Free Tier (WeatherApiService)
+
+**CHANGE** the endpoint from 3.0 to 2.5 (free tier):
+
+```swift
+// OLD (requires subscription):
+// private let baseURL = "https://api.openweathermap.org/data/3.0/onecall"
+
+// NEW (free tier):
+private let baseURL = "https://api.openweathermap.org/data/2.5/weather"
+
+func getWeather(lat: Double, lng: Double, apiKey: String) async throws -> Weather {
+    let urlString = "\(baseURL)?lat=\(lat)&lon=\(lng)&units=imperial&appid=\(apiKey)"
+    // ... rest of implementation
+}
+
+// Updated response model for 2.5 API:
+struct OpenWeatherResponse: Codable {
+    let main: MainWeather
+    let weather: [WeatherCondition]
+    let rain: RainInfo?
+    let snow: SnowInfo?
+}
+
+struct MainWeather: Codable {
+    let temp: Double
+}
+
+struct RainInfo: Codable {
+    let oneHour: Double?
+    enum CodingKeys: String, CodingKey {
+        case oneHour = "1h"
+    }
+}
+
+struct SnowInfo: Codable {
+    let oneHour: Double?
+    enum CodingKeys: String, CodingKey {
+        case oneHour = "1h"
+    }
+}
+
+// Also check for active precipitation:
+private func parseResponse(_ response: OpenWeatherResponse) -> Weather {
+    let weatherId = response.weather.first?.id ?? 800
+    let hasActiveRain = (response.rain?.oneHour ?? 0) > 0
+    let hasActiveSnow = (response.snow?.oneHour ?? 0) > 0
+
+    let isBad = (weatherId >= 200 && weatherId < 700) || hasActiveRain || hasActiveSnow
+    // ...
+}
+```
+
+### 4. "Now" Display for Arriving Trains
+
+```swift
+// In NextArrivalResult or display logic:
+var displayText: String {
+    if minutesAway <= 0 {
+        return "Now"
+    }
+    return "\(minutesAway)m"
+}
+```
+
+### 5. Per-Widget Settings (SettingsManager)
+
+Add widget-specific settings with global fallback:
+
+```swift
+// Per-widget keys
+func getWidgetOriginLat(_ widgetId: String) -> Double {
+    defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double ?? homeLat
+}
+
+func getWidgetOriginLng(_ widgetId: String) -> Double {
+    defaults.object(forKey: "widget_origin_lng_\(widgetId)") as? Double ?? homeLng
+}
+
+func getWidgetOriginName(_ widgetId: String) -> String {
+    defaults.string(forKey: "widget_origin_name_\(widgetId)") ?? (homeAddress.isEmpty ? "Home" : homeAddress)
+}
+
+// Similar for destination...
+```
+
+### 6. UI Enhancements
+
+**Live Trains - Arrival Badge Colors:**
+```swift
+// Green for ≤2 min, default otherwise
+func arrivalBadgeColor(minutesAway: Int, line: String) -> Color {
+    minutesAway <= 2 ? .green : MtaColors.color(for: line)
+}
+```
+
+**Settings - Station Count Display:**
+```swift
+// Show "X selected" for bike, "X/3 selected" for live
+Text("\(selectedBikeStations.count) selected")
+Text("\(selectedLiveStations.count)/3 selected")
+```
+
+**Settings - Collapsible Sections:**
+```swift
+@State private var bikeStationsExpanded = true
+@State private var liveStationsExpanded = true
+
+DisclosureGroup("Bike-to Stations", isExpanded: $bikeStationsExpanded) {
+    // Station chips
+}
+```
+
+**Live Trains - Line Badge in Direction Rows:**
+```swift
+// Show line badge repeated in each direction group header
+HStack {
+    LineBadge(line: group.line)
+    Text(group.direction.headsign)
+    Image(systemName: group.direction == .north ? "arrow.up" : "arrow.down")
+}
+```
+
+---
+
 ## Verification Checklist
 
 - [ ] Bike time formula: `ceil((d/10)*60*1.3)` matches Android
 - [ ] Walk time formula: `ceil((d/3)*60*1.2)` matches Android
 - [ ] Ranking demotes bike when weather.isBad AND bike is #1
+- [ ] **Route deduplication before ranking**
+- [ ] **Express train normalization (6X→6, etc.)**
+- [ ] **Weather uses free API (/data/2.5/weather)**
+- [ ] **Active precipitation check (rain.1h/snow.1h > 0)**
+- [ ] **"Now" displayed for ≤0 minute arrivals**
+- [ ] **Green badge for ≤2 min arrivals**
 - [ ] MTA arrivals parse from live GTFS-Realtime feeds
 - [ ] Widget refreshes every 15 minutes
+- [ ] **Per-widget settings with global fallback**
 - [ ] Settings persist via App Groups
 - [ ] CLGeocoder resolves addresses
 - [ ] All 23 MTA line colors match official values
+- [ ] **Collapsible station selectors in settings**
+- [ ] **Station count display (X selected, X/3 selected)**
+- [ ] **Line badge in Live Trains direction rows**
