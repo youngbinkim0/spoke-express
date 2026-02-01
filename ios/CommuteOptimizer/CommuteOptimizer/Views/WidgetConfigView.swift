@@ -1,5 +1,7 @@
 import SwiftUI
 import WidgetKit
+import MapKit
+import CoreLocation
 
 struct WidgetConfigView: View {
     @EnvironmentObject var settingsManager: SettingsManager
@@ -7,26 +9,25 @@ struct WidgetConfigView: View {
 
     let widgetId: String?
 
-    @State private var selectedOriginStation: String?
-    @State private var selectedDestinationStation: String?
     @State private var useCustomOrigin = false
     @State private var useCustomDestination = false
+    @State private var originAddress = ""
+    @State private var destAddress = ""
+    @State private var originCoord: CLLocationCoordinate2D?
+    @State private var destCoord: CLLocationCoordinate2D?
+    @State private var isGeocodingOrigin = false
+    @State private var isGeocodingDest = false
+    @State private var originError: String?
+    @State private var destError: String?
 
-    private let stationsDataSource = StationsDataSource.shared
-
-    private var stations: [LocalStation] {
-        stationsDataSource.getStations().sorted { $0.name < $1.name }
-    }
+    private let geocoder = CLGeocoder()
 
     var body: some View {
         NavigationView {
             Form {
                 infoSection
-
                 originSection
-
                 destinationSection
-
                 actionsSection
             }
             .navigationTitle("Widget Settings")
@@ -37,10 +38,18 @@ struct WidgetConfigView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { saveAndDismiss() }
+                        .disabled(!canSave)
                 }
             }
             .onAppear { loadCurrentSettings() }
         }
+    }
+
+    private var canSave: Bool {
+        // Can save if using defaults, or if custom is set with valid coordinates
+        let originValid = !useCustomOrigin || originCoord != nil
+        let destValid = !useCustomDestination || destCoord != nil
+        return originValid && destValid && !isGeocodingOrigin && !isGeocodingDest
     }
 
     private var infoSection: some View {
@@ -59,13 +68,41 @@ struct WidgetConfigView: View {
     private var originSection: some View {
         Section("Origin") {
             Toggle("Use custom origin", isOn: $useCustomOrigin)
+                .onChange(of: useCustomOrigin) { _, newValue in
+                    if !newValue {
+                        originAddress = ""
+                        originCoord = nil
+                        originError = nil
+                    }
+                }
 
             if useCustomOrigin {
-                Picker("Station", selection: $selectedOriginStation) {
-                    Text("Select a station").tag(nil as String?)
-                    ForEach(stations) { station in
-                        Text("\(station.name) (\(station.linesDisplay))")
-                            .tag(station.id as String?)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("Enter address", text: $originAddress)
+                            .textFieldStyle(.roundedBorder)
+                            .autocorrectionDisabled()
+
+                        if isGeocodingOrigin {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Button("Look up") {
+                                geocodeOrigin()
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(originAddress.isEmpty)
+                        }
+                    }
+
+                    if let error = originError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    } else if let coord = originCoord {
+                        Text("Location: \(coord.latitude, specifier: "%.4f"), \(coord.longitude, specifier: "%.4f")")
+                            .font(.caption)
+                            .foregroundColor(.green)
                     }
                 }
             } else {
@@ -83,13 +120,41 @@ struct WidgetConfigView: View {
     private var destinationSection: some View {
         Section("Destination") {
             Toggle("Use custom destination", isOn: $useCustomDestination)
+                .onChange(of: useCustomDestination) { _, newValue in
+                    if !newValue {
+                        destAddress = ""
+                        destCoord = nil
+                        destError = nil
+                    }
+                }
 
             if useCustomDestination {
-                Picker("Station", selection: $selectedDestinationStation) {
-                    Text("Select a station").tag(nil as String?)
-                    ForEach(stations) { station in
-                        Text("\(station.name) (\(station.linesDisplay))")
-                            .tag(station.id as String?)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("Enter address", text: $destAddress)
+                            .textFieldStyle(.roundedBorder)
+                            .autocorrectionDisabled()
+
+                        if isGeocodingDest {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Button("Look up") {
+                                geocodeDest()
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(destAddress.isEmpty)
+                        }
+                    }
+
+                    if let error = destError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    } else if let coord = destCoord {
+                        Text("Location: \(coord.latitude, specifier: "%.4f"), \(coord.longitude, specifier: "%.4f")")
+                            .font(.caption)
+                            .foregroundColor(.green)
                     }
                 }
             } else {
@@ -117,28 +182,96 @@ struct WidgetConfigView: View {
 
         // Check if widget has custom origin
         if settingsManager.hasWidgetOrigin(widgetId) {
-            useCustomOrigin = true
-            // Try to find matching station by coordinates
-            let originLat = settingsManager.getWidgetOriginLat(widgetId)
-            let originLng = settingsManager.getWidgetOriginLng(widgetId)
-            selectedOriginStation = findStationNear(lat: originLat, lng: originLng)
+            let lat = settingsManager.getWidgetOriginLat(widgetId)
+            let lng = settingsManager.getWidgetOriginLng(widgetId)
+            // Only consider custom if not using defaults (0,0 or same as home)
+            if lat != 0 && lng != 0 && (lat != settingsManager.homeLat || lng != settingsManager.homeLng) {
+                useCustomOrigin = true
+                originAddress = settingsManager.getWidgetOriginName(widgetId)
+                originCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+            }
         }
 
         // Check if widget has custom destination
         if settingsManager.hasWidgetDestination(widgetId) {
-            useCustomDestination = true
-            let destLat = settingsManager.getWidgetDestinationLat(widgetId)
-            let destLng = settingsManager.getWidgetDestinationLng(widgetId)
-            selectedDestinationStation = findStationNear(lat: destLat, lng: destLng)
+            let lat = settingsManager.getWidgetDestinationLat(widgetId)
+            let lng = settingsManager.getWidgetDestinationLng(widgetId)
+            // Only consider custom if not using defaults
+            if lat != 0 && lng != 0 && (lat != settingsManager.workLat || lng != settingsManager.workLng) {
+                useCustomDestination = true
+                destAddress = settingsManager.getWidgetDestinationName(widgetId)
+                destCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+            }
         }
     }
 
-    private func findStationNear(lat: Double, lng: Double) -> String? {
-        // Find station within ~100 meters
-        let threshold = 0.001  // roughly 100m in degrees
-        return stations.first { station in
-            abs(station.lat - lat) < threshold && abs(station.lng - lng) < threshold
-        }?.id
+    private func geocodeOrigin() {
+        isGeocodingOrigin = true
+        originError = nil
+        originCoord = nil
+
+        geocoder.geocodeAddressString(originAddress) { placemarks, error in
+            isGeocodingOrigin = false
+
+            if let error = error {
+                originError = "Could not find address: \(error.localizedDescription)"
+                return
+            }
+
+            guard let placemark = placemarks?.first,
+                  let location = placemark.location else {
+                originError = "No results found"
+                return
+            }
+
+            originCoord = location.coordinate
+            // Update address with formatted version
+            if let formatted = formatPlacemark(placemark) {
+                originAddress = formatted
+            }
+        }
+    }
+
+    private func geocodeDest() {
+        isGeocodingDest = true
+        destError = nil
+        destCoord = nil
+
+        geocoder.geocodeAddressString(destAddress) { placemarks, error in
+            isGeocodingDest = false
+
+            if let error = error {
+                destError = "Could not find address: \(error.localizedDescription)"
+                return
+            }
+
+            guard let placemark = placemarks?.first,
+                  let location = placemark.location else {
+                destError = "No results found"
+                return
+            }
+
+            destCoord = location.coordinate
+            // Update address with formatted version
+            if let formatted = formatPlacemark(placemark) {
+                destAddress = formatted
+            }
+        }
+    }
+
+    private func formatPlacemark(_ placemark: CLPlacemark) -> String? {
+        var components: [String] = []
+        if let street = placemark.thoroughfare {
+            if let number = placemark.subThoroughfare {
+                components.append("\(number) \(street)")
+            } else {
+                components.append(street)
+            }
+        }
+        if let city = placemark.locality {
+            components.append(city)
+        }
+        return components.isEmpty ? nil : components.joined(separator: ", ")
     }
 
     private func saveAndDismiss() {
@@ -148,18 +281,16 @@ struct WidgetConfigView: View {
         }
 
         // Save origin
-        if useCustomOrigin, let stationId = selectedOriginStation,
-           let station = stationsDataSource.getStation(id: stationId) {
-            settingsManager.setWidgetOrigin(widgetId, name: station.name, lat: station.lat, lng: station.lng)
+        if useCustomOrigin, let coord = originCoord {
+            settingsManager.setWidgetOrigin(widgetId, name: originAddress, lat: coord.latitude, lng: coord.longitude)
         } else {
             // Clear custom origin to use defaults
             settingsManager.setWidgetOrigin(widgetId, name: "", lat: 0, lng: 0)
         }
 
         // Save destination
-        if useCustomDestination, let stationId = selectedDestinationStation,
-           let station = stationsDataSource.getStation(id: stationId) {
-            settingsManager.setWidgetDestination(widgetId, name: station.name, lat: station.lat, lng: station.lng)
+        if useCustomDestination, let coord = destCoord {
+            settingsManager.setWidgetDestination(widgetId, name: destAddress, lat: coord.latitude, lng: coord.longitude)
         } else {
             // Clear custom destination to use defaults
             settingsManager.setWidgetDestination(widgetId, name: "", lat: 0, lng: 0)
@@ -174,8 +305,12 @@ struct WidgetConfigView: View {
     private func resetToDefaults() {
         useCustomOrigin = false
         useCustomDestination = false
-        selectedOriginStation = nil
-        selectedDestinationStation = nil
+        originAddress = ""
+        destAddress = ""
+        originCoord = nil
+        destCoord = nil
+        originError = nil
+        destError = nil
 
         if let widgetId = widgetId {
             settingsManager.clearWidgetData(widgetId)

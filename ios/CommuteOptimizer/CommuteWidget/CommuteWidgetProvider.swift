@@ -5,6 +5,9 @@ struct CommuteWidgetProvider: TimelineProvider {
     private let calculator = CommuteCalculator()
     private let settingsManager = SettingsManager()
 
+    // Default widget ID for StaticConfiguration widgets
+    private let defaultWidgetId = "commute-default"
+
     func placeholder(in context: Context) -> CommuteEntry {
         CommuteEntry.placeholder
     }
@@ -22,9 +25,21 @@ struct CommuteWidgetProvider: TimelineProvider {
             return
         }
 
+        // Get per-widget origin/destination (falls back to home/work)
+        let originLat = settingsManager.getWidgetOriginLat(defaultWidgetId)
+        let originLng = settingsManager.getWidgetOriginLng(defaultWidgetId)
+        let destLat = settingsManager.getWidgetDestinationLat(defaultWidgetId)
+        let destLng = settingsManager.getWidgetDestinationLng(defaultWidgetId)
+
         Task {
             do {
-                let response = try await calculator.calculateCommute(settings: settingsManager)
+                let response = try await calculator.calculateCommute(
+                    settings: settingsManager,
+                    originLat: originLat,
+                    originLng: originLng,
+                    destLat: destLat,
+                    destLng: destLng
+                )
                 let entry = CommuteEntry(
                     date: Date(),
                     options: response.options,
@@ -49,9 +64,21 @@ struct CommuteWidgetProvider: TimelineProvider {
             return
         }
 
+        // Get per-widget origin/destination (falls back to home/work)
+        let originLat = settingsManager.getWidgetOriginLat(defaultWidgetId)
+        let originLng = settingsManager.getWidgetOriginLng(defaultWidgetId)
+        let destLat = settingsManager.getWidgetDestinationLat(defaultWidgetId)
+        let destLng = settingsManager.getWidgetDestinationLng(defaultWidgetId)
+
         Task {
             do {
-                let response = try await calculator.calculateCommute(settings: settingsManager)
+                let response = try await calculator.calculateCommute(
+                    settings: settingsManager,
+                    originLat: originLat,
+                    originLng: originLng,
+                    destLat: destLat,
+                    destLng: destLng
+                )
                 let entry = CommuteEntry(
                     date: Date(),
                     options: response.options,

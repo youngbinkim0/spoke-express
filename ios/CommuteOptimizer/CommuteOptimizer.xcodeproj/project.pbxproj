@@ -43,6 +43,7 @@
 		906292575113B29D693FE9B4 /* RankingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F532E441F7519E34FD33A546 /* RankingServiceTests.swift */; };
 		971930CE40BB9A69531CB966 /* RankingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E50CC28D3262005EDB073E /* RankingService.swift */; };
 		9B3234F798C5FFAF90440360 /* WeatherApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */; };
+		9E33DCD7B7CEE748B93DD0D8 /* stations.json in Resources */ = {isa = PBXBuildFile; fileRef = 9D93BF4A058005CD2AB4AFDF /* stations.json */; };
 		A88D834DEB640BFC9AFB1056 /* ProtobufReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21F59FB5E386354BF84822E /* ProtobufReader.swift */; };
 		AB39CC183E341C819980709A /* LineBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94068CA57238404C43862F5D /* LineBadge.swift */; };
 		ABBD801B533D3084BE7B0A3F /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
@@ -320,6 +321,7 @@
 			buildConfigurationList = 0A9969E81D619C268B099F1D /* Build configuration list for PBXNativeTarget "CommuteWidgetExtension" */;
 			buildPhases = (
 				FD87339050D9B2AB69000E52 /* Sources */,
+				30D4D1D822CCB29979F656AC /* Resources */,
 			);
 			buildRules = (
 			);
@@ -417,6 +419,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		30D4D1D822CCB29979F656AC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9E33DCD7B7CEE748B93DD0D8 /* stations.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
