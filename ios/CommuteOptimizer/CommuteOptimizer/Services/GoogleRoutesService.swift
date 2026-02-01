@@ -1,5 +1,8 @@
 import Foundation
 
+/// Service to call Google Directions API directly for transit routes.
+/// Returns full transit routes with all transfer details.
+/// Matches Android implementation for feature parity.
 actor GoogleRoutesService {
     struct TransitStep {
         let line: String
@@ -20,59 +23,103 @@ actor GoogleRoutesService {
     }
 
     func getTransitRoute(
-        workerUrl: String,
         apiKey: String,
         originLat: Double, originLng: Double,
         destLat: Double, destLng: Double
-    ) async throws -> RouteResult {
-        guard !workerUrl.isEmpty, !apiKey.isEmpty else {
+    ) async -> RouteResult {
+        guard !apiKey.isEmpty else {
             return .error
         }
 
-        let urlString = "\(workerUrl)/directions?origin=\(originLat),\(originLng)&destination=\(destLat),\(destLng)&mode=transit&departure_time=now&key=\(apiKey)"
+        let urlString = "https://maps.googleapis.com/maps/api/directions/json" +
+            "?origin=\(originLat),\(originLng)" +
+            "&destination=\(destLat),\(destLng)" +
+            "&mode=transit" +
+            "&departure_time=now" +
+            "&key=\(apiKey)"
 
         guard let url = URL(string: urlString) else {
             return .error
         }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
 
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let status = json["status"] as? String,
-              status == "OK" else {
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let status = json["status"] as? String else {
+                return .error
+            }
+
+            if status != "OK" {
+                return RouteResult(status: status, durationMinutes: nil, distance: nil, transitSteps: [])
+            }
+
+            guard let routes = json["routes"] as? [[String: Any]],
+                  let route = routes.first,
+                  let legs = route["legs"] as? [[String: Any]],
+                  let leg = legs.first else {
+                return RouteResult(status: "NO_ROUTES", durationMinutes: nil, distance: nil, transitSteps: [])
+            }
+
+            let durationSeconds = (leg["duration"] as? [String: Any])?["value"] as? Int ?? 0
+            let durationMinutes = durationSeconds / 60
+            let distance = (leg["distance"] as? [String: Any])?["text"] as? String
+
+            guard let steps = leg["steps"] as? [[String: Any]] else {
+                return RouteResult(status: status, durationMinutes: durationMinutes, distance: distance, transitSteps: [])
+            }
+
+            var transitSteps: [TransitStep] = []
+            for step in steps {
+                let travelMode = step["travel_mode"] as? String ?? ""
+
+                if travelMode == "TRANSIT" {
+                    guard let transitDetails = step["transit_details"] as? [String: Any] else { continue }
+
+                    let line = transitDetails["line"] as? [String: Any]
+                    let shortName = (line?["short_name"] as? String) ?? (line?["name"] as? String) ?? "?"
+
+                    let vehicle = (line?["vehicle"] as? [String: Any])?["type"] as? String
+                    let departureStop = (transitDetails["departure_stop"] as? [String: Any])?["name"] as? String
+                    let arrivalStop = (transitDetails["arrival_stop"] as? [String: Any])?["name"] as? String
+                    let numStops = transitDetails["num_stops"] as? Int
+                    let stepDuration = ((step["duration"] as? [String: Any])?["value"] as? Int).map { $0 / 60 }
+
+                    transitSteps.append(TransitStep(
+                        line: cleanLineName(shortName),
+                        vehicle: vehicle,
+                        departureStop: departureStop,
+                        arrivalStop: arrivalStop,
+                        numStops: numStops,
+                        duration: stepDuration
+                    ))
+                }
+            }
+
+            return RouteResult(
+                status: status,
+                durationMinutes: durationMinutes,
+                distance: distance,
+                transitSteps: transitSteps
+            )
+        } catch {
             return .error
         }
-
-        let durationMinutes = json["durationMinutes"] as? Int
-        let distance = json["distance"] as? String
-
-        var transitSteps: [TransitStep] = []
-        if let stepsArray = json["transitSteps"] as? [[String: Any]] {
-            transitSteps = stepsArray.map { step in
-                TransitStep(
-                    line: cleanLineName(step["line"] as? String ?? "?"),
-                    vehicle: step["vehicle"] as? String,
-                    departureStop: step["departureStop"] as? String,
-                    arrivalStop: step["arrivalStop"] as? String,
-                    numStops: step["numStops"] as? Int,
-                    duration: step["duration"] as? Int
-                )
-            }
-        }
-
-        return RouteResult(
-            status: status,
-            durationMinutes: durationMinutes,
-            distance: distance,
-            transitSteps: transitSteps
-        )
     }
 
     private func cleanLineName(_ name: String) -> String {
-        return name
+        var cleaned = name
             .replacingOccurrences(of: " Line", with: "")
             .replacingOccurrences(of: " Train", with: "")
             .replacingOccurrences(of: "Exp", with: "")
             .trimmingCharacters(in: .whitespaces)
+            .uppercased()
+
+        // Express variants: 6X -> 6, 7X -> 7, FX -> F
+        if cleaned.count == 2 && cleaned.hasSuffix("X") {
+            cleaned = String(cleaned.dropLast())
+        }
+
+        return cleaned
     }
 }
