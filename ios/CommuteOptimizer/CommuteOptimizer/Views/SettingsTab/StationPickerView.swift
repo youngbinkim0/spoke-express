@@ -8,21 +8,26 @@ struct StationPickerView: View {
 
     private let stationsDataSource = StationsDataSource.shared
 
-    var body: some View {
-        let sortedStations: [(station: LocalStation, distance: Double)]
-
+    private var sortedStations: [(station: LocalStation, distance: Double)] {
         // Sort by distance from home if home is set, otherwise alphabetically
         if homeLat != 0 && homeLng != 0 {
-            sortedStations = stationsDataSource.getStationsSortedByDistance(
+            return stationsDataSource.getStationsSortedByDistance(
                 fromLat: homeLat,
                 fromLng: homeLng
             )
         } else {
-            sortedStations = stationsDataSource.getStations()
+            return stationsDataSource.getStations()
                 .sorted { $0.name < $1.name }
                 .map { ($0, 0.0) }
         }
+    }
 
+    private var canSelectMore: Bool {
+        guard let max = maxSelections else { return true }
+        return selectedStations.count < max
+    }
+
+    var body: some View {
         ForEach(sortedStations, id: \.station.id) { item in
             StationRow(
                 station: item.station,
@@ -32,11 +37,6 @@ struct StationPickerView: View {
                 onToggle: { toggleStation(item.station.id) }
             )
         }
-    }
-
-    private var canSelectMore: Bool {
-        guard let max = maxSelections else { return true }
-        return selectedStations.count < max
     }
 
     private func toggleStation(_ stationId: String) {
