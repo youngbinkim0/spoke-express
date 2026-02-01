@@ -8,15 +8,32 @@ actor CommuteCalculator {
     private let stationsDataSource = StationsDataSource.shared
 
     func calculateCommute(settings: SettingsManager) async throws -> CommuteResponse {
+        try await calculateCommute(
+            settings: settings,
+            originLat: settings.homeLat,
+            originLng: settings.homeLng,
+            destLat: settings.workLat,
+            destLng: settings.workLng
+        )
+    }
+
+    /// Calculate commute with custom origin/destination (for per-widget configuration)
+    func calculateCommute(
+        settings: SettingsManager,
+        originLat: Double,
+        originLng: Double,
+        destLat: Double,
+        destLng: Double
+    ) async throws -> CommuteResponse {
         let stations = stationsDataSource.getStations()
 
-        // 1. Fetch weather
-        let weather = await fetchWeather(settings: settings)
+        // 1. Fetch weather at origin
+        let weather = await fetchWeather(lat: originLat, lng: originLng, apiKey: settings.openWeatherApiKey)
 
-        // 2. Find destination station (closest to work)
+        // 2. Find destination station (closest to destination)
         guard let destStation = findClosestStation(
-            toLat: settings.workLat,
-            toLng: settings.workLng,
+            toLat: destLat,
+            toLng: destLng,
             from: stations
         ) else {
             throw CommuteError.noDestinationStation
@@ -26,14 +43,14 @@ actor CommuteCalculator {
 
         // 3. Walk-only option (if < 2 miles)
         let homeToWorkDistance = DistanceCalculator.haversineDistance(
-            lat1: settings.homeLat, lon1: settings.homeLng,
-            lat2: settings.workLat, lon2: settings.workLng
+            lat1: originLat, lon1: originLng,
+            lat2: destLat, lon2: destLng
         )
 
         if homeToWorkDistance < 2 {
             let walkTime = DistanceCalculator.estimateWalkTime(
-                fromLat: settings.homeLat, fromLng: settings.homeLng,
-                toLat: settings.workLat, toLng: settings.workLng
+                fromLat: originLat, fromLng: originLng,
+                toLat: destLat, toLng: destLng
             )
 
             let arrivalDate = Date().addingTimeInterval(TimeInterval(walkTime * 60))
@@ -67,6 +84,10 @@ actor CommuteCalculator {
                 if let option = await buildBikeToTransitOption(
                     stationId: stationId,
                     destStation: destStation,
+                    originLat: originLat,
+                    originLng: originLng,
+                    destLat: destLat,
+                    destLng: destLng,
                     settings: settings
                 ) {
                     options.append(option)
@@ -74,16 +95,20 @@ actor CommuteCalculator {
             }
         }
 
-        // 5. Transit-only options (top 3 closest by walk)
+        // 5. Transit-only options (top 3 closest by walk from origin)
         let closestStations = stationsDataSource.getStationsSortedByDistance(
-            fromLat: settings.homeLat,
-            fromLng: settings.homeLng
+            fromLat: originLat,
+            fromLng: originLng
         ).prefix(3)
 
         for (station, _) in closestStations {
             if let option = await buildTransitOnlyOption(
                 station: station,
                 destStation: destStation,
+                originLat: originLat,
+                originLng: originLng,
+                destLat: destLat,
+                destLng: destLng,
                 settings: settings
             ) {
                 options.append(option)
@@ -113,11 +138,15 @@ actor CommuteCalculator {
     // MARK: - Private Methods
 
     private func fetchWeather(settings: SettingsManager) async -> Weather {
+        await fetchWeather(lat: settings.homeLat, lng: settings.homeLng, apiKey: settings.openWeatherApiKey)
+    }
+
+    private func fetchWeather(lat: Double, lng: Double, apiKey: String) async -> Weather {
         do {
             return try await weatherService.getWeather(
-                lat: settings.homeLat,
-                lng: settings.homeLng,
-                apiKey: settings.openWeatherApiKey
+                lat: lat,
+                lng: lng,
+                apiKey: apiKey
             )
         } catch {
             return Weather(tempF: 65, conditions: "Unknown", precipitationType: .none, precipitationProbability: 0, isBad: false)
@@ -205,12 +234,16 @@ actor CommuteCalculator {
     private func buildBikeToTransitOption(
         stationId: String,
         destStation: LocalStation,
+        originLat: Double,
+        originLng: Double,
+        destLat: Double,
+        destLng: Double,
         settings: SettingsManager
     ) async -> CommuteOption? {
         guard let station = stationsDataSource.getStation(id: stationId) else { return nil }
 
         let bikeTime = DistanceCalculator.estimateBikeTime(
-            fromLat: settings.homeLat, fromLng: settings.homeLng,
+            fromLat: originLat, fromLng: originLng,
             toLat: station.lat, toLng: station.lng
         )
 
@@ -221,8 +254,8 @@ actor CommuteCalculator {
         let (transitTime, transitLegs) = await getTransitRoute(
             fromStation: station,
             toStation: destStation,
-            workLat: settings.workLat,
-            workLng: settings.workLng,
+            workLat: destLat,
+            workLng: destLng,
             googleApiKey: settings.googleApiKey
         )
 
@@ -261,10 +294,14 @@ actor CommuteCalculator {
     private func buildTransitOnlyOption(
         station: LocalStation,
         destStation: LocalStation,
+        originLat: Double,
+        originLng: Double,
+        destLat: Double,
+        destLng: Double,
         settings: SettingsManager
     ) async -> CommuteOption? {
         let walkTime = DistanceCalculator.estimateWalkTime(
-            fromLat: settings.homeLat, fromLng: settings.homeLng,
+            fromLat: originLat, fromLng: originLng,
             toLat: station.lat, toLng: station.lng
         )
 
@@ -275,8 +312,8 @@ actor CommuteCalculator {
         let (transitTime, transitLegs) = await getTransitRoute(
             fromStation: station,
             toStation: destStation,
-            workLat: settings.workLat,
-            workLng: settings.workLng,
+            workLat: destLat,
+            workLng: destLng,
             googleApiKey: settings.googleApiKey
         )
 
