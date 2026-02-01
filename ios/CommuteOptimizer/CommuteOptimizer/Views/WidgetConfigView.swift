@@ -296,6 +296,9 @@ struct WidgetConfigView: View {
             settingsManager.setWidgetDestination(widgetId, name: "", lat: 0, lng: 0)
         }
 
+        // Force sync UserDefaults before refreshing widget
+        settingsManager.synchronize()
+
         // Refresh widgets
         WidgetCenter.shared.reloadTimelines(ofKind: "CommuteWidget")
 
