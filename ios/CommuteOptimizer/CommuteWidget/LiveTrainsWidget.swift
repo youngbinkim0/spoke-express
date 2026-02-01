@@ -1,11 +1,16 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 struct LiveTrainsWidget: Widget {
     let kind: String = "LiveTrainsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: LiveTrainsWidgetProvider()) { entry in
+        AppIntentConfiguration(
+            kind: kind,
+            intent: LiveTrainsConfigurationIntent.self,
+            provider: LiveTrainsWidgetProvider()
+        ) { entry in
             LiveTrainsWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
@@ -58,7 +63,7 @@ struct LiveTrainsEntry: TimelineEntry {
     }
 }
 
-struct LiveTrainsWidgetProvider: TimelineProvider {
+struct LiveTrainsWidgetProvider: AppIntentTimelineProvider {
     private let mtaService = MtaApiService()
     private let settingsManager = SettingsManager()
     private let stationsDataSource = StationsDataSource.shared
@@ -67,76 +72,77 @@ struct LiveTrainsWidgetProvider: TimelineProvider {
         LiveTrainsEntry.placeholder
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (LiveTrainsEntry) -> Void) {
+    func snapshot(for configuration: LiveTrainsConfigurationIntent, in context: Context) async -> LiveTrainsEntry {
         if context.isPreview {
-            completion(LiveTrainsEntry.placeholder)
-            return
+            return LiveTrainsEntry.placeholder
         }
 
-        settingsManager.loadFromDefaults()
-
-        guard let stationId = settingsManager.liveStations.first,
-              let station = stationsDataSource.getStation(id: stationId) else {
-            completion(LiveTrainsEntry.error("Select station in app"))
-            return
+        // Get station from intent, fall back to settings
+        guard let station = getStation(from: configuration) else {
+            return LiveTrainsEntry.error("Long-press to select station")
         }
 
-        Task {
-            do {
-                let groups = try await mtaService.getGroupedArrivals(
-                    stationId: station.mtaId,
-                    lines: station.lines
-                )
-                let entry = LiveTrainsEntry(
-                    date: Date(),
-                    stationName: station.name,
-                    arrivalGroups: groups,
-                    isLoading: false,
-                    errorMessage: nil
-                )
-                completion(entry)
-            } catch {
-                completion(LiveTrainsEntry.error("Failed to load"))
-            }
+        do {
+            let groups = try await mtaService.getGroupedArrivals(
+                stationId: station.mtaId,
+                lines: station.lines
+            )
+            return LiveTrainsEntry(
+                date: Date(),
+                stationName: station.name,
+                arrivalGroups: groups,
+                isLoading: false,
+                errorMessage: nil
+            )
+        } catch {
+            return LiveTrainsEntry.error("Failed to load")
         }
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<LiveTrainsEntry>) -> Void) {
+    func timeline(for configuration: LiveTrainsConfigurationIntent, in context: Context) async -> Timeline<LiveTrainsEntry> {
+        guard let station = getStation(from: configuration) else {
+            let entry = LiveTrainsEntry.error("Long-press to select station")
+            return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(60 * 60)))
+        }
+
+        do {
+            let groups = try await mtaService.getGroupedArrivals(
+                stationId: station.mtaId,
+                lines: station.lines
+            )
+            let entry = LiveTrainsEntry(
+                date: Date(),
+                stationName: station.name,
+                arrivalGroups: groups,
+                isLoading: false,
+                errorMessage: nil
+            )
+
+            // Refresh every 2 minutes for live arrivals
+            let nextUpdate = Date().addingTimeInterval(2 * 60)
+            return Timeline(entries: [entry], policy: .after(nextUpdate))
+        } catch {
+            let entry = LiveTrainsEntry.error("Failed to load")
+            let nextUpdate = Date().addingTimeInterval(60)  // Retry sooner on error
+            return Timeline(entries: [entry], policy: .after(nextUpdate))
+        }
+    }
+
+    /// Get station from intent configuration, falling back to settings
+    private func getStation(from configuration: LiveTrainsConfigurationIntent) -> LocalStation? {
+        // First try to get station from intent
+        if let stationEntity = configuration.station,
+           let station = stationsDataSource.getStation(id: stationEntity.id) {
+            return station
+        }
+
+        // Fall back to first live station from settings
         settingsManager.loadFromDefaults()
-
-        guard let stationId = settingsManager.liveStations.first,
-              let station = stationsDataSource.getStation(id: stationId) else {
-            let entry = LiveTrainsEntry.error("Select station in app")
-            let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(60 * 60)))
-            completion(timeline)
-            return
+        if let stationId = settingsManager.liveStations.first {
+            return stationsDataSource.getStation(id: stationId)
         }
 
-        Task {
-            do {
-                let groups = try await mtaService.getGroupedArrivals(
-                    stationId: station.mtaId,
-                    lines: station.lines
-                )
-                let entry = LiveTrainsEntry(
-                    date: Date(),
-                    stationName: station.name,
-                    arrivalGroups: groups,
-                    isLoading: false,
-                    errorMessage: nil
-                )
-
-                // Refresh every 2 minutes for live arrivals
-                let nextUpdate = Date().addingTimeInterval(2 * 60)
-                let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-                completion(timeline)
-            } catch {
-                let entry = LiveTrainsEntry.error("Failed to load")
-                let nextUpdate = Date().addingTimeInterval(60)  // Retry sooner on error
-                let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-                completion(timeline)
-            }
-        }
+        return nil
     }
 }
 

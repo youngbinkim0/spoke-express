@@ -12,14 +12,24 @@ class StationsDataSource {
             return cached
         }
 
-        guard let url = Bundle.main.url(forResource: "stations", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let file = try? JSONDecoder().decode(StationsFile.self, from: data) else {
-            return []
+        // Try multiple bundle locations for App Intents compatibility
+        let bundles = [
+            Bundle.main,
+            Bundle(for: StationsDataSource.self),
+            Bundle(identifier: "com.commuteoptimizer.app"),
+            Bundle(identifier: "com.commuteoptimizer.app.widget")
+        ].compactMap { $0 }
+
+        for bundle in bundles {
+            if let url = bundle.url(forResource: "stations", withExtension: "json"),
+               let data = try? Data(contentsOf: url),
+               let file = try? JSONDecoder().decode(StationsFile.self, from: data) {
+                cachedStations = file.stations
+                return file.stations
+            }
         }
 
-        cachedStations = file.stations
-        return file.stations
+        return []
     }
 
     func getStation(id: String) -> LocalStation? {
