@@ -175,14 +175,15 @@ struct WidgetOptionRow: View {
 
 struct WidgetLineBadge: View {
     let line: String
+    var size: CGFloat = 18
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(MtaColors.color(for: line))
-                .frame(width: 18, height: 18)
+                .frame(width: size, height: size)
             Text(MtaColors.cleanExpressLine(line))
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: size * 0.55, weight: .bold))
                 .foregroundColor(MtaColors.textColor(for: line))
         }
     }
@@ -206,7 +207,7 @@ struct WidgetLineBadge: View {
                 ],
                 nextTrain: "3m",
                 arrivalTime: "9:45 AM",
-                station: Station(id: "test", name: "Test", transiterId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
+                station: Station(id: "test", name: "Test", mtaId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
             ),
             CommuteOption(
                 id: "2",
@@ -220,7 +221,7 @@ struct WidgetLineBadge: View {
                 ],
                 nextTrain: "5m",
                 arrivalTime: "9:52 AM",
-                station: Station(id: "test", name: "Test", transiterId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
+                station: Station(id: "test", name: "Test", mtaId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
             ),
             CommuteOption(
                 id: "3",
@@ -235,7 +236,7 @@ struct WidgetLineBadge: View {
                 ],
                 nextTrain: "2m",
                 arrivalTime: "9:55 AM",
-                station: Station(id: "test", name: "Test", transiterId: "A42", lines: ["A", "C", "G"], lat: 0, lng: 0, borough: "Brooklyn")
+                station: Station(id: "test", name: "Test", mtaId: "A42", lines: ["A", "C", "G"], lat: 0, lng: 0, borough: "Brooklyn")
             )
         ],
         weather: Weather(tempF: 68, conditions: "Partly Cloudy", precipitationType: .none, precipitationProbability: 10, isBad: false),

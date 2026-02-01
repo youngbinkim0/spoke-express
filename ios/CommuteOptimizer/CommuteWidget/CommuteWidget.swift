@@ -1,7 +1,6 @@
 import WidgetKit
 import SwiftUI
 
-@main
 struct CommuteWidget: Widget {
     let kind: String = "CommuteWidget"
 

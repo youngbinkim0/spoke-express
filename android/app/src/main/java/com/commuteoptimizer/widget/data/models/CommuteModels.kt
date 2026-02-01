@@ -36,7 +36,7 @@ data class Leg(
 data class Station(
     val id: String,
     val name: String,
-    val transiterId: String,
+    val mtaId: String,
     val lines: List<String>,
     val lat: Double,
     val lng: Double,

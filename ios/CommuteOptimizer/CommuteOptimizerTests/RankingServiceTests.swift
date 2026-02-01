@@ -29,7 +29,7 @@ final class RankingServiceTests: XCTestCase {
             legs: [],
             nextTrain: "5m",
             arrivalTime: "10:00 AM",
-            station: Station(id: "test", name: "Test", transiterId: "T1", lines: ["G"], lat: 0, lng: 0, borough: "Test")
+            station: Station(id: "test", name: "Test", mtaId: "T1", lines: ["G"], lat: 0, lng: 0, borough: "Test")
         )
     }
 

@@ -15,6 +15,7 @@
 		2758CB8FA39FD26A5F54EF26 /* ModeIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87E57947B382E8FBCAB43DB2 /* ModeIcon.swift */; };
 		2A4320CE35D140CCB93A745B /* DistanceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */; };
 		2CE42A85C2FFFC0F0222FCD7 /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
+		2D8AC1DD4F2A797C7DE64F6D /* CommuteWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58966B461B98E35C14734102 /* CommuteWidgetBundle.swift */; };
 		3BC701376CFEEE3297F87045 /* ArrivalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */; };
 		3C865593F20E88EF4D48E962 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
 		3D6FC55F2F63ED51F1582D5F /* StationsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF60417720D055FE703CFBF4 /* StationsDataSource.swift */; };
@@ -42,11 +43,14 @@
 		A88D834DEB640BFC9AFB1056 /* ProtobufReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21F59FB5E386354BF84822E /* ProtobufReader.swift */; };
 		AB39CC183E341C819980709A /* LineBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94068CA57238404C43862F5D /* LineBadge.swift */; };
 		ABBD801B533D3084BE7B0A3F /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
+		AD9FD95BB2977123947FF341 /* MtaAlertsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01821628187940D5861C47B0 /* MtaAlertsService.swift */; };
 		B5CC6B410EB7662C7B73C14F /* DistanceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */; };
 		B904C38CD62903902641B68A /* CommuteWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6568531D8830B44080C04A17 /* CommuteWidgetView.swift */; };
+		B990C6BB5E378AAF22578085 /* MtaAlertsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01821628187940D5861C47B0 /* MtaAlertsService.swift */; };
 		BC3FB6DC2F44764C6FBC5BC0 /* CommuteModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62DDAA0AAA73345A136B97 /* CommuteModels.swift */; };
 		BCE33A6895D1AD54955BDB37 /* GoogleRoutesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */; };
 		BFA84263880E2896FEAEA1E1 /* LiveTrainsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */; };
+		C0C2C369E4E94594C9664223 /* LiveTrainsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3906CED81847F673772EF336 /* LiveTrainsWidget.swift */; };
 		C104C51CDCE3F9093FA91D63 /* WeatherApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */; };
 		D15CDC2C0C71B9BC10D2A9CB /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
 		DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */ = {isa = PBXBuildFile; fileRef = 9D93BF4A058005CD2AB4AFDF /* stations.json */; };
@@ -88,6 +92,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01821628187940D5861C47B0 /* MtaAlertsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaAlertsService.swift; sourceTree = "<group>"; };
 		062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceCalculatorTests.swift; sourceTree = "<group>"; };
 		158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptionCard.swift; sourceTree = "<group>"; };
 		20FD70EE19A6783DCAB687EB /* LocalStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStation.swift; sourceTree = "<group>"; };
@@ -95,9 +100,11 @@
 		2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteCalculator.swift; sourceTree = "<group>"; };
 		2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetProvider.swift; sourceTree = "<group>"; };
 		38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherApiService.swift; sourceTree = "<group>"; };
+		3906CED81847F673772EF336 /* LiveTrainsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrainsWidget.swift; sourceTree = "<group>"; };
 		4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptimizerApp.swift; sourceTree = "<group>"; };
 		524E331C863DE6385393651C /* WeatherHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHeaderView.swift; sourceTree = "<group>"; };
 		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		58966B461B98E35C14734102 /* CommuteWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetBundle.swift; sourceTree = "<group>"; };
 		64E50CC28D3262005EDB073E /* RankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingService.swift; sourceTree = "<group>"; };
 		6568531D8830B44080C04A17 /* CommuteWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetView.swift; sourceTree = "<group>"; };
 		6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrainsView.swift; sourceTree = "<group>"; };
@@ -160,6 +167,7 @@
 				2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */,
 				97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */,
 				B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */,
+				01821628187940D5861C47B0 /* MtaAlertsService.swift */,
 				D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */,
 				64E50CC28D3262005EDB073E /* RankingService.swift */,
 				38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */,
@@ -186,8 +194,10 @@
 			children = (
 				D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */,
 				F5F43213585FBCC698B6C9B5 /* CommuteWidget.swift */,
+				58966B461B98E35C14734102 /* CommuteWidgetBundle.swift */,
 				2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */,
 				6568531D8830B44080C04A17 /* CommuteWidgetView.swift */,
+				3906CED81847F673772EF336 /* LiveTrainsWidget.swift */,
 			);
 			path = CommuteWidget;
 			sourceTree = "<group>";
@@ -411,6 +421,7 @@
 				BFA84263880E2896FEAEA1E1 /* LiveTrainsView.swift in Sources */,
 				5CEEA04331A4D45DA23E9B04 /* LocalStation.swift in Sources */,
 				2758CB8FA39FD26A5F54EF26 /* ModeIcon.swift in Sources */,
+				AD9FD95BB2977123947FF341 /* MtaAlertsService.swift in Sources */,
 				195433E80C93C8303B874EB9 /* MtaApiService.swift in Sources */,
 				2CE42A85C2FFFC0F0222FCD7 /* MtaColors.swift in Sources */,
 				A88D834DEB640BFC9AFB1056 /* ProtobufReader.swift in Sources */,
@@ -444,11 +455,14 @@
 				E080FCC67DC1551501C9990C /* CommuteCalculator.swift in Sources */,
 				548DFD375408C0FB4765F4ED /* CommuteModels.swift in Sources */,
 				1463E7F774EC42C532C0AB6C /* CommuteWidget.swift in Sources */,
+				2D8AC1DD4F2A797C7DE64F6D /* CommuteWidgetBundle.swift in Sources */,
 				E6529A633CB15339A0370B0F /* CommuteWidgetProvider.swift in Sources */,
 				B904C38CD62903902641B68A /* CommuteWidgetView.swift in Sources */,
 				B5CC6B410EB7662C7B73C14F /* DistanceCalculator.swift in Sources */,
 				7205EA5E115FE31CFC722705 /* GoogleRoutesService.swift in Sources */,
+				C0C2C369E4E94594C9664223 /* LiveTrainsWidget.swift in Sources */,
 				48927C527E8EAA0FD9515EB7 /* LocalStation.swift in Sources */,
+				B990C6BB5E378AAF22578085 /* MtaAlertsService.swift in Sources */,
 				08E3962A5B5D515C3A28ADC9 /* MtaApiService.swift in Sources */,
 				D15CDC2C0C71B9BC10D2A9CB /* MtaColors.swift in Sources */,
 				663D414A74B713973E6BBDEE /* ProtobufReader.swift in Sources */,

@@ -3,7 +3,7 @@ import Foundation
 struct LocalStation: Codable, Identifiable {
     let id: String
     let name: String
-    let transiterId: String
+    let mtaId: String
     let lines: [String]
     let lat: Double
     let lng: Double

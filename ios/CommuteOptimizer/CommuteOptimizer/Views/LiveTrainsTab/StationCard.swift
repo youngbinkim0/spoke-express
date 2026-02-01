@@ -111,7 +111,7 @@ struct ArrivalBadge: View {
             station: LocalStation(
                 id: "bedford-nostrand",
                 name: "Bedford-Nostrand Avs",
-                transiterId: "G33",
+                mtaId: "G33",
                 lines: ["G"],
                 lat: 40.6896,
                 lng: -73.9535,
