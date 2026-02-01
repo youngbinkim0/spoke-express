@@ -3,27 +3,34 @@ import SwiftUI
 struct StationPickerView: View {
     @Binding var selectedStations: [String]
     let maxSelections: Int?  // nil for unlimited
+    let homeLat: Double
+    let homeLng: Double
 
     private let stationsDataSource = StationsDataSource.shared
 
     var body: some View {
-        let stations = stationsDataSource.getStations()
+        let sortedStations: [(station: LocalStation, distance: Double)]
 
-        // Group stations by borough
-        let groupedStations = Dictionary(grouping: stations) { $0.borough }
-        let sortedBoroughs = groupedStations.keys.sorted()
+        // Sort by distance from home if home is set, otherwise alphabetically
+        if homeLat != 0 && homeLng != 0 {
+            sortedStations = stationsDataSource.getStationsSortedByDistance(
+                fromLat: homeLat,
+                fromLng: homeLng
+            )
+        } else {
+            sortedStations = stationsDataSource.getStations()
+                .sorted { $0.name < $1.name }
+                .map { ($0, 0.0) }
+        }
 
-        ForEach(sortedBoroughs, id: \.self) { borough in
-            Section(header: Text(borough).font(.caption).foregroundColor(.secondary)) {
-                ForEach(groupedStations[borough] ?? [], id: \.id) { station in
-                    StationRow(
-                        station: station,
-                        isSelected: selectedStations.contains(station.id),
-                        canSelect: canSelectMore || selectedStations.contains(station.id),
-                        onToggle: { toggleStation(station.id) }
-                    )
-                }
-            }
+        ForEach(sortedStations, id: \.station.id) { item in
+            StationRow(
+                station: item.station,
+                distance: homeLat != 0 ? item.distance : nil,
+                isSelected: selectedStations.contains(item.station.id),
+                canSelect: canSelectMore || selectedStations.contains(item.station.id),
+                onToggle: { toggleStation(item.station.id) }
+            )
         }
     }
 
@@ -43,6 +50,7 @@ struct StationPickerView: View {
 
 struct StationRow: View {
     let station: LocalStation
+    let distance: Double?  // nil if home not set
     let isSelected: Bool
     let canSelect: Bool
     let onToggle: () -> Void
@@ -51,9 +59,17 @@ struct StationRow: View {
         Button(action: onToggle) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(station.name)
-                        .font(.subheadline)
-                        .foregroundColor(canSelect || isSelected ? .primary : .secondary)
+                    HStack {
+                        Text(station.name)
+                            .font(.subheadline)
+                            .foregroundColor(canSelect || isSelected ? .primary : .secondary)
+
+                        if let distance = distance {
+                            Text(String(format: "%.1f mi", distance))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
 
                     LineBadgeRow(lines: station.lines, size: 18)
                 }
@@ -82,7 +98,9 @@ struct StationRow: View {
     Form {
         StationPickerView(
             selectedStations: .constant(["bedford-nostrand", "classon"]),
-            maxSelections: 3
+            maxSelections: 3,
+            homeLat: 40.6896,
+            homeLng: -73.9535
         )
     }
 }

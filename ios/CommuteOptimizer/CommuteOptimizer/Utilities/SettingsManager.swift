@@ -194,7 +194,7 @@ class SettingsManager: ObservableObject {
     // MARK: - Validation
 
     var isConfigured: Bool {
-        !openWeatherApiKey.isEmpty &&
+        !googleApiKey.isEmpty &&
         homeLat != 0 && homeLng != 0 &&
         workLat != 0 && workLng != 0 &&
         !bikeStations.isEmpty
