@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -54,6 +54,7 @@
 		C104C51CDCE3F9093FA91D63 /* WeatherApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */; };
 		D15CDC2C0C71B9BC10D2A9CB /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
 		DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */ = {isa = PBXBuildFile; fileRef = 9D93BF4A058005CD2AB4AFDF /* stations.json */; };
+		DDE20384F6F0AE31B2652DE5 /* stations.json in Resources */ = {isa = PBXBuildFile; fileRef = 9D93BF4A058005CD2AB4AFDF /* stations.json */; };
 		E080FCC67DC1551501C9990C /* CommuteCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */; };
 		E31B6185D3DE7E6D112BC8D7 /* CommuteCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */; };
 		E6529A633CB15339A0370B0F /* CommuteWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */; };
@@ -96,14 +97,14 @@
 		062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceCalculatorTests.swift; sourceTree = "<group>"; };
 		158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptionCard.swift; sourceTree = "<group>"; };
 		20FD70EE19A6783DCAB687EB /* LocalStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStation.swift; sourceTree = "<group>"; };
-		23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CommuteOptimizerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CommuteOptimizerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteCalculator.swift; sourceTree = "<group>"; };
 		2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetProvider.swift; sourceTree = "<group>"; };
 		38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherApiService.swift; sourceTree = "<group>"; };
 		3906CED81847F673772EF336 /* LiveTrainsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrainsWidget.swift; sourceTree = "<group>"; };
 		4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptimizerApp.swift; sourceTree = "<group>"; };
 		524E331C863DE6385393651C /* WeatherHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHeaderView.swift; sourceTree = "<group>"; };
-		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		58966B461B98E35C14734102 /* CommuteWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetBundle.swift; sourceTree = "<group>"; };
 		64E50CC28D3262005EDB073E /* RankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingService.swift; sourceTree = "<group>"; };
 		6568531D8830B44080C04A17 /* CommuteWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetView.swift; sourceTree = "<group>"; };
@@ -123,7 +124,7 @@
 		D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaApiService.swift; sourceTree = "<group>"; };
 		D21F59FB5E386354BF84822E /* ProtobufReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtobufReader.swift; sourceTree = "<group>"; };
 		D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CommuteWidget.entitlements; sourceTree = "<group>"; };
-		D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CommuteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CommuteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalModels.swift; sourceTree = "<group>"; };
 		EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaColors.swift; sourceTree = "<group>"; };
@@ -301,6 +302,7 @@
 			buildConfigurationList = 0A9969E81D619C268B099F1D /* Build configuration list for PBXNativeTarget "CommuteWidgetExtension" */;
 			buildPhases = (
 				FD87339050D9B2AB69000E52 /* Sources */,
+				207889F4F5E002B03BD1A3DA /* Resources */,
 			);
 			buildRules = (
 			);
@@ -358,7 +360,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					7D143FBE68D04228ECD1DD17 = {
 						DevelopmentTeam = "";
@@ -381,7 +383,6 @@
 			);
 			mainGroup = C6EA62F72F11D095230AD4AC;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -398,6 +399,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		207889F4F5E002B03BD1A3DA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDE20384F6F0AE31B2652DE5 /* stations.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -600,6 +609,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -613,6 +623,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -682,6 +693,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -702,6 +714,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
