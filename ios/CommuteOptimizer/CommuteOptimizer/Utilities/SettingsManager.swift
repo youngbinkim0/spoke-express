@@ -208,23 +208,39 @@ class SettingsManager: ObservableObject {
     }
 
     func getWidgetOriginLat(_ widgetId: String) -> Double {
-        let lat = defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double
-        return lat ?? homeLat
+        guard let lat = defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double,
+              lat != 0 else {
+            return homeLat
+        }
+        return lat
     }
 
     func getWidgetOriginLng(_ widgetId: String) -> Double {
-        let lng = defaults.object(forKey: "widget_origin_lng_\(widgetId)") as? Double
-        return lng ?? homeLng
+        guard let lng = defaults.object(forKey: "widget_origin_lng_\(widgetId)") as? Double,
+              lng != 0 else {
+            return homeLng
+        }
+        return lng
     }
 
     func setWidgetOrigin(_ widgetId: String, name: String, lat: Double, lng: Double) {
-        defaults.set(name, forKey: "widget_origin_name_\(widgetId)")
-        defaults.set(lat, forKey: "widget_origin_lat_\(widgetId)")
-        defaults.set(lng, forKey: "widget_origin_lng_\(widgetId)")
+        if lat == 0 && lng == 0 {
+            // Clear custom origin - remove keys so fallback to home works
+            defaults.removeObject(forKey: "widget_origin_name_\(widgetId)")
+            defaults.removeObject(forKey: "widget_origin_lat_\(widgetId)")
+            defaults.removeObject(forKey: "widget_origin_lng_\(widgetId)")
+        } else {
+            defaults.set(name, forKey: "widget_origin_name_\(widgetId)")
+            defaults.set(lat, forKey: "widget_origin_lat_\(widgetId)")
+            defaults.set(lng, forKey: "widget_origin_lng_\(widgetId)")
+        }
     }
 
     func hasWidgetOrigin(_ widgetId: String) -> Bool {
-        defaults.object(forKey: "widget_origin_lat_\(widgetId)") != nil
+        guard let lat = defaults.object(forKey: "widget_origin_lat_\(widgetId)") as? Double else {
+            return false
+        }
+        return lat != 0
     }
 
     func getWidgetDestinationName(_ widgetId: String) -> String {
@@ -233,23 +249,39 @@ class SettingsManager: ObservableObject {
     }
 
     func getWidgetDestinationLat(_ widgetId: String) -> Double {
-        let lat = defaults.object(forKey: "widget_dest_lat_\(widgetId)") as? Double
-        return lat ?? workLat
+        guard let lat = defaults.object(forKey: "widget_dest_lat_\(widgetId)") as? Double,
+              lat != 0 else {
+            return workLat
+        }
+        return lat
     }
 
     func getWidgetDestinationLng(_ widgetId: String) -> Double {
-        let lng = defaults.object(forKey: "widget_dest_lng_\(widgetId)") as? Double
-        return lng ?? workLng
+        guard let lng = defaults.object(forKey: "widget_dest_lng_\(widgetId)") as? Double,
+              lng != 0 else {
+            return workLng
+        }
+        return lng
     }
 
     func setWidgetDestination(_ widgetId: String, name: String, lat: Double, lng: Double) {
-        defaults.set(name, forKey: "widget_dest_name_\(widgetId)")
-        defaults.set(lat, forKey: "widget_dest_lat_\(widgetId)")
-        defaults.set(lng, forKey: "widget_dest_lng_\(widgetId)")
+        if lat == 0 && lng == 0 {
+            // Clear custom destination - remove keys so fallback to work works
+            defaults.removeObject(forKey: "widget_dest_name_\(widgetId)")
+            defaults.removeObject(forKey: "widget_dest_lat_\(widgetId)")
+            defaults.removeObject(forKey: "widget_dest_lng_\(widgetId)")
+        } else {
+            defaults.set(name, forKey: "widget_dest_name_\(widgetId)")
+            defaults.set(lat, forKey: "widget_dest_lat_\(widgetId)")
+            defaults.set(lng, forKey: "widget_dest_lng_\(widgetId)")
+        }
     }
 
     func hasWidgetDestination(_ widgetId: String) -> Bool {
-        defaults.object(forKey: "widget_dest_lat_\(widgetId)") != nil
+        guard let lat = defaults.object(forKey: "widget_dest_lat_\(widgetId)") as? Double else {
+            return false
+        }
+        return lat != 0
     }
 
     func getLiveTrainsWidgetStation(_ widgetId: String) -> String? {
@@ -271,5 +303,10 @@ class SettingsManager: ObservableObject {
             "live_trains_station_\(widgetId)"
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }
+    }
+
+    /// Force synchronize UserDefaults to ensure data is written
+    func synchronize() {
+        defaults.synchronize()
     }
 }
