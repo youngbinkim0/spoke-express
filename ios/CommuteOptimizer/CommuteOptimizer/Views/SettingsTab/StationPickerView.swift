@@ -6,6 +6,8 @@ struct StationPickerView: View {
     let homeLat: Double
     let homeLng: Double
 
+    @State private var searchText = ""
+
     private let stationsDataSource = StationsDataSource.shared
 
     private var sortedStations: [(station: LocalStation, distance: Double)] {
@@ -22,20 +24,74 @@ struct StationPickerView: View {
         }
     }
 
+    private var filteredStations: [(station: LocalStation, distance: Double)] {
+        guard !searchText.isEmpty else { return sortedStations }
+
+        let query = searchText.lowercased()
+        return sortedStations.filter { item in
+            // Match station name
+            if item.station.name.lowercased().contains(query) {
+                return true
+            }
+            // Match line letter/number (e.g., "G", "1", "A")
+            if item.station.lines.contains(where: { $0.lowercased() == query || $0.lowercased().contains(query) }) {
+                return true
+            }
+            return false
+        }
+    }
+
     private var canSelectMore: Bool {
         guard let max = maxSelections else { return true }
         return selectedStations.count < max
     }
 
     var body: some View {
-        ForEach(sortedStations, id: \.station.id) { item in
-            StationRow(
-                station: item.station,
-                distance: homeLat != 0 ? item.distance : nil,
-                isSelected: selectedStations.contains(item.station.id),
-                canSelect: canSelectMore || selectedStations.contains(item.station.id),
-                onToggle: { toggleStation(item.station.id) }
-            )
+        VStack(spacing: 0) {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("Search by name or line", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(8)
+            .background(Color(.systemGray6))
+            .cornerRadius(8)
+            .padding(.bottom, 8)
+
+            // Station count info
+            HStack {
+                Text("\(selectedStations.count) selected")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("\(filteredStations.count) shown")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.bottom, 4)
+
+            // Station list
+            ForEach(filteredStations, id: \.station.id) { item in
+                StationRow(
+                    station: item.station,
+                    distance: homeLat != 0 ? item.distance : nil,
+                    isSelected: selectedStations.contains(item.station.id),
+                    canSelect: canSelectMore || selectedStations.contains(item.station.id),
+                    onToggle: { toggleStation(item.station.id) }
+                )
+            }
         }
     }
 

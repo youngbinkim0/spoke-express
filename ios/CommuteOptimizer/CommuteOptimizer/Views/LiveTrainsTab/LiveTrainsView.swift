@@ -8,6 +8,7 @@ struct LiveTrainsView: View {
 
     private let mtaService = MtaApiService()
     private let stationsDataSource = StationsDataSource.shared
+    private let refreshTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationView {
@@ -36,6 +37,12 @@ struct LiveTrainsView: View {
             .task {
                 if !settingsManager.liveStations.isEmpty {
                     await loadArrivals()
+                }
+            }
+            .onReceive(refreshTimer) { _ in
+                // Auto-refresh every 30 seconds like Android
+                if !settingsManager.liveStations.isEmpty && !isLoading {
+                    Task { await loadArrivals() }
                 }
             }
         }
@@ -101,7 +108,7 @@ struct LiveTrainsView: View {
 
             do {
                 let groups = try await mtaService.getGroupedArrivals(
-                    stationId: station.transiterId,
+                    stationId: station.mtaId,
                     lines: station.lines
                 )
                 newArrivals[stationId] = groups

@@ -26,8 +26,8 @@ class StationsDataSource {
         getStations().first { $0.id == id }
     }
 
-    func getStationByTransiterId(_ transiterId: String) -> LocalStation? {
-        getStations().first { $0.transiterId == transiterId }
+    func getStationByMtaId(_ mtaId: String) -> LocalStation? {
+        getStations().first { $0.mtaId == mtaId }
     }
 
     /// Get stations sorted by distance from a location

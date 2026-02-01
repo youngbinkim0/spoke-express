@@ -146,7 +146,7 @@ struct LegView: View {
             ],
             nextTrain: "3m",
             arrivalTime: "9:45 AM",
-            station: Station(id: "test", name: "Bedford-Nostrand", transiterId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
+            station: Station(id: "test", name: "Bedford-Nostrand", mtaId: "G33", lines: ["G"], lat: 0, lng: 0, borough: "Brooklyn")
         ))
     }
     .padding()

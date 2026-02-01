@@ -3,6 +3,7 @@ import Foundation
 actor CommuteCalculator {
     private let weatherService = WeatherApiService()
     private let mtaService = MtaApiService()
+    private let mtaAlertsService = MtaAlertsService()
     private let googleRoutesService = GoogleRoutesService()
     private let stationsDataSource = StationsDataSource.shared
 
@@ -51,7 +52,7 @@ actor CommuteCalculator {
                 station: Station(
                     id: destStation.id,
                     name: destStation.name,
-                    transiterId: destStation.transiterId,
+                    mtaId: destStation.mtaId,
                     lines: destStation.lines,
                     lat: destStation.lat,
                     lng: destStation.lng,
@@ -195,8 +196,8 @@ actor CommuteCalculator {
 
         // Fallback to local estimate
         let transitTime = DistanceCalculator.estimateTransitTime(
-            fromStopId: fromStation.transiterId,
-            toStopId: toStation.transiterId
+            fromStopId: fromStation.mtaId,
+            toStopId: toStation.mtaId
         )
         return (transitTime, [Leg(mode: .subway, duration: transitTime, to: toStation.name, route: fromStation.lines.first, from: fromStation.name)])
     }
@@ -213,7 +214,7 @@ actor CommuteCalculator {
             toLat: station.lat, toLng: station.lng
         )
 
-        let arrival = await mtaService.getNextArrival(stationId: station.transiterId, lines: station.lines)
+        let arrival = await mtaService.getNextArrival(stationId: station.mtaId, lines: station.lines)
         let waitTime = arrival.minutesAway
 
         // Get transit route (uses Google API if available)
@@ -248,7 +249,7 @@ actor CommuteCalculator {
             station: Station(
                 id: station.id,
                 name: station.name,
-                transiterId: station.transiterId,
+                mtaId: station.mtaId,
                 lines: station.lines,
                 lat: station.lat,
                 lng: station.lng,
@@ -267,7 +268,7 @@ actor CommuteCalculator {
             toLat: station.lat, toLng: station.lng
         )
 
-        let arrival = await mtaService.getNextArrival(stationId: station.transiterId, lines: station.lines)
+        let arrival = await mtaService.getNextArrival(stationId: station.mtaId, lines: station.lines)
         let waitTime = arrival.minutesAway
 
         // Get transit route (uses Google API if available)
@@ -302,7 +303,7 @@ actor CommuteCalculator {
             station: Station(
                 id: station.id,
                 name: station.name,
-                transiterId: station.transiterId,
+                mtaId: station.mtaId,
                 lines: station.lines,
                 lat: station.lat,
                 lng: station.lng,
@@ -321,8 +322,11 @@ actor CommuteCalculator {
     }
 
     private func fetchAlerts(routeIds: [String]) async -> [ServiceAlert] {
-        // TODO: Implement MtaAlertsService
-        return []
+        let alerts = await mtaAlertsService.fetchAlerts(routeIds: routeIds)
+        // Filter to only show significant alerts and limit to 3
+        return Array(alerts.filter {
+            ["NO_SERVICE", "REDUCED_SERVICE", "SIGNIFICANT_DELAYS"].contains($0.effect)
+        }.prefix(3))
     }
 }
 
