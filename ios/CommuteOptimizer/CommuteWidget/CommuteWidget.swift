@@ -8,6 +8,7 @@ struct CommuteWidget: Widget {
         StaticConfiguration(kind: kind, provider: CommuteWidgetProvider()) { entry in
             CommuteWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: "widget://configure?widgetId=commute-default"))
         }
         .configurationDisplayName("Commute Options")
         .description("Shows your top 3 commute options with weather and arrival times.")
