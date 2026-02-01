@@ -65,8 +65,6 @@ targets:
       - path: CommuteOptimizer/Utilities
     resources:
       - path: CommuteOptimizer/Resources
-    info:
-      path: CommuteWidget/Info.plist
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.commuteoptimizer.app.widget
@@ -75,6 +73,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: CommuteWidget/CommuteWidget.entitlements
         ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_FILE: CommuteWidget/Info.plist
     entitlements:
       path: CommuteWidget/CommuteWidget.entitlements
       properties:

@@ -19,25 +19,25 @@ struct SettingsView: View {
             Form {
                 // API Keys Section
                 Section("API Configuration") {
-                    SecureField("OpenWeather API Key", text: Binding(
-                        get: { settingsManager.openWeatherApiKey },
-                        set: { settingsManager.openWeatherApiKey = $0 }
-                    ))
-                    .textContentType(.password)
-                    .autocapitalization(.none)
-
-                    Text("Required - get free key at openweathermap.org")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    SecureField("Google API Key (optional)", text: Binding(
+                    TextField("Google API Key", text: Binding(
                         get: { settingsManager.googleApiKey },
                         set: { settingsManager.googleApiKey = $0 }
                     ))
-                    .textContentType(.password)
                     .autocapitalization(.none)
+                    .autocorrectionDisabled()
 
-                    Text("Optional - enables accurate transit routing")
+                    Text("Required - for transit routing")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    TextField("OpenWeather API Key (optional)", text: Binding(
+                        get: { settingsManager.openWeatherApiKey },
+                        set: { settingsManager.openWeatherApiKey = $0 }
+                    ))
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+
+                    Text("Optional - for weather data (openweathermap.org)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -112,7 +112,9 @@ struct SettingsView: View {
                                     get: { settingsManager.bikeStations },
                                     set: { settingsManager.bikeStations = $0 }
                                 ),
-                                maxSelections: nil
+                                maxSelections: nil,
+                                homeLat: settingsManager.homeLat,
+                                homeLng: settingsManager.homeLng
                             )
                         },
                         label: {
@@ -137,7 +139,9 @@ struct SettingsView: View {
                                     get: { settingsManager.liveStations },
                                     set: { settingsManager.liveStations = $0 }
                                 ),
-                                maxSelections: 3
+                                maxSelections: 3,
+                                homeLat: settingsManager.homeLat,
+                                homeLng: settingsManager.homeLng
                             )
                         },
                         label: {
