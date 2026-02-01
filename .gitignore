@@ -24,3 +24,9 @@ data/settings.json
 
 # Docker
 pgdata/
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Android screenshots
+android/screenshots/
