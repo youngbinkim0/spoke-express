@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -91,13 +91,13 @@
 		062C2793FA7250063862D845 /* DistanceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceCalculatorTests.swift; sourceTree = "<group>"; };
 		158A178637942ADD7197BAF2 /* CommuteOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptionCard.swift; sourceTree = "<group>"; };
 		20FD70EE19A6783DCAB687EB /* LocalStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStation.swift; sourceTree = "<group>"; };
-		23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CommuteOptimizerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		23E1D93CB97F1966F023C8ED /* CommuteOptimizerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CommuteOptimizerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2BFDDD80992FD90FFEFD176A /* CommuteCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteCalculator.swift; sourceTree = "<group>"; };
 		2DE95B1EAF8A44F1C7896593 /* CommuteWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetProvider.swift; sourceTree = "<group>"; };
 		38D7C429DABE7AC12C6BF52F /* WeatherApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherApiService.swift; sourceTree = "<group>"; };
 		4F65FBC4C697B91F9316E306 /* CommuteOptimizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteOptimizerApp.swift; sourceTree = "<group>"; };
 		524E331C863DE6385393651C /* WeatherHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHeaderView.swift; sourceTree = "<group>"; };
-		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5339234B236D5CFD4929AA51 /* CommuteOptimizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CommuteOptimizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		64E50CC28D3262005EDB073E /* RankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingService.swift; sourceTree = "<group>"; };
 		6568531D8830B44080C04A17 /* CommuteWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommuteWidgetView.swift; sourceTree = "<group>"; };
 		6759D3D116C53F44A868BCE3 /* LiveTrainsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrainsView.swift; sourceTree = "<group>"; };
@@ -116,7 +116,7 @@
 		D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaApiService.swift; sourceTree = "<group>"; };
 		D21F59FB5E386354BF84822E /* ProtobufReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtobufReader.swift; sourceTree = "<group>"; };
 		D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CommuteWidget.entitlements; sourceTree = "<group>"; };
-		D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CommuteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D870488D5B4DFBD8C1D813FB /* CommuteWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CommuteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E0BB62EE584EDFA08C240EF9 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalModels.swift; sourceTree = "<group>"; };
 		EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaColors.swift; sourceTree = "<group>"; };
@@ -348,7 +348,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					7D143FBE68D04228ECD1DD17 = {
 						DevelopmentTeam = "";
@@ -371,7 +371,6 @@
 			);
 			mainGroup = C6EA62F72F11D095230AD4AC;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -483,11 +482,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = CommuteWidget/CommuteWidget.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = CommuteWidget;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = CommuteWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -539,11 +534,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = CommuteWidget/CommuteWidget.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = CommuteWidget;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = CommuteWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -594,6 +585,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -607,6 +599,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -676,6 +669,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -696,6 +690,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;

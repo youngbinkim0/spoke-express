@@ -57,22 +57,21 @@ targets:
     platform: iOS
     sources:
       - path: CommuteWidget
+        excludes:
+          - Info.plist
       # Widget needs access to shared code
       - path: CommuteOptimizer/Models
       - path: CommuteOptimizer/Services
       - path: CommuteOptimizer/Utilities
     resources:
       - path: CommuteOptimizer/Resources
+    info:
+      path: CommuteWidget/Info.plist
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.commuteoptimizer.app.widget
-        INFOPLIST_GENERATION_MODE: GeneratedFile
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: CommuteWidget
-        INFOPLIST_KEY_NSHumanReadableCopyright: ""
-        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         CODE_SIGN_ENTITLEMENTS: CommuteWidget/CommuteWidget.entitlements
         ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
