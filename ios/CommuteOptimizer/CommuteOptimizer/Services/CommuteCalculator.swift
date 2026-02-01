@@ -156,6 +156,51 @@ actor CommuteCalculator {
         return Array(seen.values)
     }
 
+    /// Get transit route using Google API if available, fallback to local estimate
+    private func getTransitRoute(
+        fromStation: LocalStation,
+        toStation: LocalStation,
+        workLat: Double,
+        workLng: Double,
+        googleApiKey: String?
+    ) async -> (duration: Int, legs: [Leg]) {
+        // Try Google Routes API if key is provided
+        if let apiKey = googleApiKey, !apiKey.isEmpty {
+            let result = await googleRoutesService.getTransitRoute(
+                apiKey: apiKey,
+                originLat: fromStation.lat, originLng: fromStation.lng,
+                destLat: workLat, destLng: workLng
+            )
+
+            if result.status == "OK", let duration = result.durationMinutes {
+                let legs = result.transitSteps.map { step in
+                    Leg(
+                        mode: .subway,
+                        duration: step.duration ?? 0,
+                        to: step.arrivalStop ?? "?",
+                        route: step.line,
+                        from: step.departureStop,
+                        numStops: step.numStops
+                    )
+                }
+
+                if !legs.isEmpty {
+                    return (duration, legs)
+                }
+
+                // Google returned duration but no detailed steps
+                return (duration, [Leg(mode: .subway, duration: duration, to: toStation.name, route: fromStation.lines.first, from: fromStation.name)])
+            }
+        }
+
+        // Fallback to local estimate
+        let transitTime = DistanceCalculator.estimateTransitTime(
+            fromStopId: fromStation.transiterId,
+            toStopId: toStation.transiterId
+        )
+        return (transitTime, [Leg(mode: .subway, duration: transitTime, to: toStation.name, route: fromStation.lines.first, from: fromStation.name)])
+    }
+
     private func buildBikeToTransitOption(
         stationId: String,
         destStation: LocalStation,
@@ -171,28 +216,33 @@ actor CommuteCalculator {
         let arrival = await mtaService.getNextArrival(stationId: station.transiterId, lines: station.lines)
         let waitTime = arrival.minutesAway
 
-        let transitTime = DistanceCalculator.estimateTransitTime(
-            fromStopId: station.transiterId,
-            toStopId: destStation.transiterId
+        // Get transit route (uses Google API if available)
+        let (transitTime, transitLegs) = await getTransitRoute(
+            fromStation: station,
+            toStation: destStation,
+            workLat: settings.workLat,
+            workLng: settings.workLng,
+            googleApiKey: settings.googleApiKey
         )
 
         let totalDuration = bikeTime + waitTime + transitTime
-        let route = arrival.routeId ?? station.lines.first ?? "?"
+        let route = arrival.routeId ?? transitLegs.first?.route ?? station.lines.first ?? "?"
+        let finalStop = transitLegs.last?.to ?? destStation.name
 
         let arrivalDate = Date().addingTimeInterval(TimeInterval(totalDuration * 60))
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
+
+        // Build summary like Android: "Bike -> G -> Court Sq" or "Bike -> A -> G -> Court Sq"
+        let summary = buildSummary(firstMode: "Bike", transitLegs: transitLegs, firstLine: route, finalStop: finalStop)
 
         return CommuteOption(
             id: "bike-\(stationId)",
             rank: 0,
             type: .bikeToTransit,
             durationMinutes: totalDuration,
-            summary: "Bike -> \(route) -> \(destStation.name)",
-            legs: [
-                Leg(mode: .bike, duration: bikeTime, to: station.name),
-                Leg(mode: .subway, duration: transitTime, to: destStation.name, route: route, from: station.name)
-            ],
+            summary: summary,
+            legs: [Leg(mode: .bike, duration: bikeTime, to: station.name)] + transitLegs,
             nextTrain: arrival.nextTrain,
             arrivalTime: formatter.string(from: arrivalDate),
             station: Station(
@@ -220,28 +270,33 @@ actor CommuteCalculator {
         let arrival = await mtaService.getNextArrival(stationId: station.transiterId, lines: station.lines)
         let waitTime = arrival.minutesAway
 
-        let transitTime = DistanceCalculator.estimateTransitTime(
-            fromStopId: station.transiterId,
-            toStopId: destStation.transiterId
+        // Get transit route (uses Google API if available)
+        let (transitTime, transitLegs) = await getTransitRoute(
+            fromStation: station,
+            toStation: destStation,
+            workLat: settings.workLat,
+            workLng: settings.workLng,
+            googleApiKey: settings.googleApiKey
         )
 
         let totalDuration = walkTime + waitTime + transitTime
-        let route = arrival.routeId ?? station.lines.first ?? "?"
+        let route = arrival.routeId ?? transitLegs.first?.route ?? station.lines.first ?? "?"
+        let finalStop = transitLegs.last?.to ?? destStation.name
 
         let arrivalDate = Date().addingTimeInterval(TimeInterval(totalDuration * 60))
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
+
+        // Build summary like Android: "Walk -> G -> Court Sq" or "Walk -> A -> G -> Court Sq"
+        let summary = buildSummary(firstMode: "Walk", transitLegs: transitLegs, firstLine: route, finalStop: finalStop)
 
         return CommuteOption(
             id: "transit-\(station.id)",
             rank: 0,
             type: .transitOnly,
             durationMinutes: totalDuration,
-            summary: "Walk -> \(route) -> \(destStation.name)",
-            legs: [
-                Leg(mode: .walk, duration: walkTime, to: station.name),
-                Leg(mode: .subway, duration: transitTime, to: destStation.name, route: route, from: station.name)
-            ],
+            summary: summary,
+            legs: [Leg(mode: .walk, duration: walkTime, to: station.name)] + transitLegs,
             nextTrain: arrival.nextTrain,
             arrivalTime: formatter.string(from: arrivalDate),
             station: Station(
@@ -254,6 +309,15 @@ actor CommuteCalculator {
                 borough: station.borough
             )
         )
+    }
+
+    /// Build summary string like Android: "Mode -> Lines -> FinalStop"
+    private func buildSummary(firstMode: String, transitLegs: [Leg], firstLine: String?, finalStop: String) -> String {
+        let lines = transitLegs.compactMap { $0.route }.filter { !$0.isEmpty }
+        let uniqueLines = lines.isEmpty ? [firstLine ?? "?"] : Array(NSOrderedSet(array: lines)) as! [String]
+        let linesSummary = uniqueLines.joined(separator: " -> ")
+        let destination = transitLegs.last?.to ?? finalStop
+        return "\(firstMode) -> \(linesSummary) -> \(destination)"
     }
 
     private func fetchAlerts(routeIds: [String]) async -> [ServiceAlert] {
