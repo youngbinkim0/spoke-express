@@ -17,7 +17,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                // API Keys Section
+                // API Key Section
                 Section("API Configuration") {
                     SecureField("OpenWeather API Key", text: Binding(
                         get: { settingsManager.openWeatherApiKey },
@@ -26,20 +26,9 @@ struct SettingsView: View {
                     .textContentType(.password)
                     .autocapitalization(.none)
 
-                    SecureField("Google API Key (optional)", text: Binding(
-                        get: { settingsManager.googleApiKey },
-                        set: { settingsManager.googleApiKey = $0 }
-                    ))
-                    .textContentType(.password)
-                    .autocapitalization(.none)
-
-                    TextField("Worker URL (optional)", text: Binding(
-                        get: { settingsManager.workerUrl },
-                        set: { settingsManager.workerUrl = $0 }
-                    ))
-                    .textContentType(.URL)
-                    .autocapitalization(.none)
-                    .keyboardType(.URL)
+                    Text("Get a free API key at openweathermap.org")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 // Home Address Section
