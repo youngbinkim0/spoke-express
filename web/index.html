@@ -928,7 +928,17 @@
       btn.textContent = '↻ Refresh';
     }
 
+    // Load persisted bike toggle setting
+    function loadBikeToggleSetting() {
+      const settings = loadSettings();
+      const bikeToggle = document.getElementById('bikeToggle');
+      if (bikeToggle && settings && settings.showBikeOptions !== undefined) {
+        bikeToggle.checked = settings.showBikeOptions;
+      }
+    }
+
     // Initial load
+    loadBikeToggleSetting();
     loadStations().then(loadCommute);
 
     // Auto-refresh every 30 seconds

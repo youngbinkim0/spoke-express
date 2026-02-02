@@ -294,6 +294,20 @@
       padding: 40px;
       color: #666;
     }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -324,6 +338,15 @@
           <input type="text" id="workerUrl" class="api-input" placeholder="https://commute-directions.your-account.workers.dev">
           <div class="help-text">Cloudflare Worker to proxy Google Directions API. See <code>cloudflare-worker/</code> to deploy. Both this URL and Google API key are needed for live transit times.</div>
         </div>
+      </div>
+
+      <!-- Display Options -->
+      <div class="card">
+        <h2>Display Options</h2>
+        <label class="toggle-row">
+          <input type="checkbox" id="showBikeOptions" checked>
+          <span>Show bike-to-transit options</span>
+        </label>
       </div>
 
       <!-- Home Location -->
@@ -513,6 +536,7 @@
       document.getElementById('apiKey').value = settings.apiKey || '';
       document.getElementById('googleKey').value = settings.googleKey || '';
       document.getElementById('workerUrl').value = settings.workerUrl || '';
+      document.getElementById('showBikeOptions').checked = settings.showBikeOptions ?? true;
       document.getElementById('homeAddress').value = settings.homeAddress || '';
       document.getElementById('homeLat').value = settings.homeLat || '';
       document.getElementById('homeLng').value = settings.homeLng || '';
@@ -626,6 +650,7 @@
         apiKey: document.getElementById('apiKey').value.trim(),
         googleKey: document.getElementById('googleKey').value.trim(),
         workerUrl: document.getElementById('workerUrl').value.trim(),
+        showBikeOptions: document.getElementById('showBikeOptions').checked,
         homeAddress: document.getElementById('homeAddress').value.trim(),
         homeLat: parseFloat(document.getElementById('homeLat').value) || 0,
         homeLng: parseFloat(document.getElementById('homeLng').value) || 0,
