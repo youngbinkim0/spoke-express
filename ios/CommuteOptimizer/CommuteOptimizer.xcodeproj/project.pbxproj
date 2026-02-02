@@ -18,6 +18,7 @@
 		2A4320CE35D140CCB93A745B /* DistanceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B3E54CC1CEDF47E10AF444 /* DistanceCalculator.swift */; };
 		2CE42A85C2FFFC0F0222FCD7 /* MtaColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA15BE494142D3B9C0ED1E03 /* MtaColors.swift */; };
 		2D8AC1DD4F2A797C7DE64F6D /* CommuteWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58966B461B98E35C14734102 /* CommuteWidgetBundle.swift */; };
+		36E44AC216F2EF8AF71ACDDB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C5FFFF37B3D27196C36D4668 /* Assets.xcassets */; };
 		3BC701376CFEEE3297F87045 /* ArrivalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F53D35981F90C3EB8FD714 /* ArrivalModels.swift */; };
 		3C865593F20E88EF4D48E962 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA7101C4CE798422BC562D /* WeatherModels.swift */; };
 		3D6FC55F2F63ED51F1582D5F /* StationsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF60417720D055FE703CFBF4 /* StationsDataSource.swift */; };
@@ -128,6 +129,7 @@
 		B198CA01232C84CD8243E7B1 /* GoogleRoutesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleRoutesService.swift; sourceTree = "<group>"; };
 		BDCA7EB7B31AA446D176CA33 /* StationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationCard.swift; sourceTree = "<group>"; };
 		BFAA7101C4CE798422BC562D /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
+		C5FFFF37B3D27196C36D4668 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1537D23B1E5F848BCD87F77 /* MtaApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MtaApiService.swift; sourceTree = "<group>"; };
 		D21F59FB5E386354BF84822E /* ProtobufReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtobufReader.swift; sourceTree = "<group>"; };
 		D81BF9F296CA2412EFAE5DA9 /* CommuteWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CommuteWidget.entitlements; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 		83A5CE57B402D222C1216081 /* CommuteOptimizer */ = {
 			isa = PBXGroup;
 			children = (
+				C5FFFF37B3D27196C36D4668 /* Assets.xcassets */,
 				FA0B08698E89FB457D627520 /* CommuteOptimizer.entitlements */,
 				A8F818D9F3760A38FBEABF11 /* Info.plist */,
 				EEBCBA047F75BFD062FC8237 /* App */,
@@ -418,6 +421,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				36E44AC216F2EF8AF71ACDDB /* Assets.xcassets in Resources */,
 				DDE20383F6F0AE31B2652DE4 /* stations.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

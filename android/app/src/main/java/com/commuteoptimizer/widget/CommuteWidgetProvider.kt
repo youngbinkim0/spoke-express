@@ -184,11 +184,12 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.widget_commute)
         Log.d(TAG, "RemoteViews created")
 
-        // Set widget title to "Origin → Destination"
+        // Set origin and destination names
         val prefs = WidgetPreferences(context)
         val originName = prefs.getWidgetOriginName(widgetId)
         val destName = prefs.getWidgetDestinationName(widgetId)
-        views.setTextViewText(R.id.widget_title, "$originName → $destName")
+        views.setTextViewText(R.id.widget_origin, originName)
+        views.setTextViewText(R.id.widget_destination, destName)
 
         // Set weather
         val weather = data.weather
