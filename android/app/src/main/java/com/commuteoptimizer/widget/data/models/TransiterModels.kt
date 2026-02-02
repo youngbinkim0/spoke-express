@@ -42,6 +42,7 @@ data class TransiterDestination(
 data class LocalStation(
     val id: String,
     val name: String,
+    val mtaId: String,
     val lines: List<String>,
     val lat: Double,
     val lng: Double,

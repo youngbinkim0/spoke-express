@@ -322,6 +322,11 @@ class SettingsFragment : Fragment() {
         val apiKey = inputApiKey.text?.toString()?.trim()
         val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
 
+        if (googleApiKey.isNullOrBlank()) {
+            showStatus("Please enter your Google API Key", true)
+            return
+        }
+
         if (homeLat == 0.0 || homeLng == 0.0) {
             showStatus("Please set your home location", true)
             return

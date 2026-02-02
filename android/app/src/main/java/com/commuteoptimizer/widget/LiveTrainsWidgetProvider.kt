@@ -89,7 +89,11 @@ class LiveTrainsWidgetProvider : AppWidgetProvider() {
                 val stationName = station?.name ?: "Unknown Station"
                 views.setTextViewText(R.id.widget_title, stationName)
 
-                val arrivals = MtaApiService.getGroupedArrivals(stationId, station?.lines ?: emptyList())
+                val arrivals = if (station != null) {
+                    MtaApiService.getGroupedArrivals(station.mtaId, station.lines)
+                } else {
+                    emptyList()
+                }
 
                 // Bind each row with unique IDs
                 if (arrivals.size > 0) {
