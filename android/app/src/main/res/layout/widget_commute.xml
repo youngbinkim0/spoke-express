@@ -114,6 +114,31 @@
             android:layout_marginStart="6dp"
             android:contentDescription="Mode" />
 
+        <!-- Line badges -->
+        <TextView
+            android:id="@+id/option_1_line1"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/option_1_line2"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -128,7 +153,8 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/widget_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/option_1_arrival"
@@ -139,23 +165,20 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/option_1_next_train"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
+
+        <TextView
             android:id="@+id/option_1_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/widget_text_primary"
             android:textSize="12sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/option_1_next_train"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/next_train_background"
-            android:paddingHorizontal="6dp"
-            android:paddingVertical="2dp"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Divider -->
@@ -191,6 +214,31 @@
             android:layout_marginStart="6dp"
             android:contentDescription="Mode" />
 
+        <!-- Line badges -->
+        <TextView
+            android:id="@+id/option_2_line1"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/option_2_line2"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -205,7 +253,8 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/widget_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/option_2_arrival"
@@ -216,23 +265,20 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/option_2_next_train"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
+
+        <TextView
             android:id="@+id/option_2_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/widget_text_primary"
             android:textSize="12sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/option_2_next_train"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/next_train_background"
-            android:paddingHorizontal="6dp"
-            android:paddingVertical="2dp"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Divider -->
@@ -268,6 +314,31 @@
             android:layout_marginStart="6dp"
             android:contentDescription="Mode" />
 
+        <!-- Line badges -->
+        <TextView
+            android:id="@+id/option_3_line1"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/option_3_line2"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/line_badge_background"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -282,7 +353,8 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/widget_text_primary"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/option_3_arrival"
@@ -293,23 +365,20 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/option_3_next_train"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
+
+        <TextView
             android:id="@+id/option_3_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/widget_text_primary"
             android:textSize="12sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/option_3_next_train"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/next_train_background"
-            android:paddingHorizontal="6dp"
-            android:paddingVertical="2dp"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Footer: Last updated -->
