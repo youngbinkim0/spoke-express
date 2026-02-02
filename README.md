@@ -9,17 +9,11 @@ A serverless NYC subway commute app with weather-aware routing. Shows the best w
 ### Web App
 
 ```bash
-# Option 1: Python
-cd web && python3 -m http.server 8080
-
-# Option 2: Node
-npx serve web
-
-# Option 3: Just open the file
-open web/index.html
+cd web
+./start.sh
 ```
 
-Then visit `http://localhost:8080` and configure your home/work locations in Settings.
+Then configure your home/work locations in Settings. See [web/QUICKSTART.md](web/QUICKSTART.md) for detailed setup.
 
 ### Android App
 
@@ -31,17 +25,21 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 Requires: Java 17+, Android SDK
 
+### iOS App
+
+Open `ios/CommuteOptimizer/CommuteOptimizer.xcodeproj` in Xcode and run.
+
 ## Features
 
-| Feature | Web | Android |
-|---------|-----|---------|
-| Live train arrivals | ✓ | ✓ |
-| Weather-aware ranking | ✓ | ✓ |
-| Service alerts | ✓ | ✓ |
-| Walk + Transit options | ✓ | ✓ |
-| Bike + Transit options | ✓ | ✓ |
-| Home screen widget | - | ✓ (2 types) |
-| Auto-refresh | 30s | 30s / 15m widget |
+| Feature | Web | Android | iOS |
+|---------|-----|---------|-----|
+| Live train arrivals | ✓ | ✓ | ✓ |
+| Weather-aware ranking | ✓ | ✓ | ✓ |
+| Service alerts | ✓ | ✓ | ✓ |
+| Walk + Transit options | ✓ | ✓ | ✓ |
+| Bike + Transit options | ✓ | ✓ | ✓ |
+| Home screen widget | - | ✓ | ✓ |
+| Auto-refresh | 30s | 30s | 30s |
 
 ## Configuration
 
@@ -68,14 +66,14 @@ wrangler secret put GOOGLE_API_KEY  # paste your Google Maps API key
 wrangler deploy
 ```
 
-Then add the worker URL (e.g., `https://commute-directions.YOUR_ACCOUNT.workers.dev`) to Settings.
+Then add the worker URL to Settings.
 
-## How It Works
+## Architecture
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
 │  Web App /  │────▶│   MTA API    │────▶│ Real-time train │
-│ Android App │     │ (no key req) │     │    arrivals     │
+│ Android/iOS │     │ (no key req) │     │    arrivals     │
 └─────────────┘     └──────────────┘     └─────────────────┘
        │
        │ (optional)
@@ -93,32 +91,22 @@ Then add the worker URL (e.g., `https://commute-directions.YOUR_ACCOUNT.workers.
 ## Project Structure
 
 ```
-├── web/                    # Standalone web app
+├── web/                    # Web app (start here)
+│   ├── start.sh           # Startup script
 │   ├── index.html         # Commute options page
 │   ├── arrivals.html      # Live train times
 │   ├── settings.html      # Configuration
 │   └── mta-api.js         # MTA GTFS-RT parser
 ├── android/               # Android app + widgets
-│   └── app/src/main/
-│       ├── java/.../      # Kotlin source
-│       └── res/           # Layouts & resources
-├── cloudflare-worker/     # Optional Google Routes proxy
-└── src/                   # Legacy Node.js backend (not required)
+├── ios/                   # iOS app + widgets
+└── cloudflare-worker/     # Optional Google Routes proxy
 ```
-
-## Android Widgets
-
-Two widget types available:
-
-1. **Commute Routing** (4x2) - Top 3 commute options with weather
-2. **Live Trains** (4x2) - Real-time arrivals for your stations
-
-Long-press home screen → Widgets → Commute Optimizer
 
 ## Tech Stack
 
 - **Web**: Vanilla HTML/CSS/JS, no build step
 - **Android**: Kotlin, Material Design, Coroutines
+- **iOS**: Swift, SwiftUI, WidgetKit
 - **APIs**: MTA GTFS-Realtime, OpenWeatherMap, Google Routes
 - **Proxy**: Cloudflare Workers (optional)
 
