@@ -257,19 +257,22 @@ class CommuteWidgetProvider : AppWidgetProvider() {
 
     private fun bindOption1(views: RemoteViews, option: CommuteOption) {
         bindOptionViews(views, option,
-            R.id.option_1_rank, R.id.option_1_mode_icon, R.id.option_1_summary,
+            R.id.option_1_rank, R.id.option_1_mode_icon,
+            R.id.option_1_line1, R.id.option_1_line2,
             R.id.option_1_arrival, R.id.option_1_duration, R.id.option_1_next_train)
     }
 
     private fun bindOption2(views: RemoteViews, option: CommuteOption) {
         bindOptionViews(views, option,
-            R.id.option_2_rank, R.id.option_2_mode_icon, R.id.option_2_summary,
+            R.id.option_2_rank, R.id.option_2_mode_icon,
+            R.id.option_2_line1, R.id.option_2_line2,
             R.id.option_2_arrival, R.id.option_2_duration, R.id.option_2_next_train)
     }
 
     private fun bindOption3(views: RemoteViews, option: CommuteOption) {
         bindOptionViews(views, option,
-            R.id.option_3_rank, R.id.option_3_mode_icon, R.id.option_3_summary,
+            R.id.option_3_rank, R.id.option_3_mode_icon,
+            R.id.option_3_line1, R.id.option_3_line2,
             R.id.option_3_arrival, R.id.option_3_duration, R.id.option_3_next_train)
     }
 
@@ -278,7 +281,8 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         option: CommuteOption,
         rankId: Int,
         modeIconId: Int,
-        summaryId: Int,
+        line1Id: Int,
+        line2Id: Int,
         arrivalId: Int,
         durationId: Int,
         nextTrainId: Int
@@ -302,28 +306,42 @@ class CommuteWidgetProvider : AppWidgetProvider() {
         }
         views.setImageViewResource(modeIconId, modeIconRes)
 
-        // Set summary (simplified route description)
-        views.setTextViewText(summaryId, option.summary)
+        // Get unique subway lines from all legs (like iOS)
+        val subwayLines = option.legs
+            .filter { it.mode == "subway" && !it.route.isNullOrEmpty() }
+            .mapNotNull { it.route }
+            .distinct()
+            .take(2)
+
+        // Set line badges
+        if (subwayLines.isNotEmpty()) {
+            val line1 = MtaColors.cleanExpressLine(subwayLines[0])
+            views.setTextViewText(line1Id, line1)
+            views.setInt(line1Id, "setBackgroundColor", MtaColors.getLineColor(line1))
+            views.setTextColor(line1Id, MtaColors.getTextColorForLine(line1))
+            views.setViewVisibility(line1Id, android.view.View.VISIBLE)
+        } else {
+            views.setViewVisibility(line1Id, android.view.View.GONE)
+        }
+
+        if (subwayLines.size > 1) {
+            val line2 = MtaColors.cleanExpressLine(subwayLines[1])
+            views.setTextViewText(line2Id, line2)
+            views.setInt(line2Id, "setBackgroundColor", MtaColors.getLineColor(line2))
+            views.setTextColor(line2Id, MtaColors.getTextColorForLine(line2))
+            views.setViewVisibility(line2Id, android.view.View.VISIBLE)
+        } else {
+            views.setViewVisibility(line2Id, android.view.View.GONE)
+        }
 
         // Set arrival time
         views.setTextViewText(arrivalId, "Arrive: ${option.arrivalTime}")
 
         // Set duration
-        views.setTextViewText(durationId, "${option.durationMinutes} min")
+        views.setTextViewText(durationId, "${option.durationMinutes}m")
 
-        // Set next train time
+        // Set next train time (plain text, not colored badge)
         views.setTextViewText(nextTrainId, option.nextTrain)
-
-        // Color the next train badge based on the subway line
-        val subwayLeg = option.legs.find { it.mode == "subway" }
-        val lineColor = subwayLeg?.route?.let { MtaColors.getLineColor(it) }
-            ?: Color.parseColor("#6CBE45")
-        views.setInt(nextTrainId, "setBackgroundColor", lineColor)
-
-        // Set text color based on line
-        val textColor = subwayLeg?.route?.let { MtaColors.getTextColorForLine(it) }
-            ?: Color.WHITE
-        views.setTextColor(nextTrainId, textColor)
     }
 
     private fun buildErrorViews(

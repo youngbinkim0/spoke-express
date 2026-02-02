@@ -86,4 +86,13 @@ object MtaColors {
             else -> "ic_subway"
         }
     }
+
+    // Clean express line suffix (e.g., "6X" -> "6")
+    fun cleanExpressLine(line: String): String {
+        return if (line.length == 2 && line.endsWith("X")) {
+            line.dropLast(1)
+        } else {
+            line
+        }
+    }
 }

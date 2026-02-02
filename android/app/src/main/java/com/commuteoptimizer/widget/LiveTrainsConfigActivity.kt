@@ -4,9 +4,12 @@ import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.commuteoptimizer.widget.data.models.LocalStation
@@ -15,6 +18,7 @@ import com.commuteoptimizer.widget.util.MtaColors
 import com.commuteoptimizer.widget.util.WidgetPreferences
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.textfield.TextInputEditText
 
 class LiveTrainsConfigActivity : AppCompatActivity() {
     companion object {
@@ -23,6 +27,8 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
+    private lateinit var scrollView: ScrollView
+    private lateinit var inputSearch: TextInputEditText
     private lateinit var chipGroupStations: ChipGroup
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
@@ -33,6 +39,7 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
     private lateinit var stations: List<LocalStation>
 
     private var selectedStationId: String? = null
+    private var currentSearchQuery: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,26 +81,53 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+        scrollView = findViewById(R.id.scroll_view)
+        inputSearch = findViewById(R.id.input_search)
         chipGroupStations = findViewById(R.id.chip_group_stations)
         btnSave = findViewById(R.id.btn_save)
         btnCancel = findViewById(R.id.btn_cancel)
         textStatus = findViewById(R.id.text_status)
+
+        // Setup search functionality
+        inputSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                currentSearchQuery = s?.toString()?.trim() ?: ""
+                filterStations(currentSearchQuery)
+            }
+        })
     }
 
     private fun setupStationChips() {
+        displayStations(stations, currentSearchQuery)
+    }
+
+    private fun filterStations(query: String) {
+        displayStations(stations, query)
+    }
+
+    private fun displayStations(allStations: List<LocalStation>, query: String) {
         chipGroupStations.removeAllViews()
 
         // Load existing selection if editing
         val existingStation = prefs.getLiveTrainsWidgetStation(appWidgetId)
 
-        // Sort stations alphabetically
-        val sortedStations = stations.sortedBy { it.name }
+        // Filter and sort stations
+        val filteredStations = if (query.isEmpty()) {
+            allStations
+        } else {
+            allStations.filter { station ->
+                station.name.contains(query, ignoreCase = true) ||
+                station.lines.any { it.contains(query, ignoreCase = true) }
+            }
+        }.sortedBy { it.name }
 
-        for (station in sortedStations) {
+        for (station in filteredStations) {
             val chip = Chip(this).apply {
                 text = "${station.name} (${station.lines.joinToString(",")})"
                 isCheckable = true
-                isChecked = station.id == existingStation
+                isChecked = station.id == existingStation || station.id == selectedStationId
                 tag = station.id
                 setTextColor(Color.parseColor("#eeeeee"))
 
@@ -119,6 +153,9 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
                         setChipBackgroundColorResource(android.R.color.transparent)
                         chipStrokeWidth = 2f
                         chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
+
+                        // Scroll to save button after selection
+                        scrollToSaveButton()
                     } else {
                         if (selectedStationId == station.id) {
                             selectedStationId = null
@@ -129,6 +166,12 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
                 }
             }
             chipGroupStations.addView(chip)
+        }
+    }
+
+    private fun scrollToSaveButton() {
+        scrollView.post {
+            scrollView.fullScroll(ScrollView.FOCUS_DOWN)
         }
     }
 
