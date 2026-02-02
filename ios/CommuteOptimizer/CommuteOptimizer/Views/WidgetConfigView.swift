@@ -9,6 +9,11 @@ struct WidgetConfigView: View {
 
     let widgetId: String?
 
+    /// Effective widget ID - uses default if none provided
+    private var effectiveWidgetId: String {
+        widgetId ?? "commute-default"
+    }
+
     @State private var useCustomOrigin = false
     @State private var useCustomDestination = false
     @State private var originAddress = ""
@@ -47,9 +52,19 @@ struct WidgetConfigView: View {
 
     private var canSave: Bool {
         // Can save if using defaults, or if custom is set with valid coordinates
-        let originValid = !useCustomOrigin || originCoord != nil
-        let destValid = !useCustomDestination || destCoord != nil
+        // Also allow saving if address is entered (will auto-geocode on save)
+        let originValid = !useCustomOrigin || originCoord != nil || !originAddress.isEmpty
+        let destValid = !useCustomDestination || destCoord != nil || !destAddress.isEmpty
         return originValid && destValid && !isGeocodingOrigin && !isGeocodingDest
+    }
+
+    /// Whether we need to geocode before saving
+    private var needsOriginGeocoding: Bool {
+        useCustomOrigin && originCoord == nil && !originAddress.isEmpty
+    }
+
+    private var needsDestGeocoding: Bool {
+        useCustomDestination && destCoord == nil && !destAddress.isEmpty
     }
 
     private var infoSection: some View {
@@ -178,28 +193,28 @@ struct WidgetConfigView: View {
     }
 
     private func loadCurrentSettings() {
-        guard let widgetId = widgetId else { return }
+        let wid = effectiveWidgetId
 
         // Check if widget has custom origin
-        if settingsManager.hasWidgetOrigin(widgetId) {
-            let lat = settingsManager.getWidgetOriginLat(widgetId)
-            let lng = settingsManager.getWidgetOriginLng(widgetId)
+        if settingsManager.hasWidgetOrigin(wid) {
+            let lat = settingsManager.getWidgetOriginLat(wid)
+            let lng = settingsManager.getWidgetOriginLng(wid)
             // Only consider custom if not using defaults (0,0 or same as home)
             if lat != 0 && lng != 0 && (lat != settingsManager.homeLat || lng != settingsManager.homeLng) {
                 useCustomOrigin = true
-                originAddress = settingsManager.getWidgetOriginName(widgetId)
+                originAddress = settingsManager.getWidgetOriginName(wid)
                 originCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
             }
         }
 
         // Check if widget has custom destination
-        if settingsManager.hasWidgetDestination(widgetId) {
-            let lat = settingsManager.getWidgetDestinationLat(widgetId)
-            let lng = settingsManager.getWidgetDestinationLng(widgetId)
+        if settingsManager.hasWidgetDestination(wid) {
+            let lat = settingsManager.getWidgetDestinationLat(wid)
+            let lng = settingsManager.getWidgetDestinationLng(wid)
             // Only consider custom if not using defaults
             if lat != 0 && lng != 0 && (lat != settingsManager.workLat || lng != settingsManager.workLng) {
                 useCustomDestination = true
-                destAddress = settingsManager.getWidgetDestinationName(widgetId)
+                destAddress = settingsManager.getWidgetDestinationName(wid)
                 destCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
             }
         }
@@ -274,26 +289,107 @@ struct WidgetConfigView: View {
         return components.isEmpty ? nil : components.joined(separator: ", ")
     }
 
+    /// Geocode pending addresses and then save
+    private func geocodeAndSave() {
+        let group = DispatchGroup()
+
+        // Geocode origin if needed
+        if needsOriginGeocoding {
+            group.enter()
+            isGeocodingOrigin = true
+            originError = nil
+
+            geocoder.geocodeAddressString(originAddress) { placemarks, error in
+                self.isGeocodingOrigin = false
+
+                if let error = error {
+                    self.originError = "Could not find address: \(error.localizedDescription)"
+                    group.leave()
+                    return
+                }
+
+                guard let placemark = placemarks?.first,
+                      let location = placemark.location else {
+                    self.originError = "No results found"
+                    group.leave()
+                    return
+                }
+
+                self.originCoord = location.coordinate
+                if let formatted = self.formatPlacemark(placemark) {
+                    self.originAddress = formatted
+                }
+                group.leave()
+            }
+        }
+
+        // Geocode destination if needed
+        if needsDestGeocoding {
+            group.enter()
+            isGeocodingDest = true
+            destError = nil
+
+            geocoder.geocodeAddressString(destAddress) { placemarks, error in
+                self.isGeocodingDest = false
+
+                if let error = error {
+                    self.destError = "Could not find address: \(error.localizedDescription)"
+                    group.leave()
+                    return
+                }
+
+                guard let placemark = placemarks?.first,
+                      let location = placemark.location else {
+                    self.destError = "No results found"
+                    group.leave()
+                    return
+                }
+
+                self.destCoord = location.coordinate
+                if let formatted = self.formatPlacemark(placemark) {
+                    self.destAddress = formatted
+                }
+                group.leave()
+            }
+        }
+
+        // When all geocoding is complete, save
+        group.notify(queue: .main) {
+            // Check if we got valid coordinates for all required addresses
+            if self.useCustomOrigin && self.originCoord == nil {
+                return
+            }
+            if self.useCustomDestination && self.destCoord == nil {
+                return
+            }
+            // Call saveAndDismiss again - this time needsGeocoding will be false
+            self.saveAndDismiss()
+        }
+    }
+
     private func saveAndDismiss() {
-        guard let widgetId = widgetId else {
-            dismiss()
+        let wid = effectiveWidgetId
+
+        // If user entered an address but didn't geocode, do it now
+        if needsOriginGeocoding || needsDestGeocoding {
+            geocodeAndSave()
             return
         }
 
         // Save origin
         if useCustomOrigin, let coord = originCoord {
-            settingsManager.setWidgetOrigin(widgetId, name: originAddress, lat: coord.latitude, lng: coord.longitude)
+            settingsManager.setWidgetOrigin(wid, name: originAddress, lat: coord.latitude, lng: coord.longitude)
         } else {
             // Clear custom origin to use defaults
-            settingsManager.setWidgetOrigin(widgetId, name: "", lat: 0, lng: 0)
+            settingsManager.setWidgetOrigin(wid, name: "", lat: 0, lng: 0)
         }
 
         // Save destination
         if useCustomDestination, let coord = destCoord {
-            settingsManager.setWidgetDestination(widgetId, name: destAddress, lat: coord.latitude, lng: coord.longitude)
+            settingsManager.setWidgetDestination(wid, name: destAddress, lat: coord.latitude, lng: coord.longitude)
         } else {
             // Clear custom destination to use defaults
-            settingsManager.setWidgetDestination(widgetId, name: "", lat: 0, lng: 0)
+            settingsManager.setWidgetDestination(wid, name: "", lat: 0, lng: 0)
         }
 
         // Force sync UserDefaults before refreshing widget
@@ -315,10 +411,8 @@ struct WidgetConfigView: View {
         originError = nil
         destError = nil
 
-        if let widgetId = widgetId {
-            settingsManager.clearWidgetData(widgetId)
-            WidgetCenter.shared.reloadTimelines(ofKind: "CommuteWidget")
-        }
+        settingsManager.clearWidgetData(effectiveWidgetId)
+        WidgetCenter.shared.reloadTimelines(ofKind: "CommuteWidget")
     }
 }
 

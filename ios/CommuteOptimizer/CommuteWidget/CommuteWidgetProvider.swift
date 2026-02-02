@@ -30,6 +30,8 @@ struct CommuteWidgetProvider: TimelineProvider {
         let originLng = settingsManager.getWidgetOriginLng(defaultWidgetId)
         let destLat = settingsManager.getWidgetDestinationLat(defaultWidgetId)
         let destLng = settingsManager.getWidgetDestinationLng(defaultWidgetId)
+        let originName = settingsManager.getWidgetOriginName(defaultWidgetId)
+        let destName = settingsManager.getWidgetDestinationName(defaultWidgetId)
 
         Task {
             do {
@@ -45,7 +47,9 @@ struct CommuteWidgetProvider: TimelineProvider {
                     options: response.options,
                     weather: response.weather,
                     isLoading: false,
-                    errorMessage: nil
+                    errorMessage: nil,
+                    originName: originName,
+                    destinationName: destName
                 )
                 completion(entry)
             } catch {
@@ -69,6 +73,8 @@ struct CommuteWidgetProvider: TimelineProvider {
         let originLng = settingsManager.getWidgetOriginLng(defaultWidgetId)
         let destLat = settingsManager.getWidgetDestinationLat(defaultWidgetId)
         let destLng = settingsManager.getWidgetDestinationLng(defaultWidgetId)
+        let originName = settingsManager.getWidgetOriginName(defaultWidgetId)
+        let destName = settingsManager.getWidgetDestinationName(defaultWidgetId)
 
         Task {
             do {
@@ -84,7 +90,9 @@ struct CommuteWidgetProvider: TimelineProvider {
                     options: response.options,
                     weather: response.weather,
                     isLoading: false,
-                    errorMessage: nil
+                    errorMessage: nil,
+                    originName: originName,
+                    destinationName: destName
                 )
 
                 // Refresh every 15 minutes

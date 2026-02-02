@@ -22,13 +22,17 @@ struct CommuteEntry: TimelineEntry {
     let weather: Weather?
     let isLoading: Bool
     let errorMessage: String?
+    let originName: String?
+    let destinationName: String?
 
     static let placeholder = CommuteEntry(
         date: Date(),
         options: [],
         weather: Weather(tempF: 72, conditions: "Clear", precipitationType: .none, precipitationProbability: 0, isBad: false),
         isLoading: false,
-        errorMessage: nil
+        errorMessage: nil,
+        originName: "Home",
+        destinationName: "Work"
     )
 
     static let loading = CommuteEntry(
@@ -36,7 +40,9 @@ struct CommuteEntry: TimelineEntry {
         options: [],
         weather: nil,
         isLoading: true,
-        errorMessage: nil
+        errorMessage: nil,
+        originName: nil,
+        destinationName: nil
     )
 
     static func error(_ message: String) -> CommuteEntry {
@@ -45,7 +51,9 @@ struct CommuteEntry: TimelineEntry {
             options: [],
             weather: nil,
             isLoading: false,
-            errorMessage: message
+            errorMessage: message,
+            originName: nil,
+            destinationName: nil
         )
     }
 }

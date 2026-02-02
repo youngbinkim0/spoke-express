@@ -50,16 +50,39 @@ struct CommuteWidgetEntryView: View {
     }
 
     private var contentView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Weather header
-            if let weather = entry.weather {
-                WidgetWeatherHeader(weather: weather)
+        VStack(alignment: .leading, spacing: 6) {
+            // Route header (origin → destination)
+            HStack(spacing: 4) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.blue)
+                Text(entry.originName ?? "Home")
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary)
+                Text(entry.destinationName ?? "Work")
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+                Spacer()
+                // Weather inline
+                if let weather = entry.weather {
+                    HStack(spacing: 2) {
+                        Image(systemName: MtaColors.weatherEmoji(weather.conditions, precipType: weather.precipitationType))
+                            .font(.system(size: 12))
+                            .foregroundColor(weather.isBad ? .blue : .yellow)
+                        Text("\(weather.tempF)°")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
 
             Divider()
 
             // Commute options
-            VStack(spacing: 6) {
+            VStack(spacing: 5) {
                 ForEach(entry.options.prefix(3)) { option in
                     WidgetOptionRow(option: option)
                 }
@@ -241,6 +264,8 @@ struct WidgetLineBadge: View {
         ],
         weather: Weather(tempF: 68, conditions: "Partly Cloudy", precipitationType: .none, precipitationProbability: 10, isBad: false),
         isLoading: false,
-        errorMessage: nil
+        errorMessage: nil,
+        originName: "99 Prospect Park W",
+        destinationName: "466 Lexington Ave"
     )
 }

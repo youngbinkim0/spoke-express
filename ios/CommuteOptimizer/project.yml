@@ -22,6 +22,7 @@ targets:
           - "**/*.xcworkspace"
     resources:
       - path: CommuteOptimizer/Resources
+      - path: CommuteOptimizer/Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.commuteoptimizer.app
@@ -35,6 +36,7 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         CODE_SIGN_ENTITLEMENTS: CommuteOptimizer/CommuteOptimizer.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     entitlements:
       path: CommuteOptimizer/CommuteOptimizer.entitlements
       properties:
@@ -100,3 +102,10 @@ schemes:
       config: Debug
     archive:
       config: Release
+
+  CommuteWidgetExtension:
+    build:
+      targets:
+        CommuteWidgetExtension: all
+    run:
+      config: Debug
