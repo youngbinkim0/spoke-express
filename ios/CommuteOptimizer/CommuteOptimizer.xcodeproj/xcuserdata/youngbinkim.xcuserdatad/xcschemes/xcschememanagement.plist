@@ -4,15 +4,33 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>CommuteOptimizer.xcscheme_^#shared#^_</key>
+		<key>CommuteOptimizerTests.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>0</integer>
 		</dict>
 		<key>CommuteWidgetExtension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>7D143FBE68D04228ECD1DD17</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>97B0FAF32F660E68B9C74999</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>D16C11C7C97D74B905F2D837</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
