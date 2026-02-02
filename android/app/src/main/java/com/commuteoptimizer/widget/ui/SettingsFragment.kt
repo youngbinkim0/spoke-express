@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.location.Geocoder
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,6 +25,7 @@ import com.commuteoptimizer.widget.util.WidgetPreferences
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,9 +53,15 @@ class SettingsFragment : Fragment() {
     private lateinit var bikeStationsExpandIcon: ImageView
     private lateinit var liveStationsHeader: View
     private lateinit var liveStationsExpandIcon: ImageView
+    private lateinit var bikeSearchLayout: TextInputLayout
+    private lateinit var bikeSearchInput: TextInputEditText
+    private lateinit var liveSearchLayout: TextInputLayout
+    private lateinit var liveSearchInput: TextInputEditText
 
     private var bikeStationsExpanded = false
     private var liveStationsExpanded = false
+    private var allBikeStations: List<LocalStation> = emptyList()
+    private var allLiveStations: List<LocalStation> = emptyList()
     private var homeLat: Double = 0.0
     private var homeLng: Double = 0.0
     private var workLat: Double = 0.0
@@ -96,17 +105,41 @@ class SettingsFragment : Fragment() {
         liveStationsHeader = view.findViewById(R.id.live_stations_header)
         liveStationsExpandIcon = view.findViewById(R.id.live_stations_expand_icon)
 
+        bikeSearchLayout = view.findViewById(R.id.bike_search_layout)
+        bikeSearchInput = view.findViewById(R.id.bike_search_input)
+        liveSearchLayout = view.findViewById(R.id.live_search_layout)
+        liveSearchInput = view.findViewById(R.id.live_search_input)
+
         bikeStationsHeader.setOnClickListener {
             bikeStationsExpanded = !bikeStationsExpanded
             chipGroupBikeStations.visibility = if (bikeStationsExpanded) View.VISIBLE else View.GONE
+            bikeSearchLayout.visibility = if (bikeStationsExpanded) View.VISIBLE else View.GONE
             bikeStationsExpandIcon.rotation = if (bikeStationsExpanded) 180f else 0f
         }
 
         liveStationsHeader.setOnClickListener {
             liveStationsExpanded = !liveStationsExpanded
             chipGroupLiveStations.visibility = if (liveStationsExpanded) View.VISIBLE else View.GONE
+            liveSearchLayout.visibility = if (liveStationsExpanded) View.VISIBLE else View.GONE
             liveStationsExpandIcon.rotation = if (liveStationsExpanded) 180f else 0f
         }
+
+        // Add search text watchers
+        bikeSearchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                filterBikeStations(s?.toString()?.trim() ?: "")
+            }
+        })
+
+        liveSearchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                filterLiveStations(s?.toString()?.trim() ?: "")
+            }
+        })
     }
 
     private fun loadExistingSettings() {
@@ -127,17 +160,20 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupBikeStationChips() {
-        chipGroupBikeStations.removeAllViews()
-        val selectedStations = prefs.getBikeStations().toSet()
-
         // Sort by distance from home if home is set, otherwise alphabetically
-        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
+        allBikeStations = if (homeLat != 0.0 && homeLng != 0.0) {
             stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
         } else {
             stations.sortedBy { it.name }
         }
+        renderBikeStationChips(allBikeStations)
+    }
 
-        for (station in sortedStations) {
+    private fun renderBikeStationChips(stationsToRender: List<LocalStation>) {
+        chipGroupBikeStations.removeAllViews()
+        val selectedStations = prefs.getBikeStations().toSet()
+
+        for (station in stationsToRender) {
             val distance = if (homeLat != 0.0 && homeLng != 0.0) {
                 calculateDistance(homeLat, homeLng, station.lat, station.lng)
             } else null
@@ -169,17 +205,20 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupLiveStationChips() {
-        chipGroupLiveStations.removeAllViews()
-        val selectedStations = prefs.getLiveStations().toSet()
-
         // Sort by distance from home if home is set, otherwise alphabetically
-        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
+        allLiveStations = if (homeLat != 0.0 && homeLng != 0.0) {
             stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
         } else {
             stations.sortedBy { it.name }
         }
+        renderLiveStationChips(allLiveStations)
+    }
 
-        for (station in sortedStations) {
+    private fun renderLiveStationChips(stationsToRender: List<LocalStation>) {
+        chipGroupLiveStations.removeAllViews()
+        val selectedStations = prefs.getLiveStations().toSet()
+
+        for (station in stationsToRender) {
             val distance = if (homeLat != 0.0 && homeLng != 0.0) {
                 calculateDistance(homeLat, homeLng, station.lat, station.lng)
             } else null
@@ -237,6 +276,30 @@ class SettingsFragment : Fragment() {
     private fun updateLiveStationCount() {
         val count = getSelectedLiveStationCount()
         textLiveStationCount.text = "$count/3 selected"
+    }
+
+    private fun filterBikeStations(query: String) {
+        val filtered = if (query.isEmpty()) {
+            allBikeStations
+        } else {
+            allBikeStations.filter { station ->
+                station.name.contains(query, ignoreCase = true) ||
+                station.lines.any { it.contains(query, ignoreCase = true) }
+            }
+        }
+        renderBikeStationChips(filtered)
+    }
+
+    private fun filterLiveStations(query: String) {
+        val filtered = if (query.isEmpty()) {
+            allLiveStations
+        } else {
+            allLiveStations.filter { station ->
+                station.name.contains(query, ignoreCase = true) ||
+                station.lines.any { it.contains(query, ignoreCase = true) }
+            }
+        }
+        renderLiveStationChips(filtered)
     }
 
     private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
