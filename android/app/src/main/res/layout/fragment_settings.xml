@@ -216,6 +216,28 @@
                 app:tint="@color/text_secondary" />
         </LinearLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/bike_search_layout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search bike stations"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/text_secondary"
+            app:startIconDrawable="@drawable/ic_search"
+            app:startIconTint="@color/text_secondary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/bike_search_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:inputType="text"
+                android:imeOptions="actionSearch" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chip_group_bike_stations"
             android:layout_width="match_parent"
@@ -264,6 +286,28 @@
                 android:rotation="0"
                 app:tint="@color/text_secondary" />
         </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/live_search_layout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search live train stations"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/text_secondary"
+            app:startIconDrawable="@drawable/ic_search"
+            app:startIconTint="@color/text_secondary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/live_search_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:inputType="text"
+                android:imeOptions="actionSearch" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chip_group_live_stations"
