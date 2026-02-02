@@ -414,7 +414,8 @@
     async function loadStations() {
       try {
         const response = await fetch('stations.json');
-        STATIONS = await response.json();
+        const data = await response.json();
+        STATIONS = data.stations || data;  // Handle wrapped or raw array format
       } catch (e) {
         console.error('Failed to load stations:', e);
         STATIONS = [];
