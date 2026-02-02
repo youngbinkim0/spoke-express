@@ -95,9 +95,9 @@ class LiveTrainsFragment : Fragment() {
             }
 
             try {
-                val stationData = stationIds.map { stationId ->
-                    val station = localDataSource.getStation(stationId)
-                    val groups = MtaApiService.getGroupedArrivals(stationId, station?.lines ?: emptyList())
+                val stationData = stationIds.mapNotNull { stationId ->
+                    val station = localDataSource.getStation(stationId) ?: return@mapNotNull null
+                    val groups = MtaApiService.getGroupedArrivals(station.mtaId, station.lines)
                     Pair(station, groups)
                 }
 

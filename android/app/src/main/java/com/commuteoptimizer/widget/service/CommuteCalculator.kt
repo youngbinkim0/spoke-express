@@ -208,7 +208,7 @@ class CommuteCalculator(private val context: Context) {
         googleApiKey: String?, index: Int
     ): CommuteOption? {
         val bikeTime = DistanceCalculator.estimateBikeTime(homeLat, homeLng, station.lat, station.lng)
-        val nextArrival = getNextArrival(station.id, station.lines)
+        val nextArrival = getNextArrival(station.mtaId, station.lines)
         val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
 
         // Include wait time like webapp: bikeTime + waitTime + transitTime
@@ -226,7 +226,7 @@ class CommuteCalculator(private val context: Context) {
             id = "bike_$index", rank = 0, type = "bike_to_transit",
             durationMinutes = totalDuration, summary = summary, legs = legs,
             nextTrain = nextArrival.nextTrainText, arrivalTime = arrivalTimeStr,
-            station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
+            station = Station(station.id, station.name, station.mtaId, station.lines, station.lat, station.lng, station.borough)
         )
     }
 
@@ -235,7 +235,7 @@ class CommuteCalculator(private val context: Context) {
         destStation: LocalStation, workLat: Double, workLng: Double,
         googleApiKey: String?, walkTime: Int, index: Int
     ): CommuteOption? {
-        val nextArrival = getNextArrival(station.id, station.lines)
+        val nextArrival = getNextArrival(station.mtaId, station.lines)
         val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
 
         // Include wait time like webapp: walkTime + waitTime + transitTime
@@ -253,7 +253,7 @@ class CommuteCalculator(private val context: Context) {
             id = "transit_$index", rank = 0, type = "transit_only",
             durationMinutes = totalDuration, summary = summary, legs = legs,
             nextTrain = nextArrival.nextTrainText, arrivalTime = arrivalTimeStr,
-            station = Station(station.id, station.name, station.id, station.lines, station.lat, station.lng, station.borough)
+            station = Station(station.id, station.name, station.mtaId, station.lines, station.lat, station.lng, station.borough)
         )
     }
 
