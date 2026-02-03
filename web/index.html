@@ -757,7 +757,7 @@
           );
 
           const [arrival, transitRoute] = await Promise.all([
-            fetchNextArrival(stationId, station.lines),
+            fetchNextArrival(station.mtaId || stationId, station.lines),
             fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
@@ -820,7 +820,7 @@
         for (const { id: stationId, station, walkTime } of walkableStations) {
 
           const [arrival, transitRoute] = await Promise.all([
-            fetchNextArrival(stationId, station.lines),
+            fetchNextArrival(station.mtaId || stationId, station.lines),
             fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
