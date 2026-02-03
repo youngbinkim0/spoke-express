@@ -331,7 +331,8 @@
       try {
         // Use MTA API directly via mta-api.js
         if (window.MtaApi) {
-          const groups = await window.MtaApi.getGroupedArrivals(stationId, station.lines);
+          // Use mtaId (MTA's stop ID like "L06") not internal id (like "1-av")
+          const groups = await window.MtaApi.getGroupedArrivals(station.mtaId || stationId, station.lines);
           return { station, groups };
         }
         return { station, groups: [] };
