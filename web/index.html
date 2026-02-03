@@ -516,10 +516,18 @@
       }
     }
 
+    function estimateTransitTime(originLat, originLng, destLat, destLng) {
+      // Estimate transit time based on distance (avg 15 mph including stops/transfers)
+      const distance = calculateDistance(originLat, originLng, destLat, destLng);
+      const AVG_TRANSIT_SPEED_MPH = 15;
+      return Math.ceil((distance / AVG_TRANSIT_SPEED_MPH) * 60);
+    }
+
     async function fetchTransitRoute(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
-      // Require both worker URL and API key - no fallbacks
+      // If no worker URL or API key, use distance-based estimate
       if (!workerUrl || !googleKey) {
-        return { error: 'missing_config' };
+        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
+        return { duration: estimatedDuration, transitSteps: [], estimated: true };
       }
 
       try {
@@ -538,10 +546,13 @@
             };
           }
         }
-        return { error: 'api_error' };
+        // Fallback to estimate on API error
+        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
+        return { duration: estimatedDuration, transitSteps: [], estimated: true };
       } catch (e) {
         console.error('Worker error:', e);
-        return { error: 'fetch_error' };
+        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
+        return { duration: estimatedDuration, transitSteps: [], estimated: true };
       }
     }
 
