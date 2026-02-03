@@ -516,18 +516,10 @@
       }
     }
 
-    function estimateTransitTime(originLat, originLng, destLat, destLng) {
-      // Estimate transit time based on distance (avg 15 mph including stops/transfers)
-      const distance = calculateDistance(originLat, originLng, destLat, destLng);
-      const AVG_TRANSIT_SPEED_MPH = 15;
-      return Math.ceil((distance / AVG_TRANSIT_SPEED_MPH) * 60);
-    }
-
     async function fetchTransitRoute(originLat, originLng, destLat, destLng, workerUrl, googleKey) {
-      // If no worker URL or API key, use distance-based estimate
+      // Require both worker URL and API key
       if (!workerUrl || !googleKey) {
-        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
-        return { duration: estimatedDuration, transitSteps: [], estimated: true };
+        return { error: 'missing_config' };
       }
 
       try {
@@ -546,13 +538,10 @@
             };
           }
         }
-        // Fallback to estimate on API error
-        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
-        return { duration: estimatedDuration, transitSteps: [], estimated: true };
+        return { error: 'api_error' };
       } catch (e) {
         console.error('Worker error:', e);
-        const estimatedDuration = estimateTransitTime(originLat, originLng, destLat, destLng);
-        return { duration: estimatedDuration, transitSteps: [], estimated: true };
+        return { error: 'fetch_error' };
       }
     }
 
@@ -772,6 +761,9 @@
             fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
+          // Skip if transit routing failed
+          if (transitRoute.error) continue;
+
           const route = arrival.routeId || station.lines[0];
           // Calculate actual arrival time at work
           const waitTime = arrival.minutesAway || 5;
@@ -835,6 +827,9 @@
             fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
           ]);
 
+          // Skip if transit routing failed
+          if (transitRoute.error) continue;
+
           const route = arrival.routeId || station.lines[0];
           // Calculate actual arrival time at work
           const waitTime = arrival.minutesAway || 5;
@@ -883,7 +878,7 @@
             ${renderAlerts(alerts)}
             <div class="no-options">
               No commute options available.<br>
-              <a href="settings.html">Configure stations</a>
+              Make sure <strong>Google API Key</strong> and <strong>Worker URL</strong> are configured in <a href="settings.html">Settings</a>.
             </div>
           `;
           return;
