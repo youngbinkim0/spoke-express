@@ -196,8 +196,7 @@ class SettingsManager: ObservableObject {
     var isConfigured: Bool {
         !googleApiKey.isEmpty &&
         homeLat != 0 && homeLng != 0 &&
-        workLat != 0 && workLng != 0 &&
-        !bikeStations.isEmpty
+        workLat != 0 && workLng != 0
     }
 
     // MARK: - Per-Widget Settings

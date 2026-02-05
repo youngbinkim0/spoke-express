@@ -395,15 +395,13 @@
         </div>
       </div>
 
-      <!-- Bike-to Stations -->
+      <!-- Auto-Selected Bike Stations (read-only) -->
       <div class="card">
-        <h2>Bike-to Stations</h2>
-        <p>Select stations you'd bike to from home</p>
-        <div class="search-box">
-          <input type="text" id="bikeSearch" placeholder="Search stations..." oninput="filterStations('bike')">
+        <h2>Auto-Selected Bike Stations</h2>
+        <p>Top 3 stations per line within 4 miles, ranked by estimated commute time</p>
+        <div id="autoSelectedStations">
+          <p style="color: #888; font-size: 0.9rem;">Set home and work locations to see auto-selected stations.</p>
         </div>
-        <div id="bikeStationCount" class="station-count"></div>
-        <div id="bikeStations" class="station-list"></div>
       </div>
 
       <!-- Live Train Stations -->
@@ -423,6 +421,7 @@
     </div>
   </div>
 
+  <script src="auto-select.js"></script>
   <script>
     let STATIONS = [];
     const STORAGE_KEY = 'commuteOptimizerSettings';
@@ -549,6 +548,8 @@
 
       document.getElementById('homeLat').addEventListener('change', () => renderStations(loadSettings()));
       document.getElementById('homeLng').addEventListener('change', () => renderStations(loadSettings()));
+      document.getElementById('workLat').addEventListener('change', () => renderStations(loadSettings()));
+      document.getElementById('workLng').addEventListener('change', () => renderStations(loadSettings()));
     }
 
     function getStationsWithDistance(settings) {
@@ -561,38 +562,52 @@
       })).sort((a, b) => a.distance - b.distance);
     }
 
+    function renderAutoSelectedStations() {
+      const container = document.getElementById('autoSelectedStations');
+      const homeLat = parseFloat(document.getElementById('homeLat').value) || 0;
+      const homeLng = parseFloat(document.getElementById('homeLng').value) || 0;
+      const workLat = parseFloat(document.getElementById('workLat').value) || 0;
+      const workLng = parseFloat(document.getElementById('workLng').value) || 0;
+
+      if (!homeLat || !workLat || STATIONS.length === 0) {
+        container.innerHTML = '<p style="color: #888; font-size: 0.9rem;">Set home and work locations to see auto-selected stations.</p>';
+        return;
+      }
+
+      const autoIds = autoSelectStations(homeLat, homeLng, workLat, workLng, STATIONS);
+
+      // Group by line for display
+      const byLine = {};
+      for (const id of autoIds) {
+        const s = STATIONS.find(st => st.id === id);
+        if (!s) continue;
+        for (const line of s.lines) {
+          if (!byLine[line]) byLine[line] = [];
+          if (!byLine[line].find(st => st.id === s.id)) {
+            const dist = calculateDistance(homeLat, homeLng, s.lat, s.lng);
+            byLine[line].push({ ...s, distance: dist });
+          }
+        }
+      }
+
+      const lineOrder = Object.keys(byLine).sort();
+      container.innerHTML = `<p class="station-count">${autoIds.length} stations auto-selected</p>` +
+        lineOrder.map(line => `
+          <div style="margin-bottom: 8px;">
+            <span class="line-badge line-${line}">${line}</span>
+            <span style="color: #666; font-size: 0.85rem;">
+              ${byLine[line].map(s => `${s.name} (${s.distance.toFixed(1)} mi)`).join(', ')}
+            </span>
+          </div>
+        `).join('');
+    }
+
     function renderStations(settings, bikeFilter = '', liveFilter = '') {
       const stationsWithDist = getStationsWithDistance(settings);
-      const bikeStations = settings.bikeStations || [];
       const liveStations = settings.liveStations || [];
 
-      // Bike stations
-      const bikeContainer = document.getElementById('bikeStations');
-      const bikeFiltered = stationsWithDist.filter(s =>
-        s.name.toLowerCase().includes(bikeFilter.toLowerCase()) ||
-        s.lines.some(l => l.toLowerCase().includes(bikeFilter.toLowerCase()))
-      );
-
-      document.getElementById('bikeStationCount').textContent =
-        `${bikeStations.length} selected • ${bikeFiltered.length} shown`;
-
-      bikeContainer.innerHTML = bikeFiltered.slice(0, 100).map(s => `
-        <label class="station-item">
-          <input type="checkbox" name="bikeStation" value="${s.id}"
-            ${bikeStations.includes(s.id) ? 'checked' : ''}>
-          <div class="station-info">
-            <div class="station-name">${s.name}</div>
-            <div class="station-meta">
-              <span class="station-lines">
-                ${s.lines.slice(0, 6).map(l => `<span class="line-badge line-${l}">${l}</span>`).join('')}
-                ${s.lines.length > 6 ? '...' : ''}
-              </span>
-              • ${s.borough || ''}
-            </div>
-          </div>
-          <div class="station-distance">${s.distance < 100 ? s.distance.toFixed(1) + ' mi' : '--'}</div>
-        </label>
-      `).join('');
+      // Render auto-selected bike stations (read-only)
+      renderAutoSelectedStations();
 
       // Live stations
       const liveContainer = document.getElementById('liveStations');
@@ -624,14 +639,9 @@
     }
 
     function filterStations(type) {
-      const filter = document.getElementById(`${type}Search`).value;
+      const filter = document.getElementById('liveSearch').value;
       const settings = loadSettings();
-
-      if (type === 'bike') {
-        renderStations(settings, filter, document.getElementById('liveSearch').value);
-      } else {
-        renderStations(settings, document.getElementById('bikeSearch').value, filter);
-      }
+      renderStations(settings, '', filter);
     }
 
     function checkLiveLimit(checkbox) {
@@ -658,8 +668,6 @@
         workAddress: document.getElementById('workAddress').value.trim(),
         workLat: parseFloat(document.getElementById('workLat').value) || 0,
         workLng: parseFloat(document.getElementById('workLng').value) || 0,
-        bikeStations: Array.from(document.querySelectorAll('input[name="bikeStation"]:checked'))
-          .map(el => el.value),
         liveStations: Array.from(document.querySelectorAll('input[name="liveStation"]:checked'))
           .map(el => el.value).slice(0, 3)
       };
@@ -670,9 +678,9 @@
         return;
       }
 
-      if (settings.bikeStations.length === 0) {
+      if (!settings.workLat || !settings.workLng) {
         status.className = 'status error';
-        status.textContent = 'Please select at least one bike-to station.';
+        status.textContent = 'Please enter work coordinates (use Lookup button).';
         return;
       }
 

@@ -30,13 +30,17 @@ class CommuteCalculator(private val context: Context) {
             // Use per-widget destination if widgetId is provided, otherwise fall back to global
             val workLat = if (widgetId >= 0) prefs.getWidgetDestinationLat(widgetId) else prefs.getWorkLat()
             val workLng = if (widgetId >= 0) prefs.getWidgetDestinationLng(widgetId) else prefs.getWorkLng()
-            val selectedStations = prefs.getBikeStations()
             val apiKey = prefs.getOpenWeatherApiKey()
             val googleApiKey = prefs.getGoogleApiKey()
             val showBikeOptions = prefs.getShowBikeOptions()
 
-            if (homeLat == 0.0 || workLat == 0.0 || selectedStations.isEmpty()) {
-                return Result.Error("Please configure home, work, and stations in settings")
+            if (homeLat == 0.0 || workLat == 0.0) {
+                return Result.Error("Please configure home and work locations in settings")
+            }
+
+            val autoSelected = localDataSource.autoSelectStations(homeLat, homeLng, workLat, workLng)
+            if (autoSelected.isEmpty()) {
+                return Result.Error("No stations found within 4 miles of home")
             }
 
             val weather = fetchWeather(homeLat, homeLng, apiKey)
@@ -55,7 +59,7 @@ class CommuteCalculator(private val context: Context) {
             }
 
             // Build bike-to-transit options for all selected stations
-            for ((index, stationId) in selectedStations.withIndex()) {
+            for ((index, stationId) in autoSelected.withIndex()) {
                 val station = stationMap[stationId] ?: continue
 
                 try {
@@ -71,7 +75,7 @@ class CommuteCalculator(private val context: Context) {
             }
 
             // Build transit-only (walk) options for top 3 closest stations (like webapp)
-            val walkableStations = selectedStations
+            val walkableStations = autoSelected
                 .mapNotNull { stationId -> stationMap[stationId]?.let { stationId to it } }
                 .map { (stationId, station) ->
                     val walkTime = DistanceCalculator.estimateWalkTime(homeLat, homeLng, station.lat, station.lng)
@@ -101,7 +105,7 @@ class CommuteCalculator(private val context: Context) {
 
             val ranked = RankingService.rankOptions(deduplicated, weather)
 
-            val routeIds = selectedStations.flatMap { id ->
+            val routeIds = autoSelected.flatMap { id ->
                 stationMap[id]?.lines ?: emptyList()
             }.distinct()
             val alerts = fetchAlerts(routeIds)

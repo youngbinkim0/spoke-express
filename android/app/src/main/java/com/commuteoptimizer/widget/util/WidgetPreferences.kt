@@ -303,7 +303,6 @@ class WidgetPreferences(context: Context) {
     fun isConfigured(): Boolean {
         return !getGoogleApiKey().isNullOrBlank() &&
                getHomeLat() != 0.0 &&
-               getWorkLat() != 0.0 &&
-               getBikeStations().isNotEmpty()
+               getWorkLat() != 0.0
     }
 }

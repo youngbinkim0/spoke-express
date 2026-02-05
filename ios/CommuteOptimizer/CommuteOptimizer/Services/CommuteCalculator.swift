@@ -78,9 +78,14 @@ actor CommuteCalculator {
             ))
         }
 
-        // 4. Bike-to-transit options
+        // 4. Bike-to-transit options (auto-selected stations)
+        let autoSelected = stationsDataSource.autoSelectStations(
+            homeLat: originLat, homeLng: originLng,
+            workLat: destLat, workLng: destLng
+        )
+
         if settings.showBikeOptions {
-            for stationId in settings.bikeStations {
+            for stationId in autoSelected {
                 if let option = await buildBikeToTransitOption(
                     stationId: stationId,
                     destStation: destStation,
@@ -95,13 +100,14 @@ actor CommuteCalculator {
             }
         }
 
-        // 5. Transit-only options (top 3 closest by walk from origin)
-        let closestStations = stationsDataSource.getStationsSortedByDistance(
-            fromLat: originLat,
-            fromLng: originLng
-        ).prefix(3)
+        // 5. Transit-only options (top 3 closest from auto-selected)
+        let autoStations = autoSelected.compactMap { stationsDataSource.getStation(id: $0) }
+        let walkSorted = autoStations.sorted {
+            DistanceCalculator.estimateWalkTime(fromLat: originLat, fromLng: originLng, toLat: $0.lat, toLng: $0.lng) <
+            DistanceCalculator.estimateWalkTime(fromLat: originLat, fromLng: originLng, toLat: $1.lat, toLng: $1.lng)
+        }
 
-        for (station, _) in closestStations {
+        for station in walkSorted.prefix(3) {
             if let option = await buildTransitOnlyOption(
                 station: station,
                 destStation: destStation,

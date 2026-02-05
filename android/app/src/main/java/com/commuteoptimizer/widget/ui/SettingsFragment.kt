@@ -160,48 +160,36 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupBikeStationChips() {
-        // Sort by distance from home if home is set, otherwise alphabetically
-        allBikeStations = if (homeLat != 0.0 && homeLng != 0.0) {
-            stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
-        } else {
-            stations.sortedBy { it.name }
-        }
-        renderBikeStationChips(allBikeStations)
+        renderAutoSelectedStations()
     }
 
-    private fun renderBikeStationChips(stationsToRender: List<LocalStation>) {
+    private fun renderAutoSelectedStations() {
         chipGroupBikeStations.removeAllViews()
-        val selectedStations = prefs.getBikeStations().toSet()
 
-        for (station in stationsToRender) {
-            val distance = if (homeLat != 0.0 && homeLng != 0.0) {
-                calculateDistance(homeLat, homeLng, station.lat, station.lng)
-            } else null
+        if (homeLat == 0.0 || workLat == 0.0) {
+            textBikeStationCount.text = "Set home and work locations"
+            return
+        }
 
-            val distanceText = distance?.let { " - %.1f mi".format(it) } ?: ""
+        val autoIds = localDataSource.autoSelectStations(homeLat, homeLng, workLat, workLng)
+        val stationMap = stations.associateBy { it.id }
+
+        for (stationId in autoIds) {
+            val station = stationMap[stationId] ?: continue
+            val distance = calculateDistance(homeLat, homeLng, station.lat, station.lng)
 
             val chip = Chip(requireContext()).apply {
-                text = "${station.name} (${station.lines.joinToString(",")})$distanceText"
-                isCheckable = true
-                isChecked = selectedStations.contains(station.id)
+                text = "${station.name} (${station.lines.joinToString(",")}) - %.1f mi".format(distance)
+                isCheckable = false
                 tag = station.id
                 setTextColor(Color.parseColor("#eeeeee"))
                 val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
-                if (isChecked) {
-                    chipStrokeWidth = 2f
-                    chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
-                }
-                setOnCheckedChangeListener { _, checked ->
-                    chipStrokeWidth = if (checked) 2f else 1f
-                    chipStrokeColor = android.content.res.ColorStateList.valueOf(
-                        if (checked) lineColor else Color.LTGRAY
-                    )
-                    updateBikeStationCount()
-                }
+                chipStrokeWidth = 2f
+                chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
             }
             chipGroupBikeStations.addView(chip)
         }
-        updateBikeStationCount()
+        textBikeStationCount.text = "${autoIds.size} stations auto-selected"
     }
 
     private fun setupLiveStationChips() {
@@ -265,12 +253,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun updateBikeStationCount() {
-        var count = 0
-        for (i in 0 until chipGroupBikeStations.childCount) {
-            val chip = chipGroupBikeStations.getChildAt(i) as? Chip
-            if (chip?.isChecked == true) count++
-        }
-        textBikeStationCount.text = "$count selected"
+        // Count is updated by renderAutoSelectedStations()
     }
 
     private fun updateLiveStationCount() {
@@ -279,15 +262,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun filterBikeStations(query: String) {
-        val filtered = if (query.isEmpty()) {
-            allBikeStations
-        } else {
-            allBikeStations.filter { station ->
-                station.name.contains(query, ignoreCase = true) ||
-                station.lines.any { it.contains(query, ignoreCase = true) }
-            }
-        }
-        renderBikeStationChips(filtered)
+        // Bike stations are auto-selected, no filtering needed
     }
 
     private fun filterLiveStations(query: String) {
@@ -352,6 +327,7 @@ class SettingsFragment : Fragment() {
                         workLat = result.first
                         workLng = result.second
                         textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
+                        renderAutoSelectedStations()
                     }
                     showStatus("Location found!", false)
                 } else {
@@ -400,14 +376,6 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        val bikeStations = mutableListOf<String>()
-        for (i in 0 until chipGroupBikeStations.childCount) {
-            val chip = chipGroupBikeStations.getChildAt(i) as? Chip
-            if (chip?.isChecked == true) {
-                bikeStations.add(chip.tag as String)
-            }
-        }
-
         val liveStations = mutableListOf<String>()
         for (i in 0 until chipGroupLiveStations.childCount) {
             val chip = chipGroupLiveStations.getChildAt(i) as? Chip
@@ -416,16 +384,10 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        if (bikeStations.isEmpty()) {
-            showStatus("Please select at least one bike-to station", true)
-            return
-        }
-
         if (!apiKey.isNullOrBlank()) prefs.setOpenWeatherApiKey(apiKey)
         if (!googleApiKey.isNullOrBlank()) prefs.setGoogleApiKey(googleApiKey)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
-        prefs.setBikeStations(bikeStations)
         prefs.setLiveStations(liveStations)
         prefs.setShowBikeOptions(switchBikeOptions.isChecked)
 
