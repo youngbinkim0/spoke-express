@@ -362,6 +362,7 @@
   </style>
 </head>
 <body>
+  <script src="auto-select.js"></script>
   <script src="mta-api.js?v=3"></script>
   <div class="container">
     <header>
@@ -499,7 +500,11 @@
       if (!window.MtaApi) return [];
       const settings = loadSettings();
       const routeIds = new Set();
-      for (const sid of (settings.bikeStations || [])) {
+      // Use all station lines from auto-selected stations
+      const autoStations = (settings.homeLat && settings.workLat && STATIONS.length > 0)
+        ? autoSelectStations(settings.homeLat, settings.homeLng, settings.workLat, settings.workLng, STATIONS)
+        : [];
+      for (const sid of autoStations) {
         const s = getStation(sid);
         if (s) s.lines.forEach(l => routeIds.add(l));
       }
@@ -687,7 +692,7 @@
       const content = document.getElementById('content');
       const settings = loadSettings();
 
-      if (!settings || !settings.homeLat || !settings.bikeStations || settings.bikeStations.length === 0) {
+      if (!settings || !settings.homeLat || !settings.workLat) {
         content.innerHTML = `
           <div class="no-options">
             Not configured yet.<br>
@@ -730,6 +735,23 @@
           return;
         }
 
+        const autoSelected = autoSelectStations(
+          settings.homeLat, settings.homeLng,
+          settings.workLat, settings.workLng,
+          STATIONS
+        );
+
+        if (autoSelected.length === 0) {
+          content.innerHTML = `
+            ${renderWeather(weather)}
+            ${renderAlerts(alerts)}
+            <div class="no-options">
+              No stations found within 4 miles of home.
+            </div>
+          `;
+          return;
+        }
+
         // Build commute options
         const options = [];
 
@@ -747,7 +769,7 @@
           });
         }
 
-        for (const stationId of settings.bikeStations) {
+        for (const stationId of autoSelected) {
           const station = getStation(stationId);
           if (!station) continue;
 
@@ -810,7 +832,7 @@
 
         // Transit-only options (walk to station)
         // Generate for closest stations (no walk time limit to ensure at least one option)
-        const walkableStations = settings.bikeStations
+        const walkableStations = autoSelected
           .map(id => ({ id, station: getStation(id) }))
           .filter(s => s.station)
           .map(s => ({

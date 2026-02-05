@@ -178,61 +178,36 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private fun setupStationChips() {
         chipGroupStations.removeAllViews()
-        val selectedStations = prefs.getBikeStations().toSet()
 
-        // Sort by distance from home if home is set, otherwise alphabetically
-        val sortedStations = if (homeLat != 0.0 && homeLng != 0.0) {
-            stations.sortedBy { calculateDistance(homeLat, homeLng, it.lat, it.lng) }
-        } else {
-            stations.sortedBy { it.name }
+        if (homeLat == 0.0 || workLat == 0.0) {
+            textStationCount.text = "Set home and work locations"
+            return
         }
 
-        for (station in sortedStations) {
-            val distance = if (homeLat != 0.0 && homeLng != 0.0) {
-                calculateDistance(homeLat, homeLng, station.lat, station.lng)
-            } else null
+        val localDataSource = LocalDataSource(this)
+        val autoIds = localDataSource.autoSelectStations(homeLat, homeLng, workLat, workLng)
+        val stationMap = stations.associateBy { it.id }
 
-            val distanceText = distance?.let { " - %.1f mi".format(it) } ?: ""
+        for (stationId in autoIds) {
+            val station = stationMap[stationId] ?: continue
+            val distance = calculateDistance(homeLat, homeLng, station.lat, station.lng)
 
             val chip = Chip(this).apply {
-                text = "${station.name} (${station.lines.joinToString(",")})$distanceText"
-                isCheckable = true
-                isChecked = selectedStations.contains(station.id)
+                text = "${station.name} (${station.lines.joinToString(",")}) - %.1f mi".format(distance)
+                isCheckable = false
                 tag = station.id
                 setTextColor(Color.parseColor("#eeeeee"))
-
-                // Color the chip based on primary line
                 val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
-                if (isChecked) {
-                    setChipBackgroundColorResource(android.R.color.transparent)
-                    chipStrokeWidth = 2f
-                    chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
-                }
-
-                setOnCheckedChangeListener { _, checked ->
-                    if (checked) {
-                        setChipBackgroundColorResource(android.R.color.transparent)
-                        chipStrokeWidth = 2f
-                        chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
-                    } else {
-                        chipStrokeWidth = 1f
-                        chipStrokeColor = android.content.res.ColorStateList.valueOf(Color.LTGRAY)
-                    }
-                    updateStationCount()
-                }
+                chipStrokeWidth = 2f
+                chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
             }
             chipGroupStations.addView(chip)
         }
-        updateStationCount()
+        textStationCount.text = "${autoIds.size} stations auto-selected"
     }
 
     private fun updateStationCount() {
-        var count = 0
-        for (i in 0 until chipGroupStations.childCount) {
-            val chip = chipGroupStations.getChildAt(i) as? Chip
-            if (chip?.isChecked == true) count++
-        }
-        textStationCount.text = "$count selected"
+        // Count is updated by setupStationChips()
     }
 
     private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
@@ -290,6 +265,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
                         workLat = result.latitude
                         workLng = result.longitude
                         textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
+                        setupStationChips()
                     }
                     showStatus("Location found!", isError = false)
                 } else {
@@ -336,22 +312,7 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             return
         }
 
-        // Get selected stations
-        val selectedStations = mutableListOf<String>()
-        for (i in 0 until chipGroupStations.childCount) {
-            val chip = chipGroupStations.getChildAt(i) as? Chip
-            if (chip?.isChecked == true) {
-                selectedStations.add(chip.tag as String)
-            }
-        }
-
-        if (selectedStations.isEmpty()) {
-            Log.d(TAG, "Validation failed: no stations selected")
-            showStatus("Please select at least one station", isError = true)
-            return
-        }
-
-        Log.d(TAG, "Validation passed, saving ${selectedStations.size} stations")
+        Log.d(TAG, "Validation passed, saving configuration")
 
         try {
             // Get optional settings
@@ -365,7 +326,6 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
             prefs.setWidgetDestination(appWidgetId, destName, workLat, workLng)
             // Also save as global work location for backwards compatibility
             prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")
-            prefs.setBikeStations(selectedStations)
             prefs.setShowBikeOptions(showBikeOptions)
 
             Log.d(TAG, "Settings saved, triggering widget update for ID: $appWidgetId")
