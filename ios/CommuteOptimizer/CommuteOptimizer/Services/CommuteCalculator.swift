@@ -199,7 +199,7 @@ actor CommuteCalculator {
         workLat: Double,
         workLng: Double,
         googleApiKey: String?
-    ) async -> (duration: Int, legs: [Leg]) {
+    ) async -> (duration: Int, legs: [Leg])? {
         // Try Google Routes API if key is provided
         if let apiKey = googleApiKey, !apiKey.isEmpty {
             let result = await googleRoutesService.getTransitRoute(
@@ -229,12 +229,8 @@ actor CommuteCalculator {
             }
         }
 
-        // Fallback to local estimate
-        let transitTime = DistanceCalculator.estimateTransitTime(
-            fromStopId: fromStation.mtaId,
-            toStopId: toStation.mtaId
-        )
-        return (transitTime, [Leg(mode: .subway, duration: transitTime, to: toStation.name, route: fromStation.lines.first, from: fromStation.name)])
+        // Fallback removed - requires Google Routes API
+        return nil
     }
 
     private func buildBikeToTransitOption(
@@ -257,13 +253,14 @@ actor CommuteCalculator {
         let waitTime = arrival.minutesAway
 
         // Get transit route (uses Google API if available)
-        let (transitTime, transitLegs) = await getTransitRoute(
+        let transitRoute = await getTransitRoute(
             fromStation: station,
             toStation: destStation,
             workLat: destLat,
             workLng: destLng,
             googleApiKey: settings.googleApiKey
         )
+        guard let (transitTime, transitLegs) = transitRoute else { return nil }
 
         let totalDuration = bikeTime + waitTime + transitTime
         let route = arrival.routeId ?? transitLegs.first?.route ?? station.lines.first ?? "?"
@@ -315,13 +312,14 @@ actor CommuteCalculator {
         let waitTime = arrival.minutesAway
 
         // Get transit route (uses Google API if available)
-        let (transitTime, transitLegs) = await getTransitRoute(
+        let transitRoute = await getTransitRoute(
             fromStation: station,
             toStation: destStation,
             workLat: destLat,
             workLng: destLng,
             googleApiKey: settings.googleApiKey
         )
+        guard let (transitTime, transitLegs) = transitRoute else { return nil }
 
         let totalDuration = walkTime + waitTime + transitTime
         let route = arrival.routeId ?? transitLegs.first?.route ?? station.lines.first ?? "?"

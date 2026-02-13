@@ -213,7 +213,9 @@ class CommuteCalculator(private val context: Context) {
     ): CommuteOption? {
         val bikeTime = DistanceCalculator.estimateBikeTime(homeLat, homeLng, station.lat, station.lng)
         val nextArrival = getNextArrival(station.mtaId, station.lines)
-        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
+        val transitRoute = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
+        if (transitRoute == null) return null
+        val (transitTime, transitLegs) = transitRoute
 
         // Include wait time like webapp: bikeTime + waitTime + transitTime
         val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
@@ -240,7 +242,9 @@ class CommuteCalculator(private val context: Context) {
         googleApiKey: String?, walkTime: Int, index: Int
     ): CommuteOption? {
         val nextArrival = getNextArrival(station.mtaId, station.lines)
-        val (transitTime, transitLegs) = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
+        val transitRoute = getTransitRoute(station, destStation, workLat, workLng, googleApiKey)
+        if (transitRoute == null) return null
+        val (transitTime, transitLegs) = transitRoute
 
         // Include wait time like webapp: walkTime + waitTime + transitTime
         val waitTime = nextArrival.minutesAway.coerceAtLeast(0)
@@ -265,7 +269,7 @@ class CommuteCalculator(private val context: Context) {
         fromStation: LocalStation, toStation: LocalStation,
         workLat: Double, workLng: Double,
         googleApiKey: String?
-    ): Pair<Int, List<Leg>> {
+    ): Pair<Int, List<Leg>>? {
         if (!googleApiKey.isNullOrBlank()) {
             try {
                 val result = GoogleRoutesService.getTransitRoute(
@@ -289,8 +293,8 @@ class CommuteCalculator(private val context: Context) {
             } catch (e: Exception) { }
         }
 
-        val transitTime = DistanceCalculator.estimateTransitTime(fromStation.id, toStation.id)
-        return Pair(transitTime, listOf(Leg("subway", transitTime, toStation.name, fromStation.lines.firstOrNull(), fromStation.name, null)))
+        // Google Routes API required but failed or not configured
+        return null
     }
 
     private fun buildSummary(firstMode: String, transitLegs: List<Leg>, firstLine: String?, finalStop: String): String {
