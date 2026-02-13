@@ -317,8 +317,9 @@ class CommuteCalculator(private val context: Context) {
                 val next = arrivals.first()
                 val arrivalDate = Date(next.arrivalTime * 1000)
                 val timeFormat = SimpleDateFormat("h:mm a", Locale.US)
+                val displayText = if (next.minutesAway <= 0) "Now" else "${next.minutesAway}m"
                 NextArrival(
-                    nextTrainText = "${next.minutesAway}m",
+                    nextTrainText = displayText,
                     arrivalTime = timeFormat.format(arrivalDate),
                     routeId = next.routeId,
                     minutesAway = next.minutesAway

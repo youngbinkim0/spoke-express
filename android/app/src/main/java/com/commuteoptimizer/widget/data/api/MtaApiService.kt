@@ -386,8 +386,10 @@ object MtaApiService {
         val arrivalDate = Date(next.arrivalTime * 1000)
         val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
+        val displayText = if (next.minutesAway <= 0) "Now" else "${next.minutesAway}m"
+
         return NextArrivalResult(
-            nextTrain = "${next.minutesAway}m",
+            nextTrain = displayText,
             arrivalTime = timeFormat.format(arrivalDate),
             routeId = next.routeId
         )
