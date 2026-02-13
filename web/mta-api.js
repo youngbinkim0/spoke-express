@@ -359,8 +359,10 @@ async function getNextArrival(stationId, lines) {
     minute: '2-digit'
   });
 
+  const displayText = next.minutesAway <= 0 ? "Now" : `${next.minutesAway}m`;
+
   return {
-    nextTrain: `${next.minutesAway}m`,
+    nextTrain: displayText,
     minutesAway: next.minutesAway,
     arrivalTime: timeStr,
     routeId: next.routeId
