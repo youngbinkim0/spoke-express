@@ -56,7 +56,7 @@ struct DistanceCalculator {
             "G28_G22": 6,   // Nassau to Court Sq
             "G26_G22": 4    // Greenpoint to Court Sq
         ]
-        return knownRoutes["\(fromStopId)_\(toStopId)"] ?? 15
+        return knownRoutes["\(fromStopId)_\(toStopId)"] ?? 0
     }
 }
 

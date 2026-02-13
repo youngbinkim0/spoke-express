@@ -72,7 +72,7 @@ object DistanceCalculator {
         )
 
         val key = "${fromStopId}_${toStopId}"
-        return knownRoutes[key] ?: 15 // Default estimate
+        return knownRoutes[key] ?: 0 // Unknown - no valid data
     }
 
     private fun toRadians(degrees: Double): Double = degrees * PI / 180
