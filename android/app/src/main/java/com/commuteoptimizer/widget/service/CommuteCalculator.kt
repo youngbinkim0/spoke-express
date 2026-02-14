@@ -141,9 +141,10 @@ class CommuteCalculator(private val context: Context) {
         return try {
             android.util.Log.d("CommuteCalc", "Fetching weather for $lat, $lng")
             val response = weatherApi.getWeather(lat, lng, apiKey = apiKey)
-            if (response.isSuccessful && response.body() != null) {
-                android.util.Log.d("CommuteCalc", "Weather fetched successfully: ${response.body()?.main?.temp}")
-                parseWeatherResponse(response.body()!!)
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                android.util.Log.d("CommuteCalc", "Weather fetched successfully: ${body.main?.temp}")
+                parseWeatherResponse(body)
             } else {
                 android.util.Log.e("CommuteCalc", "Weather API error: ${response.code()} - ${response.errorBody()?.string()}")
                 getDefaultWeather()
@@ -290,7 +291,9 @@ class CommuteCalculator(private val context: Context) {
                         listOf(Leg("subway", result.durationMinutes, toStation.name, fromStation.lines.firstOrNull(), fromStation.name, null))
                     })
                 }
-            } catch (e: Exception) { }
+            } catch (e: Exception) {
+                android.util.Log.w("CommuteCalc", "Google Routes API failed: ${e.message}")
+            }
         }
 
         // Google Routes API required but failed or not configured
