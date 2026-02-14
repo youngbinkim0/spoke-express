@@ -92,7 +92,10 @@ actor MtaApiService {
     // MARK: - Private Methods
 
     private func fetchFeed(_ feedName: String) async throws -> Data {
-        var request = URLRequest(url: URL(string: baseURL + feedName)!)
+        guard let url = URL(string: baseURL + feedName) else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
         request.setValue("NYC-Commute-Optimizer/1.0", forHTTPHeaderField: "User-Agent")
         let (data, _) = try await URLSession.shared.data(for: request)
         return data
