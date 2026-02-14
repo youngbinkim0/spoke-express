@@ -23,6 +23,8 @@ targets:
     resources:
       - path: CommuteOptimizer/Resources
       - path: CommuteOptimizer/Assets.xcassets
+      - path: CommuteOptimizer/PrivacyInfo.xcprivacy
+      - path: CommuteOptimizer/PrivacyInfo.xcprivacy
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.commuteoptimizer.app
