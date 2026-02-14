@@ -49,8 +49,9 @@ class ProtobufReader {
       result |= (byte & 0x7f) << shift;
       if ((byte & 0x80) === 0) break;
       shift += 7;
+      if (shift >= 35) break; // JS bitwise ops are 32-bit; prevent overflow
     }
-    return result;
+    return result >>> 0; // Ensure unsigned
   }
 
   readFixed64() {
