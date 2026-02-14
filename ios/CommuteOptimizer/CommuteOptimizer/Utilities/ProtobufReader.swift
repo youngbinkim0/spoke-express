@@ -14,21 +14,22 @@ class ProtobufReader {
         position < data.count
     }
 
-    func readVarint() -> UInt64 {
-        var result: UInt64 = 0
-        var shift: UInt64 = 0
+     func readVarint() -> UInt64 {
+         var result: UInt64 = 0
+         var shift: UInt64 = 0
 
-        while position < data.count {
-            let byte = data[position]
-            position += 1
-            result |= UInt64(byte & 0x7F) << shift
-            if (byte & 0x80) == 0 { break }
-            shift += 7
-        }
-        return result
-    }
+         while position < data.count {
+             let byte = data[position]
+             position += 1
+             result |= UInt64(byte & 0x7F) << shift
+             if (byte & 0x80) == 0 { break }
+             shift += 7
+             if shift >= 64 { break } // Prevent overflow on malformed data
+         }
+         return result
+     }
 
-    func readString(length: Int) -> String {
+     func readString(length: Int) -> String {
         let endIndex = min(position + length, data.count)
         let bytes = data[position..<endIndex]
         position = endIndex
