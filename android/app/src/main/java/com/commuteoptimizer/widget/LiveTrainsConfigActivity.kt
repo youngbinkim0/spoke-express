@@ -188,17 +188,18 @@ class LiveTrainsConfigActivity : AppCompatActivity() {
     private fun saveConfiguration() {
         Log.d(TAG, "saveConfiguration called")
 
-        if (selectedStationId == null) {
+        val stationId = selectedStationId
+        if (stationId == null) {
             Log.d(TAG, "Validation failed: no station selected")
             showStatus("Please select a station", isError = true)
             return
         }
 
-        Log.d(TAG, "Saving station: $selectedStationId")
+        Log.d(TAG, "Saving station: $stationId")
 
         try {
             // Save the station for this widget
-            prefs.setLiveTrainsWidgetStation(appWidgetId, selectedStationId!!)
+            prefs.setLiveTrainsWidgetStation(appWidgetId, stationId)
 
             Log.d(TAG, "Settings saved, triggering widget update for ID: $appWidgetId")
 
