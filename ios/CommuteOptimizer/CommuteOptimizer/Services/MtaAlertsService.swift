@@ -17,7 +17,11 @@ actor MtaAlertsService {
     /// Fetch alerts, optionally filtered by route IDs
     func fetchAlerts(routeIds: [String] = []) async -> [ServiceAlert] {
         do {
-            var request = URLRequest(url: URL(string: alertsURL)!)
+            guard let url = URL(string: alertsURL) else {
+                print("MtaAlertsService: Invalid alerts URL: \(alertsURL)")
+                return []
+            }
+            var request = URLRequest(url: url)
             request.setValue("NYC-Commute-Optimizer/1.0", forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 10
 
