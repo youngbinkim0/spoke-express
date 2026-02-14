@@ -95,6 +95,7 @@ object MtaApiService {
                 result = result or ((byte and 0x7F).toLong() shl shift)
                 if ((byte and 0x80) == 0) break
                 shift += 7
+                if (shift >= 64) break // Prevent overflow on malformed data
             }
             return result
         }
