@@ -1,8 +1,10 @@
-# NYC Commute Optimizer
+# Spoke Express
 
-A serverless NYC subway commute app with weather-aware routing. Shows the best way to get to work - bike, walk, or transit - with real-time train arrivals.
+NYC bike + transit commute optimizer with weather-aware routing. Compare bike, walk, and subway options side-by-side with real-time train arrivals.
 
-**Zero backend required** - calls MTA APIs directly from your browser/device.
+**Zero backend required** — calls MTA APIs directly from your browser/device.
+
+**Current version:** v0.1
 
 ## Quick Start
 
@@ -16,6 +18,10 @@ cd web
 Then configure your home/work locations in Settings. See [web/QUICKSTART.md](web/QUICKSTART.md) for detailed setup.
 
 ### Android App
+
+Download the APK from [GitHub Releases](https://github.com/youngbinkim0/spoke-express/releases) and sideload it.
+
+Or build from source:
 
 ```bash
 cd android
@@ -112,4 +118,4 @@ Then add the worker URL to Settings.
 
 ## License
 
-MIT
+GPL-3.0 — see [LICENSE](LICENSE)

@@ -1,6 +1,6 @@
-# NYC Commute Optimizer - Web App
+# Spoke Express — Web App
 
-Serverless NYC subway commute app. Shows the best way to get to work with real-time train arrivals and weather-aware routing.
+NYC bike + transit commute optimizer. Compare bike, walk, and subway options with real-time train arrivals and weather-aware routing.
 
 ## Quick Start
 

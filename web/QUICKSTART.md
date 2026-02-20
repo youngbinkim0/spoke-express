@@ -1,6 +1,6 @@
 # Quickstart
 
-Get the NYC Commute Optimizer running in under 2 minutes.
+Get Spoke Express running in under 2 minutes.
 
 ## 1. Start the app
 
