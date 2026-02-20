@@ -67,10 +67,10 @@ Open Settings in the app and configure:
 |---------|----------|-------|
 | Home address | Yes | Click "Lookup" to geocode |
 | Work address | Yes | Click "Lookup" to geocode |
-| Nearby stations | Auto | Automatically selected within 4-mile radius |
+| Bike transfer stations | Auto | Automatically selected within 4-mile radius |
 | OpenWeatherMap API key | No | Free at openweathermap.org - enables weather |
-| Google API key | No | Enables accurate transit directions |
-| Worker URL | No | For Google Routes API proxy (see below) |
+| Google API key | Yes | Enables accurate transit directions |
+| Worker URL | Web Only | For Google Routes API proxy (see below) |
 
 ## Optional: Enhanced Transit Directions
 
