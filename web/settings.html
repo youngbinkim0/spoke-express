@@ -418,6 +418,14 @@
     const STORAGE_KEY = 'commuteOptimizerSettings';
     const GEOCODE_API = 'https://api.openweathermap.org/geo/1.0/direct';
 
+    function normalizeUrl(url) {
+      if (!url) return url;
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      return url.replace(/\/+$/, '');
+    }
+
     async function loadStations() {
       try {
         const response = await fetch('stations.json');
@@ -608,7 +616,7 @@
       const settings = {
         apiKey: document.getElementById('apiKey').value.trim(),
         googleKey: document.getElementById('googleKey').value.trim(),
-        workerUrl: document.getElementById('workerUrl').value.trim(),
+        workerUrl: normalizeUrl(document.getElementById('workerUrl').value.trim()),
         showBikeOptions: document.getElementById('showBikeOptions').checked,
         homeAddress: document.getElementById('homeAddress').value.trim(),
         homeLat: parseFloat(document.getElementById('homeLat').value) || 0,
