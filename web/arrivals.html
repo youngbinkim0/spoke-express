@@ -276,6 +276,13 @@
     const STORAGE_KEY = 'commuteOptimizerSettings';
     // MTA API is now used via mta-api.js
 
+    // Default stations for new users (no config needed)
+    const DEFAULT_LIVE_STATIONS = [
+      'times-sq-42-st',         // Times Sq-42 St (1,2,3)
+      'grand-central-42-st',    // Grand Central-42 St (4,5,6)
+      '34-st-penn-station-1'    // 34 St-Penn Station (A,C,E)
+    ];
+
     let STATIONS = [];
 
     const lineColors = {
@@ -413,15 +420,10 @@
       const lastUpdated = document.getElementById('lastUpdated');
       const settings = loadSettings();
 
-      if (!settings || !settings.liveStations || settings.liveStations.length === 0) {
-        content.innerHTML = `
-          <div class="no-stations">
-            <h2>No Stations Configured</h2>
-            <p>Go to <a href="settings.html">Settings</a> to select up to 3 stations for live train times.</p>
-          </div>
-        `;
-        return;
-      }
+      // Use configured stations, or fall back to popular defaults
+      const liveStations = (settings && settings.liveStations && settings.liveStations.length > 0)
+        ? settings.liveStations
+        : DEFAULT_LIVE_STATIONS;
 
       try {
         if (STATIONS.length === 0) {
@@ -429,7 +431,7 @@
         }
 
         const stationDataList = await Promise.all(
-          settings.liveStations.map(id => fetchStationArrivals(id))
+          liveStations.map(id => fetchStationArrivals(id))
         );
 
         content.innerHTML = `

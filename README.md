@@ -1,5 +1,9 @@
 # Spoke Express
 
+> **Try it now: [https://youngbinkim0.github.io/spoke-express/](https://youngbinkim0.github.io/spoke-express/)**
+> 
+> Live train arrivals work instantly — no API keys, no setup.
+
 NYC hybrid commute optimizer — bike to the subway, ride to work, get there faster.
 
 Regular transit apps show you one option: take the train, or ride a bike. But in NYC, the fastest commute is often **both** — bike to a nearby station, lock up, and catch the express. Spoke Express finds these hybrid routes automatically, ranking every combination of bike + subway by real-time train arrivals and weather conditions.
@@ -20,7 +24,15 @@ Spoke Express does. It:
 
 ## Quick Start
 
-### Web App
+### Web App (Hosted)
+
+Just open **[https://youngbinkim0.github.io/spoke-express/](https://youngbinkim0.github.io/spoke-express/)** — no installation needed.
+
+The Live Trains page works immediately with 3 popular stations pre-loaded. For full commute routing, configure your home/work locations in Settings.
+
+### Web App (Local)
+
+To run locally instead:
 
 ```bash
 cd web
