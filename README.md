@@ -10,7 +10,7 @@ Regular transit apps show you one option: take the train, or ride a bike. But in
 
 ## Why Spoke Express?
 
-Google Maps gives you a bike route OR a transit route. Citymapper does the same. Neither will tell you: "Bike 8 minutes to Court Sq, catch the E express arriving in 3 minutes, save 12 minutes vs. walking to your local stop."
+Google Maps gives you a bike route OR a transit route. Citymapper offers some hybrid options, but won't exhaustively compare every nearby station against live arrivals to find the fastest combo right now.
 
 Spoke Express does. It:
 - Compares **walk-to-station** vs. **bike-to-station** for every nearby subway stop
