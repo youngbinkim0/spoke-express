@@ -8,7 +8,6 @@ struct SettingsView: View {
     @State private var isGeocodingHome = false
     @State private var isGeocodingWork = false
     @State private var geocodeError: String?
-    @State private var bikeStationsExpanded = true
     @State private var liveStationsExpanded = true
 
     private let geocoder = CLGeocoder()
@@ -102,68 +101,6 @@ struct SettingsView: View {
                     }
                 }
 
-                // Auto-Selected Bike Stations (read-only)
-                Section {
-                    DisclosureGroup(
-                        isExpanded: $bikeStationsExpanded,
-                        content: {
-                            if settingsManager.homeLat == 0 || settingsManager.workLat == 0 {
-                                Text("Set home and work locations to see auto-selected stations")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            } else {
-                                let autoIds = StationsDataSource.shared.autoSelectStations(
-                                    homeLat: settingsManager.homeLat,
-                                    homeLng: settingsManager.homeLng,
-                                    workLat: settingsManager.workLat,
-                                    workLng: settingsManager.workLng
-                                )
-                                let grouped = groupAutoSelectedByLine(ids: autoIds)
-                                if grouped.isEmpty {
-                                    Text("No stations found within 4 miles")
-                                        .foregroundColor(.secondary)
-                                        .font(.caption)
-                                } else {
-                                    ForEach(grouped, id: \.line) { group in
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(group.line)
-                                                .font(.subheadline)
-                                                .fontWeight(.semibold)
-                                            ForEach(group.stations, id: \.id) { station in
-                                                HStack {
-                                                    Text(station.name)
-                                                        .font(.caption)
-                                                    Spacer()
-                                                    Text(String(format: "%.1f mi", station.distance))
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        label: {
-                            HStack {
-                                Text("Auto-Selected Bike Stations")
-                                Spacer()
-                                if settingsManager.homeLat != 0 && settingsManager.workLat != 0 {
-                                    let count = StationsDataSource.shared.autoSelectStations(
-                                        homeLat: settingsManager.homeLat,
-                                        homeLng: settingsManager.homeLng,
-                                        workLat: settingsManager.workLat,
-                                        workLng: settingsManager.workLng
-                                    ).count
-                                    Text("\(count) stations")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                    )
-                }
-
                 // Live Train Stations Section
                 Section {
                     DisclosureGroup(
@@ -220,40 +157,6 @@ struct SettingsView: View {
             } message: {
                 Text(geocodeError ?? "")
             }
-        }
-    }
-
-    private struct LineGroup: Identifiable {
-        let line: String
-        let stations: [StationWithDistance]
-        var id: String { line }
-    }
-
-    private struct StationWithDistance: Identifiable {
-        let id: String
-        let name: String
-        let distance: Double
-    }
-
-    private func groupAutoSelectedByLine(ids: [String]) -> [LineGroup] {
-        let homeLat = settingsManager.homeLat
-        let homeLng = settingsManager.homeLng
-        var byLine: [String: [StationWithDistance]] = [:]
-
-        for id in ids {
-            guard let station = stationsDataSource.getStation(id: id) else { continue }
-            let dist = DistanceCalculator.haversineDistance(
-                lat1: homeLat, lon1: homeLng,
-                lat2: station.lat, lon2: station.lng
-            )
-            let swd = StationWithDistance(id: station.id, name: station.name, distance: dist)
-            for line in station.lines {
-                byLine[line, default: []].append(swd)
-            }
-        }
-
-        return byLine.keys.sorted().map { line in
-            LineGroup(line: line, stations: byLine[line]!)
         }
     }
 

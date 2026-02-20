@@ -29,8 +29,6 @@ class WidgetPreferences(context: Context) {
         private const val KEY_WORK_LAT = "work_lat"
         private const val KEY_WORK_LNG = "work_lng"
         private const val KEY_WORK_ADDRESS = "work_address"
-        private const val KEY_SELECTED_STATIONS = "selected_stations"
-        private const val KEY_BIKE_STATIONS = "bike_stations"
         private const val KEY_LIVE_STATIONS = "live_stations"
         private const val KEY_DEST_STATION = "dest_station"
         private const val KEY_SHOW_BIKE_OPTIONS = "show_bike_options"
@@ -92,26 +90,6 @@ class WidgetPreferences(context: Context) {
             .putFloat(KEY_WORK_LNG, lng.toFloat())
             .putString(KEY_WORK_ADDRESS, address)
             .apply()
-    }
-
-    // ========== Bike-to Stations (for commute routing) ==========
-
-    fun getBikeStations(): List<String> {
-        // Try new key first, fall back to legacy key for migration
-        val json = prefs.getString(KEY_BIKE_STATIONS, null)
-            ?: prefs.getString(KEY_SELECTED_STATIONS, null)
-            ?: return emptyList()
-        return try {
-            val type = object : TypeToken<List<String>>() {}.type
-            gson.fromJson(json, type)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    fun setBikeStations(stations: List<String>) {
-        val json = gson.toJson(stations)
-        prefs.edit().putString(KEY_BIKE_STATIONS, json).apply()
     }
 
     // ========== Live Train Stations (max 3, for live trains screen) ==========

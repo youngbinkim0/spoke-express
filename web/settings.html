@@ -395,15 +395,6 @@
         </div>
       </div>
 
-      <!-- Auto-Selected Bike Stations (read-only) -->
-      <div class="card">
-        <h2>Auto-Selected Bike Stations</h2>
-        <p>Top 3 stations per line within 4 miles, ranked by estimated commute time</p>
-        <div id="autoSelectedStations">
-          <p style="color: #888; font-size: 0.9rem;">Set home and work locations to see auto-selected stations.</p>
-        </div>
-      </div>
-
       <!-- Live Train Stations -->
       <div class="card">
         <h2>Live Train Stations</h2>
@@ -562,52 +553,9 @@
       })).sort((a, b) => a.distance - b.distance);
     }
 
-    function renderAutoSelectedStations() {
-      const container = document.getElementById('autoSelectedStations');
-      const homeLat = parseFloat(document.getElementById('homeLat').value) || 0;
-      const homeLng = parseFloat(document.getElementById('homeLng').value) || 0;
-      const workLat = parseFloat(document.getElementById('workLat').value) || 0;
-      const workLng = parseFloat(document.getElementById('workLng').value) || 0;
-
-      if (!homeLat || !workLat || STATIONS.length === 0) {
-        container.innerHTML = '<p style="color: #888; font-size: 0.9rem;">Set home and work locations to see auto-selected stations.</p>';
-        return;
-      }
-
-      const autoIds = autoSelectStations(homeLat, homeLng, workLat, workLng, STATIONS);
-
-      // Group by line for display
-      const byLine = {};
-      for (const id of autoIds) {
-        const s = STATIONS.find(st => st.id === id);
-        if (!s) continue;
-        for (const line of s.lines) {
-          if (!byLine[line]) byLine[line] = [];
-          if (!byLine[line].find(st => st.id === s.id)) {
-            const dist = calculateDistance(homeLat, homeLng, s.lat, s.lng);
-            byLine[line].push({ ...s, distance: dist });
-          }
-        }
-      }
-
-      const lineOrder = Object.keys(byLine).sort();
-      container.innerHTML = `<p class="station-count">${autoIds.length} stations auto-selected</p>` +
-        lineOrder.map(line => `
-          <div style="margin-bottom: 8px;">
-            <span class="line-badge line-${line}">${line}</span>
-            <span style="color: #666; font-size: 0.85rem;">
-              ${byLine[line].map(s => `${s.name} (${s.distance.toFixed(1)} mi)`).join(', ')}
-            </span>
-          </div>
-        `).join('');
-    }
-
     function renderStations(settings, bikeFilter = '', liveFilter = '') {
       const stationsWithDist = getStationsWithDistance(settings);
       const liveStations = settings.liveStations || [];
-
-      // Render auto-selected bike stations (read-only)
-      renderAutoSelectedStations();
 
       // Live stations
       const liveContainer = document.getElementById('liveStations');

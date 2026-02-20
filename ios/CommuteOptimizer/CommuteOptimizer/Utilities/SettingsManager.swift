@@ -16,7 +16,6 @@ class SettingsManager: ObservableObject {
         static let workLat = "work_lat"
         static let workLng = "work_lng"
         static let workAddress = "work_address"
-        static let bikeStations = "bike_stations"
         static let liveStations = "live_stations"
         static let destinationStation = "destination_station"
         static let showBikeOptions = "show_bike_options"
@@ -39,7 +38,6 @@ class SettingsManager: ObservableObject {
         _workLat = 0
         _workLng = 0
         _workAddress = ""
-        _bikeStations = []
         _liveStations = []
         _destinationStation = "court-sq"
         _showBikeOptions = true
@@ -134,15 +132,6 @@ class SettingsManager: ObservableObject {
 
     // MARK: - Stations
 
-    @Published private var _bikeStations: [String]
-    var bikeStations: [String] {
-        get { _bikeStations }
-        set {
-            _bikeStations = newValue
-            defaults.set(newValue, forKey: Keys.bikeStations)
-        }
-    }
-
     @Published private var _liveStations: [String]
     var liveStations: [String] {
         get { _liveStations }
@@ -185,7 +174,6 @@ class SettingsManager: ObservableObject {
         _workLat = defaults.double(forKey: Keys.workLat)
         _workLng = defaults.double(forKey: Keys.workLng)
         _workAddress = defaults.string(forKey: Keys.workAddress) ?? ""
-        _bikeStations = defaults.stringArray(forKey: Keys.bikeStations) ?? []
         _liveStations = defaults.stringArray(forKey: Keys.liveStations) ?? []
         _destinationStation = defaults.string(forKey: Keys.destinationStation) ?? "court-sq"
         _showBikeOptions = defaults.object(forKey: Keys.showBikeOptions) == nil ? true : defaults.bool(forKey: Keys.showBikeOptions)

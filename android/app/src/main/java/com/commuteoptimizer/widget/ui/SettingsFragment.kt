@@ -43,24 +43,16 @@ class SettingsFragment : Fragment() {
     private lateinit var inputWorkAddress: TextInputEditText
     private lateinit var textHomeCoords: TextView
     private lateinit var textWorkCoords: TextView
-    private lateinit var chipGroupBikeStations: ChipGroup
     private lateinit var chipGroupLiveStations: ChipGroup
-    private lateinit var textBikeStationCount: TextView
     private lateinit var textLiveStationCount: TextView
     private lateinit var switchBikeOptions: SwitchCompat
     private lateinit var textStatus: TextView
-    private lateinit var bikeStationsHeader: View
-    private lateinit var bikeStationsExpandIcon: ImageView
     private lateinit var liveStationsHeader: View
     private lateinit var liveStationsExpandIcon: ImageView
-    private lateinit var bikeSearchLayout: TextInputLayout
-    private lateinit var bikeSearchInput: TextInputEditText
     private lateinit var liveSearchLayout: TextInputLayout
     private lateinit var liveSearchInput: TextInputEditText
 
-    private var bikeStationsExpanded = false
     private var liveStationsExpanded = false
-    private var allBikeStations: List<LocalStation> = emptyList()
     private var allLiveStations: List<LocalStation> = emptyList()
     private var homeLat: Double = 0.0
     private var homeLng: Double = 0.0
@@ -80,7 +72,6 @@ class SettingsFragment : Fragment() {
 
         initViews(view)
         loadExistingSettings()
-        setupBikeStationChips()
         setupLiveStationChips()
         setupClickListeners()
     }
@@ -92,30 +83,17 @@ class SettingsFragment : Fragment() {
         inputWorkAddress = view.findViewById(R.id.input_work_address)
         textHomeCoords = view.findViewById(R.id.text_home_coords)
         textWorkCoords = view.findViewById(R.id.text_work_coords)
-        chipGroupBikeStations = view.findViewById(R.id.chip_group_bike_stations)
         chipGroupLiveStations = view.findViewById(R.id.chip_group_live_stations)
-        textBikeStationCount = view.findViewById(R.id.text_bike_station_count)
         textLiveStationCount = view.findViewById(R.id.text_live_station_count)
         switchBikeOptions = view.findViewById(R.id.switch_bike_options)
         textStatus = view.findViewById(R.id.text_status)
 
         // Collapsible section headers
-        bikeStationsHeader = view.findViewById(R.id.bike_stations_header)
-        bikeStationsExpandIcon = view.findViewById(R.id.bike_stations_expand_icon)
         liveStationsHeader = view.findViewById(R.id.live_stations_header)
         liveStationsExpandIcon = view.findViewById(R.id.live_stations_expand_icon)
 
-        bikeSearchLayout = view.findViewById(R.id.bike_search_layout)
-        bikeSearchInput = view.findViewById(R.id.bike_search_input)
         liveSearchLayout = view.findViewById(R.id.live_search_layout)
         liveSearchInput = view.findViewById(R.id.live_search_input)
-
-        bikeStationsHeader.setOnClickListener {
-            bikeStationsExpanded = !bikeStationsExpanded
-            chipGroupBikeStations.visibility = if (bikeStationsExpanded) View.VISIBLE else View.GONE
-            bikeSearchLayout.visibility = if (bikeStationsExpanded) View.VISIBLE else View.GONE
-            bikeStationsExpandIcon.rotation = if (bikeStationsExpanded) 180f else 0f
-        }
 
         liveStationsHeader.setOnClickListener {
             liveStationsExpanded = !liveStationsExpanded
@@ -124,15 +102,7 @@ class SettingsFragment : Fragment() {
             liveStationsExpandIcon.rotation = if (liveStationsExpanded) 180f else 0f
         }
 
-        // Add search text watchers
-        bikeSearchInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                filterBikeStations(s?.toString()?.trim() ?: "")
-            }
-        })
-
+        // Add search text watcher
         liveSearchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -157,39 +127,6 @@ class SettingsFragment : Fragment() {
         if (workLat != 0.0) textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
 
         switchBikeOptions.isChecked = prefs.getShowBikeOptions()
-    }
-
-    private fun setupBikeStationChips() {
-        renderAutoSelectedStations()
-    }
-
-    private fun renderAutoSelectedStations() {
-        chipGroupBikeStations.removeAllViews()
-
-        if (homeLat == 0.0 || workLat == 0.0) {
-            textBikeStationCount.text = "Set home and work locations"
-            return
-        }
-
-        val autoIds = localDataSource.autoSelectStations(homeLat, homeLng, workLat, workLng)
-        val stationMap = stations.associateBy { it.id }
-
-        for (stationId in autoIds) {
-            val station = stationMap[stationId] ?: continue
-            val distance = calculateDistance(homeLat, homeLng, station.lat, station.lng)
-
-            val chip = Chip(requireContext()).apply {
-                text = "${station.name} (${station.lines.joinToString(",")}) - %.1f mi".format(distance)
-                isCheckable = false
-                tag = station.id
-                setTextColor(Color.parseColor("#eeeeee"))
-                val lineColor = MtaColors.getLineColor(station.lines.firstOrNull() ?: "G")
-                chipStrokeWidth = 2f
-                chipStrokeColor = android.content.res.ColorStateList.valueOf(lineColor)
-            }
-            chipGroupBikeStations.addView(chip)
-        }
-        textBikeStationCount.text = "${autoIds.size} stations auto-selected"
     }
 
     private fun setupLiveStationChips() {
@@ -252,17 +189,9 @@ class SettingsFragment : Fragment() {
         return count
     }
 
-    private fun updateBikeStationCount() {
-        // Count is updated by renderAutoSelectedStations()
-    }
-
     private fun updateLiveStationCount() {
         val count = getSelectedLiveStationCount()
         textLiveStationCount.text = "$count/3 selected"
-    }
-
-    private fun filterBikeStations(query: String) {
-        // Bike stations are auto-selected, no filtering needed
     }
 
     private fun filterLiveStations(query: String) {
@@ -321,13 +250,11 @@ class SettingsFragment : Fragment() {
                         homeLng = result.second
                         textHomeCoords.text = "%.4f, %.4f".format(homeLat, homeLng)
                         // Re-sort stations by distance from new home location
-                        setupBikeStationChips()
                         setupLiveStationChips()
                     } else {
                         workLat = result.first
                         workLng = result.second
                         textWorkCoords.text = "%.4f, %.4f".format(workLat, workLng)
-                        renderAutoSelectedStations()
                     }
                     showStatus("Location found!", false)
                 } else {
