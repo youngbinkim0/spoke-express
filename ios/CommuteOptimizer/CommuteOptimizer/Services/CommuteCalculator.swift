@@ -356,7 +356,7 @@ actor CommuteCalculator {
     /// Build summary string like Android: "Mode -> Lines -> FinalStop"
     private func buildSummary(firstMode: String, transitLegs: [Leg], firstLine: String?, finalStop: String) -> String {
         let lines = transitLegs.compactMap { $0.route }.filter { !$0.isEmpty }
-        let uniqueLines = lines.isEmpty ? [firstLine ?? "?"] : Array(NSOrderedSet(array: lines)) as! [String]
+        let uniqueLines = lines.isEmpty ? [firstLine ?? "?"] : NSOrderedSet(array: lines).array.compactMap { $0 as? String }
         let linesSummary = uniqueLines.joined(separator: " -> ")
         let destination = transitLegs.last?.to ?? finalStop
         return "\(firstMode) -> \(linesSummary) -> \(destination)"

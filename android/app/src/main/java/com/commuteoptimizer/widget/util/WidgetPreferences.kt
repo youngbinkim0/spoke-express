@@ -132,14 +132,6 @@ class WidgetPreferences(context: Context) {
         prefs.edit().putString(KEY_LIVE_STATIONS, json).apply()
     }
 
-    // ========== Legacy Selected Stations (alias for backward compatibility) ==========
-
-    @Deprecated("Use getBikeStations() instead", ReplaceWith("getBikeStations()"))
-    fun getSelectedStations(): List<String> = getBikeStations()
-
-    @Deprecated("Use setBikeStations() instead", ReplaceWith("setBikeStations(stations)"))
-    fun setSelectedStations(stations: List<String>) = setBikeStations(stations)
-
     // ========== Destination Station ==========
 
     fun getDestStation(): String {

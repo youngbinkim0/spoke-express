@@ -408,10 +408,7 @@ object MtaApiService {
 
         for (arrival in arrivals) {
             val key = "${arrival.routeId}-${arrival.direction}"
-            if (!groups.containsKey(key)) {
-                groups[key] = mutableListOf()
-            }
-            val groupList = groups[key]!!
+            val groupList = groups.getOrPut(key) { mutableListOf() }
             if (groupList.size < 3) {
                 groupList.add(arrival)
             }

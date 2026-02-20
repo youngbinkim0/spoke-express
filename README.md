@@ -1,10 +1,22 @@
 # Spoke Express
 
-NYC bike + transit commute optimizer with weather-aware routing. Compare bike, walk, and subway options side-by-side with real-time train arrivals.
+NYC hybrid commute optimizer — bike to the subway, ride to work, get there faster.
+
+Regular transit apps show you one option: take the train, or ride a bike. But in NYC, the fastest commute is often **both** — bike to a nearby station, lock up, and catch the express. Spoke Express finds these hybrid routes automatically, ranking every combination of bike + subway by real-time train arrivals and weather conditions.
 
 **Zero backend required** — calls MTA APIs directly from your browser/device.
 
 **Current version:** v0.1
+
+## Why Spoke Express?
+
+Google Maps gives you a bike route OR a transit route. Citymapper does the same. Neither will tell you: "Bike 8 minutes to Court Sq, catch the E express arriving in 3 minutes, save 12 minutes vs. walking to your local stop."
+
+Spoke Express does. It:
+- Compares **walk-to-station** vs. **bike-to-station** for every nearby subway stop
+- Uses **live MTA arrivals** to find the fastest connection right now
+- **Demotes bike options** when it's raining (via weather API)
+- Shows you the **actual best commute**, not just the default one
 
 ## Quick Start
 

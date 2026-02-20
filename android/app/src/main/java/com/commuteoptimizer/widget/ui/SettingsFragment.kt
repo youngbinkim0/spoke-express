@@ -380,7 +380,7 @@ class SettingsFragment : Fragment() {
         for (i in 0 until chipGroupLiveStations.childCount) {
             val chip = chipGroupLiveStations.getChildAt(i) as? Chip
             if (chip?.isChecked == true) {
-                liveStations.add(chip.tag as String)
+                liveStations.add(chip.tag as? String ?: continue)
             }
         }
 

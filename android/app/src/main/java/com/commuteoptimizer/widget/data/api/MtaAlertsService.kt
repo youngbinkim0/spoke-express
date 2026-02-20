@@ -126,7 +126,9 @@ object MtaAlertsService {
                     else -> break
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.e("MtaAlerts", "Error parsing alert", e)
+        }
 
         return if (routeIds.isNotEmpty() && headerText.isNotEmpty()) {
             ServiceAlert(routeIds, effect, headerText)
@@ -165,7 +167,9 @@ object MtaAlertsService {
                     else -> break
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.e("MtaAlerts", "Error parsing alert", e)
+        }
 
         return Triple(routeIds.distinct(), effect, headerText)
     }
@@ -189,7 +193,9 @@ object MtaAlertsService {
                     else -> break
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.e("MtaAlerts", "Error parsing alert", e)
+        }
         return null
     }
 
@@ -208,7 +214,9 @@ object MtaAlertsService {
                     if (fieldNum == 1) return parseTranslation(data)
                 } else break
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.e("MtaAlerts", "Error parsing alert", e)
+        }
         return ""
     }
 
@@ -229,7 +237,9 @@ object MtaAlertsService {
                     readVarint(input)
                 } else break
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.e("MtaAlerts", "Error parsing alert", e)
+        }
         return ""
     }
 
@@ -241,6 +251,7 @@ object MtaAlertsService {
             result = result or ((b and 0x7F) shl shift)
             if ((b and 0x80) == 0) break
             shift += 7
+            if (shift >= 35) break
         }
         return result
     }

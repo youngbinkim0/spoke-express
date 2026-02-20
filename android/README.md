@@ -1,95 +1,84 @@
-# Commute Optimizer Android Widget
+# Spoke Express — Android App
 
-A 4x2 Android home screen widget that displays the top 3 commute options with live train times, fetching data from the backend API.
+NYC bike + transit commute optimizer. Full app with home screen widgets for at-a-glance commute info.
 
-## Requirements
+## Install
 
-- Android SDK (API 26+)
-- Java 17 or higher (required by Android Gradle Plugin 8.2.0)
-- Android Studio Hedgehog (2023.1.1) or later recommended
+Download the APK from [GitHub Releases](https://github.com/youngbinkim0/spoke-express/releases) and sideload it.
 
-## Building
-
-### Command Line
+Or build from source:
 
 ```bash
-# Build debug APK
 ./gradlew assembleDebug
-
-# Build release APK
-./gradlew assembleRelease
-
-# Install debug APK on connected device
-./gradlew installDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### Android Studio
-
-1. Open the `android/` folder in Android Studio
-2. Wait for Gradle sync to complete
-3. Click Run > Run 'app' or press Shift+F10
-
-## Installation
-
-1. Build the debug APK: `./gradlew assembleDebug`
-2. Install on device: `adb install app/build/outputs/apk/debug/app-debug.apk`
-3. Long-press on home screen and add the "Commute Options" widget
-4. Configure the API URL in the setup screen
+Requires: Java 17+, Android SDK (API 26+)
 
 ## Features
 
-- **4x2 Widget Layout**: Shows top 3 commute options at a glance
-- **Weather Display**: Current temperature and weather condition
-- **Live Train Times**: Next arrival times for each option
-- **MTA Colors**: Authentic subway line colors
-- **Manual Refresh**: Tap refresh icon to update
-- **Auto Updates**: Background refresh every 15 minutes via WorkManager
-- **Error Handling**: Graceful error display with tap-to-retry
+### Full App (3 tabs)
 
-## Configuration
+- **Commute** — Ranked bike + walk + transit options with live train arrivals and weather
+- **Live Trains** — Real-time arrival board for up to 3 stations
+- **Settings** — Home/work addresses, station selection, API keys
 
-When adding the widget, you'll be prompted to enter:
-- **API URL**: Your commute optimizer backend server URL (e.g., `http://192.168.1.100:8888`)
+### Home Screen Widgets
 
-The widget allows cleartext HTTP traffic to local network addresses for development.
+- **Commute Widget** (4×2) — Top 3 commute options with weather and train times
+- **Live Trains Widget** — Next arrivals for a single station
+
+Both widgets auto-refresh via WorkManager and support tap-to-refresh.
+
+## Architecture
+
+Zero backend — all API calls happen directly on-device:
+
+- **MTA GTFS-Realtime** — Live subway arrivals (free, no key)
+- **MTA Service Alerts** — Delays, planned work, service changes
+- **OpenWeatherMap** — Weather-aware bike ranking (free tier, optional)
+- **Google Routes** — Accurate transit directions via Cloudflare Worker proxy (optional)
 
 ## Project Structure
 
 ```
-app/src/main/
-├── java/com/commuteoptimizer/widget/
-│   ├── CommuteWidgetProvider.kt      # Main widget provider
-│   ├── CommuteWidgetConfigActivity.kt # Configuration activity
-│   ├── CommuteUpdateWorker.kt        # Background update worker
-│   ├── data/
-│   │   ├── api/
-│   │   │   ├── CommuteApiService.kt  # Retrofit API interface
-│   │   │   └── RetrofitClient.kt     # Network client
-│   │   ├── models/CommuteModels.kt   # Data classes
-│   │   └── CommuteRepository.kt      # Data layer
-│   └── util/
-│       ├── MtaColors.kt              # MTA line colors
-│       └── WidgetPreferences.kt      # SharedPreferences wrapper
-├── res/
-│   ├── layout/
-│   │   ├── widget_commute.xml        # Main widget layout
-│   │   ├── widget_option_item.xml    # Option row layout
-│   │   ├── widget_loading.xml        # Loading state
-│   │   ├── widget_error.xml          # Error state
-│   │   └── activity_config.xml       # Config activity
-│   ├── drawable/                     # Icons and backgrounds
-│   ├── xml/
-│   │   ├── widget_commute_info.xml   # Widget metadata
-│   │   └── network_security_config.xml
-│   └── values/                       # Colors, strings, themes
-└── AndroidManifest.xml
+app/src/main/java/com/commuteoptimizer/widget/
+├── MainActivity.kt                    # Tab host (Commute / Live Trains / Settings)
+├── CommuteWidgetProvider.kt           # Commute widget
+├── CommuteWidgetConfigActivity.kt     # Commute widget setup
+├── CommuteUpdateWorker.kt             # Background widget refresh
+├── LiveTrainsWidgetProvider.kt        # Live Trains widget
+├── LiveTrainsConfigActivity.kt        # Live Trains widget setup
+├── data/
+│   ├── api/
+│   │   ├── ApiClientFactory.kt        # OkHttp client
+│   │   ├── MtaApiService.kt          # GTFS-RT feed parser
+│   │   ├── MtaAlertsService.kt       # Service alerts parser
+│   │   ├── GoogleRoutesService.kt    # Transit directions (optional)
+│   │   └── WeatherApiService.kt      # OpenWeatherMap client
+│   ├── models/
+│   │   ├── CommuteModels.kt          # Commute option data classes
+│   │   ├── TransiterModels.kt        # Transit data classes
+│   │   └── WeatherModels.kt          # Weather data classes
+│   └── CommuteRepository.kt          # Data layer
+├── service/
+│   ├── CommuteCalculator.kt          # Route ranking engine
+│   ├── DistanceCalculator.kt         # Haversine distance
+│   ├── LocalDataSource.kt            # Station data
+│   └── RankingService.kt             # Option scoring
+├── ui/
+│   ├── CommuteFragment.kt            # Commute tab
+│   ├── LiveTrainsFragment.kt         # Live Trains tab
+│   └── SettingsFragment.kt           # Settings tab
+└── util/
+    ├── MtaColors.kt                  # MTA line colors
+    └── WidgetPreferences.kt          # SharedPreferences wrapper
 ```
 
 ## Dependencies
 
-- Retrofit 2.9.0 - HTTP client
-- Gson - JSON parsing
-- OkHttp 4.12.0 - HTTP client with logging
-- Kotlin Coroutines 1.7.3 - Async operations
-- WorkManager 2.9.0 - Background scheduling
-- Material Components - UI components
+- OkHttp 4.12.0 — HTTP client
+- Gson — JSON + protobuf parsing
+- Kotlin Coroutines 1.7.3 — Async operations
+- WorkManager 2.9.0 — Background widget refresh
+- Material Components — UI
