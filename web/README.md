@@ -36,4 +36,4 @@ Configure your Google API key in Settings. One key enables all features:
 - Weather-aware routing (Google Weather API)
 - Accurate transit directions (Google Routes API, via Cloudflare Worker proxy)
 
-The Cloudflare Worker URL is pre-configured with a shared default. To self-host, see the [Cloudflare Worker setup](../cloudflare-worker/).
+The Cloudflare Worker URL is hardcoded to a shared default (the `WORKER_URL` constant in `index.html`). To self-host, deploy your own worker and update this constant — see the [Cloudflare Worker setup](../cloudflare-worker/).

@@ -30,3 +30,5 @@ pgdata/
 
 # Android screenshots
 android/screenshots/
+
+.sisyphus/

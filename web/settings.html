@@ -328,11 +328,6 @@
           <input type="text" id="googleKey" class="api-input" placeholder="For geocoding, transit directions, and weather">
           <div class="help-text">Get key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>. Enable Geocoding + Routes API.</div>
         </div>
-        <div class="input-group">
-          <label>Directions Worker URL (optional)</label>
-          <input type="text" id="workerUrl" class="api-input" placeholder="https://commute-directions.xmicroby.workers.dev">
-          <div class="help-text">Cloudflare Worker to proxy Google APIs. See <code>cloudflare-worker/</code> to deploy your own. Both this URL and Google API key are needed for live transit times and weather.</div>
-        </div>
       </div>
 
       <!-- Display Options -->
@@ -411,14 +406,6 @@
   <script>
     let STATIONS = [];
     const STORAGE_KEY = 'commuteOptimizerSettings';
-
-    function normalizeUrl(url) {
-      if (!url) return url;
-      if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-      }
-      return url.replace(/\/+$/, '');
-    }
 
     async function loadStations() {
       try {
@@ -526,7 +513,6 @@
       const settings = loadSettings();
 
       document.getElementById('googleKey').value = settings.googleKey || '';
-      document.getElementById('workerUrl').value = settings.workerUrl || 'https://commute-directions.xmicroby.workers.dev';
       document.getElementById('showBikeOptions').checked = settings.showBikeOptions ?? true;
       document.getElementById('homeAddress').value = settings.homeAddress || '';
       document.getElementById('homeLat').value = settings.homeLat || '';
@@ -607,7 +593,6 @@
 
       const settings = {
         googleKey: document.getElementById('googleKey').value.trim(),
-        workerUrl: normalizeUrl(document.getElementById('workerUrl').value.trim()),
         showBikeOptions: document.getElementById('showBikeOptions').checked,
         homeAddress: document.getElementById('homeAddress').value.trim(),
         homeLat: parseFloat(document.getElementById('homeLat').value) || 0,

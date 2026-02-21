@@ -389,6 +389,7 @@
 
   <script>
     const STORAGE_KEY = 'commuteOptimizerSettings';
+    const WORKER_URL = 'https://commute-directions.xmicroby.workers.dev';
     // MTA API is now used via mta-api.js
 
     let STATIONS = [];
@@ -406,14 +407,6 @@
       'S': '#808183',
     };
 
-    function normalizeUrl(url) {
-      if (!url) return url;
-      if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-      }
-      return url.replace(/\/+$/, '');
-    }
-
     function loadSettings() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return null;
@@ -427,7 +420,6 @@
           localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
         }
 
-        if (settings.workerUrl) settings.workerUrl = normalizeUrl(settings.workerUrl);
         return settings;
       } catch (e) {
         return null;
@@ -492,9 +484,7 @@
       }
 
       try {
-        const settings = loadSettings();
-        const workerUrl = settings?.workerUrl || 'https://commute-directions.xmicroby.workers.dev';
-        const url = `${workerUrl}/weather?lat=${lat}&lng=${lng}&key=${encodeURIComponent(apiKey)}`;
+        const url = `${WORKER_URL}/weather?lat=${lat}&lng=${lng}&key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -719,12 +709,12 @@
         return;
       }
 
-      // Require Google API key and Worker URL for transit routing
-      if (!settings.googleKey || !settings.workerUrl) {
+      // Require Google API key for transit routing
+      if (!settings.googleKey) {
         content.innerHTML = `
           <div class="no-options">
             Missing API configuration.<br>
-            Please add your <strong>Google API Key</strong> and <strong>Worker URL</strong> in <a href="settings.html">Settings</a>.
+            Please add your <strong>Google API Key</strong> in <a href="settings.html">Settings</a>.
           </div>
         `;
         return;
@@ -797,7 +787,7 @@
 
           const [arrival, transitRoute] = await Promise.all([
             fetchNextArrival(station.mtaId || stationId, station.lines),
-            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, WORKER_URL, settings.googleKey)
           ]);
 
           // Skip if transit routing failed
@@ -863,7 +853,7 @@
 
           const [arrival, transitRoute] = await Promise.all([
             fetchNextArrival(station.mtaId || stationId, station.lines),
-            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, settings.workerUrl, settings.googleKey)
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, WORKER_URL, settings.googleKey)
           ]);
 
           // Skip if transit routing failed
@@ -917,7 +907,7 @@
             ${renderAlerts(alerts)}
             <div class="no-options">
               No commute options available.<br>
-              Make sure <strong>Google API Key</strong> and <strong>Worker URL</strong> are configured in <a href="settings.html">Settings</a>.
+              Make sure <strong>Google API Key</strong> is configured in <a href="settings.html">Settings</a>.
             </div>
           `;
           return;

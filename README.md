@@ -81,7 +81,6 @@ Open Settings in the app and configure:
 | Work address | Yes | Click "Lookup" to geocode |
 | Bike transfer stations | Auto | Automatically selected within 4-mile radius |
 | Google API key | Yes | Enables weather + accurate transit directions |
-| Worker URL | Web Only | Pre-configured (shared worker). Override for self-hosting. |
 
 ## Optional: Self-Hosted Worker
 
@@ -95,7 +94,7 @@ wrangler secret put GOOGLE_API_KEY  # paste your Google Maps API key
 wrangler deploy
 ```
 
-Then set the worker URL in Settings to override the default.
+Then update the `WORKER_URL` constant in `web/index.html` to point to your deployed worker.
 
 ## Architecture
 

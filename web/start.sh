@@ -48,7 +48,7 @@ echo "  Settings: http://localhost:$WEB_PORT/settings.html"
 echo "  Worker:   http://localhost:$WORKER_PORT"
 echo "===================================="
 echo ""
-echo "Set Worker URL in Settings to: http://localhost:$WORKER_PORT"
+echo "Note: For local development, update WORKER_URL in index.html to: http://localhost:$WORKER_PORT"
 echo ""
 
 # Open browser
