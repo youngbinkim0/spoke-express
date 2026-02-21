@@ -36,7 +36,7 @@ Zero backend — all API calls happen directly on-device:
 
 - **MTA GTFS-Realtime** — Live subway arrivals (free, no key)
 - **MTA Service Alerts** — Delays, planned work, service changes
-- **OpenWeatherMap** — Weather-aware bike ranking (free tier, optional)
+- **Google Weather API** — Weather-aware bike ranking (uses Google API key)
 - **Google Routes** — Accurate transit directions via Cloudflare Worker proxy (optional)
 
 ## Project Structure
@@ -55,7 +55,7 @@ app/src/main/java/com/commuteoptimizer/widget/
 │   │   ├── MtaApiService.kt          # GTFS-RT feed parser
 │   │   ├── MtaAlertsService.kt       # Service alerts parser
 │   │   ├── GoogleRoutesService.kt    # Transit directions (optional)
-│   │   └── WeatherApiService.kt      # OpenWeatherMap client
+│   │   └── WeatherApiService.kt      # Google Weather client
 │   ├── models/
 │   │   ├── CommuteModels.kt          # Commute option data classes
 │   │   ├── TransiterModels.kt        # Transit data classes

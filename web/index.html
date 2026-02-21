@@ -682,7 +682,7 @@
       return `
         <div class="weather-bar">
           <div class="weather-info">
-            <span class="weather-temp">${weather.tempF}°F</span>
+             <span class="weather-temp">${weather.tempF != null && !isNaN(weather.tempF) ? weather.tempF + '°F' : '--°F'}</span>
             <span class="weather-conditions">${weather.conditions}</span>
             ${warningHtml}
           </div>
