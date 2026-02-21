@@ -1,0 +1,13 @@
+{
+  "name": "Spoke Express — NYC Commute Optimizer",
+  "short_name": "Spoke Express",
+  "description": "Find the fastest NYC commute by combining bike + subway",
+  "start_url": "/spoke-express/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

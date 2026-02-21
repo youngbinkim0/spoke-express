@@ -1,6 +1,10 @@
 # Spoke Express — Web App
 
-NYC bike + transit commute optimizer. Compare bike, walk, and subway options with real-time train arrivals and weather-aware routing.
+Local development files for the Spoke Express web app.
+
+> **For general usage, setup, and API key instructions, see the [main README](../README.md).**
+>
+> **Live site: [https://youngbinkim0.github.io/spoke-express/](https://youngbinkim0.github.io/spoke-express/)**
 
 ## Quick Start
 
@@ -8,7 +12,7 @@ NYC bike + transit commute optimizer. Compare bike, walk, and subway options wit
 ./start.sh
 ```
 
-Then configure your home/work locations in Settings.
+Then configure your home/work locations in Settings. See [QUICKSTART.md](QUICKSTART.md) for details.
 
 ## Features
 
@@ -16,24 +20,28 @@ Then configure your home/work locations in Settings.
 - Weather-aware ranking (bike demoted on rainy days)
 - Service alerts
 - Walk + Transit and Bike + Transit options
+- Installable as PWA (Add to Home Screen)
 - Auto-refreshes every 30 seconds
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `index.html` | Main commute options page |
-| `arrivals.html` | Live train times |
-| `settings.html` | Configuration |
+| `index.html` | Main commute options page (includes SEO/PWA meta tags) |
+| `arrivals.html` | Live train times (includes SEO/PWA meta tags) |
+| `settings.html` | Configuration (includes SEO/PWA meta tags) |
 | `mta-api.js` | MTA GTFS-RT parser |
 | `stations.json` | NYC subway stations data |
+| `manifest.json` | PWA manifest (app name, icons, display mode) |
+| `icon-192.png` | PWA icon (192×192) |
+| `icon-512.png` | PWA icon (512×512) |
+| `favicon.ico` | Browser tab favicon |
 | `start.sh` | Startup script |
 
 ## API Key
 
-Configure your Google API key in Settings. One key enables all features:
-- Geocoding (address lookup)
-- Weather-aware routing (Google Weather API)
-- Accurate transit directions (Google Routes API, via Cloudflare Worker proxy)
+A Google API key unlocks weather-aware ranking and accurate transit directions.
+
+**→ [Get a Google API Key](../README.md#get-a-google-api-key-free-tier)** — step-by-step instructions in the main README.
 
 The Cloudflare Worker URL is hardcoded to a shared default (the `WORKER_URL` constant in `index.html`). To self-host, deploy your own worker and update this constant — see the [Cloudflare Worker setup](../cloudflare-worker/).

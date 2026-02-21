@@ -1,6 +1,8 @@
-# Quickstart
+# Quickstart — Local Development
 
-Get Spoke Express running in under 2 minutes.
+Get Spoke Express running locally in under 2 minutes.
+
+> For general usage (no setup needed), visit **[the live site](https://youngbinkim0.github.io/spoke-express/)** — see the [main README](../README.md) for details.
 
 ## 1. Start the app
 
@@ -20,16 +22,26 @@ This starts a local web server and opens the app in your browser.
 4. Select **1-3 nearby subway stations** you can walk or bike to
 5. Click **Save Settings**
 
-### Optional: Google API Key
+### Google API Key
 
-Weather is powered by Google (same API key — no separate weather key needed).
+For the full experience (weather + accurate transit directions with transfers), you'll need a Google API key.
 
-For the full experience (weather + accurate transit directions with transfers), add a Google API key in Settings and optionally deploy the [Cloudflare Worker](../cloudflare-worker/) proxy.
+**→ [Get a Google API Key](../README.md#get-a-google-api-key-free-tier)** — step-by-step instructions in the main README.
+
+Once you have a key, paste it into **Settings → API Key** in the app.
 
 ## 3. Use the app
 
-- **Main page** - Ranked commute options (best first)
-- **Live Trains** - Real-time arrivals for your stations
-- **Settings** - Change locations and preferences
+- **Main page** — Ranked commute options (best first)
+- **Live Trains** — Real-time arrivals for your stations
+- **Settings** — Change locations and preferences
 
 The app auto-refreshes every 30 seconds.
+
+## PWA / Add to Home Screen (local testing)
+
+The app includes a `manifest.json` for PWA support. To test "Add to Home Screen" locally:
+
+- Serve over HTTPS (or use `localhost`, which browsers treat as secure)
+- Open DevTools → **Application** tab → **Manifest** to verify it loads
+- The manifest provides app name, icons, and standalone display mode
