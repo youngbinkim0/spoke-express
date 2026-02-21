@@ -80,13 +80,12 @@ Open Settings in the app and configure:
 | Home address | Yes | Click "Lookup" to geocode |
 | Work address | Yes | Click "Lookup" to geocode |
 | Bike transfer stations | Auto | Automatically selected within 4-mile radius |
-| OpenWeatherMap API key | No | Free at openweathermap.org - enables weather |
-| Google API key | Yes | Enables accurate transit directions |
-| Worker URL | Web Only | For Google Routes API proxy (see below) |
+| Google API key | Yes | Enables weather + accurate transit directions |
+| Worker URL | Web Only | Pre-configured (shared worker). Override for self-hosting. |
 
-## Optional: Enhanced Transit Directions
+## Optional: Self-Hosted Worker
 
-For accurate transit routing with transfers, deploy the Cloudflare Worker:
+The app uses a shared Cloudflare Worker by default (`https://commute-directions.xmicroby.workers.dev`). To self-host your own:
 
 ```bash
 cd cloudflare-worker
@@ -96,7 +95,7 @@ wrangler secret put GOOGLE_API_KEY  # paste your Google Maps API key
 wrangler deploy
 ```
 
-Then add the worker URL to Settings.
+Then set the worker URL in Settings to override the default.
 
 ## Architecture
 
@@ -106,7 +105,9 @@ Then add the worker URL to Settings.
 │ Android/iOS │     │ (no key req) │     │    arrivals     │
 └─────────────┘     └──────────────┘     └─────────────────┘
        │
-       │ (optional)
+       ├────────────────────────────────▶ Google Weather API
+       │
+       │ (via CF Worker proxy)
        ▼
 ┌─────────────┐     ┌──────────────┐
 │ CF Worker   │────▶│ Google Routes│
@@ -115,8 +116,8 @@ Then add the worker URL to Settings.
 ```
 
 - **MTA GTFS-Realtime**: Free, no API key, called directly from browser/app
-- **OpenWeatherMap**: Free tier, optional, for weather-aware ranking
-- **Google Routes**: Paid, optional, for accurate transit times with transfers
+- **Google Weather API**: Weather-aware ranking (uses your Google API key)
+- **Google Routes API**: Accurate transit times with transfers (via CF Worker proxy)
 
 ## Project Structure
 
@@ -137,7 +138,7 @@ Then add the worker URL to Settings.
 - **Web**: Vanilla HTML/CSS/JS, no build step
 - **Android**: Kotlin, Material Design, Coroutines
 - **iOS**: Swift, SwiftUI, WidgetKit
-- **APIs**: MTA GTFS-Realtime, OpenWeatherMap, Google Routes
+- **APIs**: MTA GTFS-Realtime, Google Weather API, Google Routes API
 - **Proxy**: Cloudflare Workers (optional)
 
 ## License

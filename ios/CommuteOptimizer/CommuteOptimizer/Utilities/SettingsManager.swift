@@ -7,7 +7,6 @@ class SettingsManager: ObservableObject {
 
     // Keys
     private enum Keys {
-        static let openWeatherApiKey = "openweather_api_key"
         static let googleApiKey = "google_api_key"
         static let workerUrl = "worker_url"
         static let homeLat = "home_lat"
@@ -29,7 +28,6 @@ class SettingsManager: ObservableObject {
         }
 
         // Initialize with default values
-        _openWeatherApiKey = ""
         _googleApiKey = ""
         _workerUrl = ""
         _homeLat = 0
@@ -44,15 +42,6 @@ class SettingsManager: ObservableObject {
     }
 
     // MARK: - API Keys
-
-    @Published private var _openWeatherApiKey: String
-    var openWeatherApiKey: String {
-        get { _openWeatherApiKey }
-        set {
-            _openWeatherApiKey = newValue
-            defaults.set(newValue, forKey: Keys.openWeatherApiKey)
-        }
-    }
 
     @Published private var _googleApiKey: String
     var googleApiKey: String {
@@ -165,7 +154,6 @@ class SettingsManager: ObservableObject {
     // MARK: - Initialization
 
     func loadFromDefaults() {
-        _openWeatherApiKey = defaults.string(forKey: Keys.openWeatherApiKey) ?? ""
         _googleApiKey = defaults.string(forKey: Keys.googleApiKey) ?? ""
         _workerUrl = defaults.string(forKey: Keys.workerUrl) ?? ""
         _homeLat = defaults.double(forKey: Keys.homeLat)

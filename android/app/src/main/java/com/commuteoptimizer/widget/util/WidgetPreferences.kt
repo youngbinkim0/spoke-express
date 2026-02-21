@@ -22,7 +22,6 @@ class WidgetPreferences(context: Context) {
         private const val KEY_LAST_UPDATE = "last_update_"
 
         // Serverless mode keys (global, not per-widget)
-        private const val KEY_OPENWEATHER_API_KEY = "openweather_api_key"
         private const val KEY_HOME_LAT = "home_lat"
         private const val KEY_HOME_LNG = "home_lng"
         private const val KEY_HOME_ADDRESS = "home_address"
@@ -36,16 +35,6 @@ class WidgetPreferences(context: Context) {
         private const val KEY_WORKER_URL = "worker_url"
 
         const val DEFAULT_API_URL = "http://192.168.1.100:8888"
-    }
-
-    // ========== OpenWeatherMap API Key ==========
-
-    fun getOpenWeatherApiKey(): String? {
-        return prefs.getString(KEY_OPENWEATHER_API_KEY, null)
-    }
-
-    fun setOpenWeatherApiKey(apiKey: String) {
-        prefs.edit().putString(KEY_OPENWEATHER_API_KEY, apiKey).apply()
     }
 
     // ========== Home Location ==========

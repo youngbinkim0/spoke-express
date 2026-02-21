@@ -59,4 +59,7 @@ dependencies {
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+
+    // Unit testing
+    testImplementation("junit:junit:4.13.2")
 }

@@ -25,18 +25,7 @@ struct SettingsView: View {
                     .autocapitalization(.none)
                     .autocorrectionDisabled()
 
-                    Text("Required - for transit routing")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    TextField("OpenWeather API Key (optional)", text: Binding(
-                        get: { settingsManager.openWeatherApiKey },
-                        set: { settingsManager.openWeatherApiKey = $0 }
-                    ))
-                    .autocapitalization(.none)
-                    .autocorrectionDisabled()
-
-                    Text("Optional - for weather data (openweathermap.org)")
+                    Text("Required - for transit routing and weather")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -7,6 +7,7 @@ import com.commuteoptimizer.widget.data.api.GoogleRoutesService
 import com.commuteoptimizer.widget.data.api.MtaAlertsService
 import com.commuteoptimizer.widget.data.api.MtaApiService
 import com.commuteoptimizer.widget.data.models.*
+import com.commuteoptimizer.widget.mapGoogleWeatherToIsBad
 import com.commuteoptimizer.widget.util.WidgetPreferences
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,8 +31,8 @@ class CommuteCalculator(private val context: Context) {
             // Use per-widget destination if widgetId is provided, otherwise fall back to global
             val workLat = if (widgetId >= 0) prefs.getWidgetDestinationLat(widgetId) else prefs.getWorkLat()
             val workLng = if (widgetId >= 0) prefs.getWidgetDestinationLng(widgetId) else prefs.getWorkLng()
-            val apiKey = prefs.getOpenWeatherApiKey()
-            val googleApiKey = prefs.getGoogleApiKey()
+            val apiKey = prefs.getGoogleApiKey()
+            val googleApiKey = apiKey
             val showBikeOptions = prefs.getShowBikeOptions()
 
             if (homeLat == 0.0 || workLat == 0.0) {
@@ -134,7 +135,7 @@ class CommuteCalculator(private val context: Context) {
 
     private suspend fun fetchWeather(lat: Double, lng: Double, apiKey: String?): Weather {
         if (apiKey.isNullOrBlank()) {
-            android.util.Log.w("CommuteCalc", "No OpenWeather API key configured")
+            android.util.Log.w("CommuteCalc", "No Google API key configured for weather")
             return getDefaultWeather()
         }
 
@@ -143,8 +144,8 @@ class CommuteCalculator(private val context: Context) {
             val response = weatherApi.getWeather(lat, lng, apiKey = apiKey)
             val body = response.body()
             if (response.isSuccessful && body != null) {
-                android.util.Log.d("CommuteCalc", "Weather fetched successfully: ${body.main?.temp}")
-                parseWeatherResponse(body)
+                android.util.Log.d("CommuteCalc", "Weather fetched successfully: ${body.temperature?.degrees}")
+                parseGoogleWeatherResponse(body)
             } else {
                 android.util.Log.e("CommuteCalc", "Weather API error: ${response.code()} - ${response.errorBody()?.string()}")
                 getDefaultWeather()
@@ -155,27 +156,24 @@ class CommuteCalculator(private val context: Context) {
         }
     }
 
-    private fun parseWeatherResponse(data: OpenWeatherResponse): Weather {
-        val weatherId = data.weather.firstOrNull()?.id ?: 800
-        val weatherMain = data.weather.firstOrNull()?.main ?: "Clear"
+    private fun parseGoogleWeatherResponse(data: GoogleWeatherResponse): Weather {
+        val conditionType = data.weatherCondition?.type
+        val conditionText = data.weatherCondition?.description?.text ?: "Unknown"
+        val precipType = data.precipitation?.type?.lowercase() ?: "none"
+        val precipProb = data.precipitation?.probability?.percent ?: 0
+        val tempDegrees = data.temperature?.degrees?.toInt()
 
-        val precipitationType = when {
-            weatherId in 200..599 -> "rain"
-            weatherId in 600..610 -> "snow"
-            weatherId in 611..699 -> "mix"
-            else -> "none"
-        }
-
-        // Check if there's active rain or snow from the response
-        val hasRain = (data.rain?.oneHour ?: data.rain?.threeHour ?: 0.0) > 0
-        val hasSnow = (data.snow?.oneHour ?: data.snow?.threeHour ?: 0.0) > 0
-        val isBad = precipitationType != "none" || hasRain || hasSnow
+        val isBad = mapGoogleWeatherToIsBad(
+            condition = conditionType,
+            precipitationProbability = precipProb,
+            precipitationType = precipType
+        )
 
         return Weather(
-            tempF = data.main.temp.toInt(),
-            conditions = weatherMain,
-            precipitationType = precipitationType,
-            precipitationProbability = if (isBad) 100 else 0,
+            tempF = tempDegrees,
+            conditions = conditionText,
+            precipitationType = precipType,
+            precipitationProbability = precipProb,
             isBad = isBad
         )
     }

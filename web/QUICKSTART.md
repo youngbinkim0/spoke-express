@@ -20,15 +20,11 @@ This starts a local web server and opens the app in your browser.
 4. Select **1-3 nearby subway stations** you can walk or bike to
 5. Click **Save Settings**
 
-### Optional: Weather
+### Optional: Google API Key
 
-Add a free [OpenWeatherMap API key](https://openweathermap.org/api) to see weather conditions and get weather-aware routing (bike options move down on rainy days).
+Weather is powered by Google (same API key — no separate weather key needed).
 
-### Optional: Transit Directions
-
-For accurate transit times with transfers, you'll need:
-- A Google Maps API key (Routes API enabled)
-- Deploy the [Cloudflare Worker](../cloudflare-worker/) proxy
+For the full experience (weather + accurate transit directions with transfers), add a Google API key in Settings and optionally deploy the [Cloudflare Worker](../cloudflare-worker/) proxy.
 
 ## 3. Use the app
 

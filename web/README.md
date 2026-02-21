@@ -29,13 +29,11 @@ Then configure your home/work locations in Settings.
 | `stations.json` | NYC subway stations data |
 | `start.sh` | Startup script |
 
-## Optional API Keys
+## API Key
 
-Configure these in Settings for enhanced features:
+Configure your Google API key in Settings. One key enables all features:
+- Geocoding (address lookup)
+- Weather-aware routing (Google Weather API)
+- Accurate transit directions (Google Routes API, via Cloudflare Worker proxy)
 
-| Key | Free? | Enables |
-|-----|-------|---------|
-| OpenWeatherMap | Yes | Weather display and bike ranking |
-| Google API + Worker URL | No | Accurate transit directions with transfers |
-
-See the [Cloudflare Worker setup](../cloudflare-worker/) for Google Routes proxy deployment.
+The Cloudflare Worker URL is pre-configured with a shared default. To self-host, see the [Cloudflare Worker setup](../cloudflare-worker/).

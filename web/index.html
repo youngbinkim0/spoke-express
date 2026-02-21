@@ -389,7 +389,6 @@
 
   <script>
     const STORAGE_KEY = 'commuteOptimizerSettings';
-    const WEATHER_BASE = 'https://api.openweathermap.org';
     // MTA API is now used via mta-api.js
 
     let STATIONS = [];
@@ -418,9 +417,21 @@
     function loadSettings() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return null;
-      const settings = JSON.parse(saved);
-      if (settings.workerUrl) settings.workerUrl = normalizeUrl(settings.workerUrl);
-      return settings;
+
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed || typeof parsed !== 'object') return null;
+
+        const { apiKey, ...settings } = parsed;
+        if (apiKey !== undefined) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        }
+
+        if (settings.workerUrl) settings.workerUrl = normalizeUrl(settings.workerUrl);
+        return settings;
+      } catch (e) {
+        return null;
+      }
     }
 
     async function loadStations() {
@@ -477,33 +488,28 @@
 
     async function fetchWeather(lat, lng, apiKey) {
       if (!apiKey) {
-        return { tempF: '--', conditions: 'No API key', isBad: false };
+        return { tempF: null, conditions: 'No API key', precipProb: 0, isBad: false };
       }
 
       try {
-        // Use free 2.5 API (3.0 requires paid subscription)
-        const url = `${WEATHER_BASE}/data/2.5/weather?lat=${lat}&lon=${lng}&units=imperial&appid=${apiKey}`;
+        const settings = loadSettings();
+        const workerUrl = settings?.workerUrl || 'https://commute-directions.xmicroby.workers.dev';
+        const url = `${workerUrl}/weather?lat=${lat}&lng=${lng}&key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
-          return { tempF: '--', conditions: 'API error', isBad: false };
+          return { tempF: null, conditions: 'Unknown', precipProb: 0, isBad: false };
         }
 
         const data = await response.json();
-        const weatherId = data.weather?.[0]?.id || 800;
-        const conditions = data.weather?.[0]?.main || 'Clear';
-
-        // Weather IDs 200-699 indicate precipitation (rain, snow, etc.)
-        const isBad = weatherId >= 200 && weatherId < 700;
-
         return {
-          tempF: Math.round(data.main?.temp || 0),
-          conditions,
-          precipProb: 0, // 2.5 API doesn't include precipitation probability
-          isBad
+          tempF: data.tempF,
+          conditions: data.conditions,
+          precipProb: data.precipitationProbability || 0,
+          isBad: data.isBad
         };
       } catch (e) {
-        return { tempF: '--', conditions: 'Error', isBad: false };
+        return { tempF: null, conditions: 'Unknown', precipProb: 0, isBad: false };
       }
     }
 
@@ -732,7 +738,7 @@
 
         // Fetch weather and alerts in parallel
         const [weather, alerts] = await Promise.all([
-          fetchWeather(settings.homeLat, settings.homeLng, settings.apiKey),
+          fetchWeather(settings.homeLat, settings.homeLng, settings.googleKey),
           fetchAlerts()
         ]);
 

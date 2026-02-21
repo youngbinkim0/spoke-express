@@ -128,13 +128,11 @@ class CommuteWidgetConfigActivity : AppCompatActivity() {
 
     private fun loadExistingSettings() {
         // Show API key status (keys are managed in main app Settings)
-        val hasWeatherKey = !prefs.getOpenWeatherApiKey().isNullOrBlank()
         val hasGoogleKey = !prefs.getGoogleApiKey().isNullOrBlank()
-        val statusText = when {
-            hasWeatherKey && hasGoogleKey -> "API keys: ✓ Configured in Settings"
-            hasWeatherKey -> "API keys: Weather ✓, Google ✗ (set in Settings)"
-            hasGoogleKey -> "API keys: Weather ✗, Google ✓ (set in Settings)"
-            else -> "API keys: Not configured (set in main app Settings)"
+        val statusText = if (hasGoogleKey) {
+            "API key: ✓ Google configured in Settings"
+        } else {
+            "API key: Not configured (set in main app Settings)"
         }
         textApiStatus.text = statusText
 

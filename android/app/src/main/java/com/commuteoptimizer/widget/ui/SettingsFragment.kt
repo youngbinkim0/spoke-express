@@ -37,7 +37,6 @@ class SettingsFragment : Fragment() {
     private lateinit var localDataSource: LocalDataSource
     private lateinit var stations: List<LocalStation>
 
-    private lateinit var inputApiKey: TextInputEditText
     private lateinit var inputGoogleApiKey: TextInputEditText
     private lateinit var inputHomeAddress: TextInputEditText
     private lateinit var inputWorkAddress: TextInputEditText
@@ -77,7 +76,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun initViews(view: View) {
-        inputApiKey = view.findViewById(R.id.input_api_key)
         inputGoogleApiKey = view.findViewById(R.id.input_google_api_key)
         inputHomeAddress = view.findViewById(R.id.input_home_address)
         inputWorkAddress = view.findViewById(R.id.input_work_address)
@@ -113,7 +111,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun loadExistingSettings() {
-        prefs.getOpenWeatherApiKey()?.let { inputApiKey.setText(it) }
         prefs.getGoogleApiKey()?.let { inputGoogleApiKey.setText(it) }
 
         homeLat = prefs.getHomeLat()
@@ -285,7 +282,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveSettings() {
-        val apiKey = inputApiKey.text?.toString()?.trim()
         val googleApiKey = inputGoogleApiKey.text?.toString()?.trim()
 
         if (googleApiKey.isNullOrBlank()) {
@@ -311,7 +307,6 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        if (!apiKey.isNullOrBlank()) prefs.setOpenWeatherApiKey(apiKey)
         if (!googleApiKey.isNullOrBlank()) prefs.setGoogleApiKey(googleApiKey)
         prefs.setHomeLocation(homeLat, homeLng, inputHomeAddress.text?.toString() ?: "")
         prefs.setWorkLocation(workLat, workLng, inputWorkAddress.text?.toString() ?: "")

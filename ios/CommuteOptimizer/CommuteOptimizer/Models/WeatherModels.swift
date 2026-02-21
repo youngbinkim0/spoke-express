@@ -20,41 +20,31 @@ enum PrecipitationType: String, Codable {
     case none, rain, snow, mix
 }
 
-// OpenWeatherMap API response (2.5 free tier)
-struct OpenWeatherResponse: Codable {
-    let main: MainWeather
-    let weather: [WeatherCondition]
-    let rain: RainInfo?
-    let snow: SnowInfo?
+// Google Weather API response (currentConditions:lookup)
+struct GoogleWeatherResponse: Codable {
+    let temperature: GoogleTemperature?
+    let weatherCondition: GoogleWeatherCondition?
+    let precipitation: GooglePrecipitation?
 }
 
-struct MainWeather: Codable {
-    let temp: Double
+struct GoogleTemperature: Codable {
+    let degrees: Double?
 }
 
-struct WeatherCondition: Codable {
-    let id: Int
-    let main: String
-    let description: String
-    let icon: String
+struct GoogleWeatherCondition: Codable {
+    let type: String?
+    let description: GoogleConditionDescription?
 }
 
-struct RainInfo: Codable {
-    let oneHour: Double?
-    let threeHour: Double?
-
-    enum CodingKeys: String, CodingKey {
-        case oneHour = "1h"
-        case threeHour = "3h"
-    }
+struct GoogleConditionDescription: Codable {
+    let text: String?
 }
 
-struct SnowInfo: Codable {
-    let oneHour: Double?
-    let threeHour: Double?
+struct GooglePrecipitation: Codable {
+    let type: String?
+    let probability: GooglePrecipitationProbability?
+}
 
-    enum CodingKeys: String, CodingKey {
-        case oneHour = "1h"
-        case threeHour = "3h"
-    }
+struct GooglePrecipitationProbability: Codable {
+    let percent: Int?
 }

@@ -28,7 +28,7 @@ actor CommuteCalculator {
         let stations = stationsDataSource.getStations()
 
         // 1. Fetch weather at origin
-        let weather = await fetchWeather(lat: originLat, lng: originLng, apiKey: settings.openWeatherApiKey)
+        let weather = await fetchWeather(lat: originLat, lng: originLng, apiKey: settings.googleApiKey)
 
         // 2. Find destination station (closest to destination)
         guard let destStation = findClosestStation(
@@ -144,7 +144,7 @@ actor CommuteCalculator {
     // MARK: - Private Methods
 
     private func fetchWeather(settings: SettingsManager) async -> Weather {
-        await fetchWeather(lat: settings.homeLat, lng: settings.homeLng, apiKey: settings.openWeatherApiKey)
+        await fetchWeather(lat: settings.homeLat, lng: settings.homeLng, apiKey: settings.googleApiKey)
     }
 
     private func fetchWeather(lat: Double, lng: Double, apiKey: String) async -> Weather {

@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClientFactory {
 
-    private const val OPENWEATHER_BASE_URL = "https://api.openweathermap.org/"
+    private const val GOOGLE_WEATHER_BASE_URL = "https://weather.googleapis.com/"
 
     private val okHttpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -25,7 +25,7 @@ object ApiClientFactory {
 
     private val weatherRetrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl(OPENWEATHER_BASE_URL)
+            .baseUrl(GOOGLE_WEATHER_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
