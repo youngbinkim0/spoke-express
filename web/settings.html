@@ -76,10 +76,12 @@
     .address-row {
       display: flex;
       gap: 8px;
+      align-items: stretch;
     }
 
     .address-input, .api-input {
       flex: 1;
+      min-width: 0;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
@@ -94,6 +96,8 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.9rem;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .btn-lookup:hover {
@@ -619,9 +623,9 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 
       status.className = 'status success';
-      status.textContent = 'Settings saved!';
+      status.textContent = 'Settings saved! Redirecting...';
 
-      setTimeout(() => { status.className = 'status'; }, 3000);
+      setTimeout(() => { window.location.href = 'index.html'; }, 800);
     }
 
     loadStations();
