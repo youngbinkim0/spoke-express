@@ -973,14 +973,6 @@
       }
     }
 
-    // Redirect unconfigured users to Live Trains (works without any setup)
-    (function() {
-      const s = loadSettings();
-      if ((!s || !s.homeLat || !s.workLat) && !window.location.search.includes('commute')) {
-        window.location.replace('arrivals.html');
-        return;
-      }
-    })();
 
     // Initial load
     loadBikeToggleSetting();
