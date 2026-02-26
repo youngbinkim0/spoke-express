@@ -29,6 +29,7 @@ Spoke Express does. It:
 1. Open **[https://youngbinkim0.github.io/spoke-express/](https://youngbinkim0.github.io/spoke-express/)**
 2. The **Live Trains** page works immediately with 3 popular stations pre-loaded
 3. For full commute routing, tap **Settings** and enter your home/work addresses
+4. Use the **Search** tab for ad-hoc trips — enter any origin and destination on the fly
 
 That's it. Pin it to your home screen (see below) and it works like a native app.
 
@@ -67,16 +68,19 @@ A Google API key unlocks weather-aware ranking and accurate transit directions w
 > Detailed link: [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials)
 
 ## Features
-
 | Feature | Web | Android | iOS |
 |---------|-----|---------|-----|
 | Live train arrivals | ✓ | ✓ | ✓ |
+| My Commute (home → work) | ✓ | ✓ | ✓ |
+| Search (ad-hoc routes) | ✓ | ✓ | ✓ |
 | Weather-aware ranking | ✓ | ✓ | ✓ |
 | Service alerts | ✓ | ✓ | ✓ |
 | Walk + Transit options | ✓ | ✓ | ✓ |
 | Bike + Transit options | ✓ | ✓ | ✓ |
+| Address prefill from settings | ✓ | ✓ | ✓ |
+| Recent searches | ✓ | ✓ | ✓ |
 | Home screen widget | - | ✓ | ✓ |
-| Auto-refresh | 30s | 30s | 30s |
+| Auto-refresh (My Commute) | 30s | 30s | 30s |
 
 ## Configuration
 
@@ -154,13 +158,16 @@ Then update the `WORKER_URL` constant in `web/index.html` to point to your deplo
 - **Google Routes API**: Accurate transit times with transfers (via CF Worker proxy)
 
 ## Project Structure
-
 ```
 ├── web/                    # Web app (start here)
 │   ├── start.sh           # Startup script
-│   ├── index.html         # Commute options page
+│   ├── index.html         # My Commute (home → work)
+│   ├── search.html        # Search (ad-hoc routes)
 │   ├── arrivals.html      # Live train times
 │   ├── settings.html      # Configuration
+│   ├── commute-engine.js  # Shared commute calculation
+│   ├── render-utils.js    # Shared rendering utilities
+│   ├── shared.css         # Shared styles
 │   └── mta-api.js         # MTA GTFS-RT parser
 ├── android/               # Android app + widgets
 ├── ios/                   # iOS app + widgets
