@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Routes — Spoke Express</title>
+  <meta name="description" content="Search NYC bike + subway routes between any two addresses. Compare walk vs bike to nearby stations with live MTA arrivals and weather-aware routing.">
+  <meta name="keywords" content="NYC commute, subway, bike, MTA, transit, route search, Manhattan, Brooklyn, Queens">
+  <meta property="og:title" content="Search Routes — Spoke Express">
+  <meta property="og:description" content="Search NYC bike + subway routes between any two addresses. Compare walk vs bike to nearby stations with live MTA arrivals and weather-aware routing.">
+  <meta property="og:url" content="https://youngbinkim0.github.io/spoke-express/search.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Search Routes — Spoke Express">
+  <meta name="twitter:description" content="Search NYC bike + subway routes between any two addresses. Compare walk vs bike to nearby stations with live MTA arrivals and weather-aware routing.">
+  <link rel="canonical" href="https://youngbinkim0.github.io/spoke-express/search.html">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Spoke Express - Search Routes",
+    "description": "Search NYC bike + subway routes between any two addresses. Compare walk vs bike to nearby stations with live MTA arrivals and weather-aware routing.",
+    "url": "https://youngbinkim0.github.io/spoke-express/search.html",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web"
+  }
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .options-list { display: flex; flex-direction: column; gap: 12px; }
+    .time { color: #888; font-size: 0.9rem; }
+    .search-form { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .search-field { display: flex; gap: 8px; margin-bottom: 8px; }
+    .search-field input { flex: 1; padding: 12px; border: 1px solid #333; border-radius: 6px; background: #0f3460; color: #eee; font-size: 1rem; }
+    .search-field input::placeholder { color: #666; }
+    .btn-geocode { padding: 12px 16px; background: #4ecca3; color: #1a1a2e; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .btn-geocode:hover { background: #3db892; }
+    .btn-geocode:disabled { opacity: 0.5; cursor: not-allowed; }
+    .geocode-status { font-size: 0.85rem; padding: 4px 0 8px 0; min-height: 24px; }
+    .geocode-status.success { color: #4ecca3; }
+    .geocode-status.error { color: #ff6b6b; }
+    .geocode-status.loading { color: #888; }
+    .btn-search { background: #4ecca3; color: #1a1a2e; width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; }
+    .btn-search:hover { background: #3db892; }
+    .btn-search:disabled { opacity: 0.5; cursor: not-allowed; }
+    .recent-section { margin-bottom: 16px; }
+    .recent-label { font-size: 0.8rem; color: #666; margin-bottom: 8px; }
+    .recent-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recent-chip { background: #0f3460; border: 1px solid #333; border-radius: 20px; padding: 8px 14px; font-size: 0.85rem; color: #aaa; cursor: pointer; white-space: nowrap; }
+    .recent-chip:hover { border-color: #4ecca3; color: #eee; }
+  </style>
+</head>
+<body>
+  <script src="auto-select.js"></script>
+  <script src="mta-api.js?v=3"></script>
+  <script src="commute-engine.js"></script>
+  <script src="render-utils.js"></script>
+  <div class="container">
+    <header>
+      <h1>Search Routes</h1>
+      <div class="nav-links">
+        <label class="filter-toggle">
+          <input type="checkbox" id="bikeToggle" checked onchange="onBikeToggleChanged()">
+          🚲 Bike
+        </label>
+        <a href="search.html" class="active">Search</a>
+        <a href="index.html">My Commute</a>
+        <a href="arrivals.html">Live Trains</a>
+        <a href="settings.html">Settings</a>
+      </div>
+    </header>
+
+    <div id="recentSection" class="recent-section" style="display:none">
+      <div class="recent-label">Recent searches</div>
+      <div id="recentChips" class="recent-chips"></div>
+    </div>
+
+    <div class="search-form">
+      <div class="search-field">
+        <input type="text" id="fromAddress" placeholder="From (e.g. 123 Main St, Brooklyn, NY)" onkeydown="if(event.key==='Enter'){event.preventDefault();geocodeFrom()}">
+        <button class="btn-geocode" id="fromBtn" onclick="geocodeFrom()">📍</button>
+      </div>
+      <div id="fromStatus" class="geocode-status"></div>
+      <div class="search-field">
+        <input type="text" id="toAddress" placeholder="To (e.g. Times Square, NY)" onkeydown="if(event.key==='Enter'){event.preventDefault();geocodeTo()}">
+        <button class="btn-geocode" id="toBtn" onclick="geocodeTo()">📍</button>
+      </div>
+      <div id="toStatus" class="geocode-status"></div>
+      <button class="btn-search" id="searchBtn" onclick="performSearch()">Search Routes</button>
+    </div>
+
+    <div id="content"></div>
+  </div>
+  <script>
+    const SEARCH_HISTORY_KEY = 'commuteOptimizerSearchHistory';
+    const MAX_RECENT = 3;
+
+    let fromCoord = null;  // { lat, lng, formatted }
+    let toCoord = null;    // { lat, lng, formatted }
+    let lastResults = null; // Store last ranked results for bike filter
+
+    // --- Recent search history ---
+    function loadRecentSearches() {
+      try { return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); }
+      catch { return []; }
+    }
+
+    function saveRecentSearch(from, to) {
+      let recent = loadRecentSearches();
+      recent = recent.filter(r => !(r.from.address === from.formatted && r.to.address === to.formatted));
+      recent.unshift({
+        from: { address: from.formatted, lat: from.lat, lng: from.lng },
+        to: { address: to.formatted, lat: to.lat, lng: to.lng },
+        timestamp: Date.now()
+      });
+      recent = recent.slice(0, MAX_RECENT);
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(recent));
+      renderRecentSearches();
+    }
+
+    function renderRecentSearches() {
+      const recent = loadRecentSearches();
+      const section = document.getElementById('recentSection');
+      const chips = document.getElementById('recentChips');
+      if (recent.length === 0) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      chips.innerHTML = recent.map((r, i) =>
+        `<span class="recent-chip" onclick="loadRecent(${i})">${r.from.address.split(',')[0]} → ${r.to.address.split(',')[0]}</span>`
+      ).join('');
+    }
+
+    function loadRecent(index) {
+      const recent = loadRecentSearches();
+      const r = recent[index];
+      if (!r) return;
+      document.getElementById('fromAddress').value = r.from.address;
+      document.getElementById('toAddress').value = r.to.address;
+      fromCoord = { lat: r.from.lat, lng: r.from.lng, formatted: r.from.address };
+      toCoord = { lat: r.to.lat, lng: r.to.lng, formatted: r.to.address };
+      document.getElementById('fromStatus').className = 'geocode-status success';
+      document.getElementById('fromStatus').textContent = `✓ ${r.from.address}`;
+      document.getElementById('toStatus').className = 'geocode-status success';
+      document.getElementById('toStatus').textContent = `✓ ${r.to.address}`;
+      performSearch();
+    }
+
+    // --- Geocoding ---
+    async function geocodeFrom() {
+      const address = document.getElementById('fromAddress').value.trim();
+      const statusEl = document.getElementById('fromStatus');
+      const btn = document.getElementById('fromBtn');
+      if (!address) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Enter an address first.'; return; }
+      const settings = loadSettings();
+      if (!settings?.googleKey) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Google API key required. Add it in Settings.'; return; }
+      btn.disabled = true;
+      statusEl.className = 'geocode-status loading';
+      statusEl.textContent = 'Looking up...';
+      try {
+        const result = await geocodeAddress(address, settings.googleKey);
+        if (!result) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Address not found.'; fromCoord = null; }
+        else { fromCoord = result; statusEl.className = 'geocode-status success'; statusEl.textContent = `✓ ${result.formatted}`; }
+      } catch (e) { statusEl.className = 'geocode-status error'; statusEl.textContent = `Lookup failed: ${e.message}`; fromCoord = null; }
+      finally { btn.disabled = false; }
+    }
+
+    async function geocodeTo() {
+      const address = document.getElementById('toAddress').value.trim();
+      const statusEl = document.getElementById('toStatus');
+      const btn = document.getElementById('toBtn');
+      if (!address) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Enter an address first.'; return; }
+      const settings = loadSettings();
+      if (!settings?.googleKey) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Google API key required. Add it in Settings.'; return; }
+      btn.disabled = true;
+      statusEl.className = 'geocode-status loading';
+      statusEl.textContent = 'Looking up...';
+      try {
+        const result = await geocodeAddress(address, settings.googleKey);
+        if (!result) { statusEl.className = 'geocode-status error'; statusEl.textContent = 'Address not found.'; toCoord = null; }
+        else { toCoord = result; statusEl.className = 'geocode-status success'; statusEl.textContent = `✓ ${result.formatted}`; }
+      } catch (e) { statusEl.className = 'geocode-status error'; statusEl.textContent = `Lookup failed: ${e.message}`; toCoord = null; }
+      finally { btn.disabled = false; }
+    }
+
+    // --- Alerts (adapted from index.html — takes station IDs directly) ---
+    async function fetchAlertsForStations(stationIds) {
+      if (!window.MtaApi) return [];
+      const routeIds = new Set();
+      for (const sid of stationIds) {
+        const s = getStation(sid);
+        if (s) s.lines.forEach(l => routeIds.add(l));
+      }
+      try {
+        const alerts = await window.MtaApi.fetchServiceAlerts([...routeIds]);
+        return alerts
+          .filter(a => ['NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS'].includes(a.effect))
+          .slice(0, 3)
+          .map(a => ({ text: `${a.routeIds.join('/')} - ${a.headerText}`, isElevator: false }));
+      } catch (e) { return []; }
+    }
+
+    // --- Bike filter ---
+    function applyBikeFilter() {
+      if (!lastResults) return;
+      const content = document.getElementById('content');
+      const showBike = document.getElementById('bikeToggle').checked;
+      let filtered = showBike ? lastResults : lastResults.filter(o => o.type !== 'bike_to_transit');
+
+      let topOptions = filtered.slice(0, 5);
+      if (showBike && topOptions.length > 0) {
+        const hasNonBike = topOptions.some(o => o.type !== 'bike_to_transit');
+        if (!hasNonBike) {
+          const firstNonBike = lastResults.find(o => o.type !== 'bike_to_transit');
+          if (firstNonBike) {
+            topOptions.pop();
+            topOptions.push(firstNonBike);
+          }
+        }
+      }
+
+      if (topOptions.length === 0 && lastResults.length > 0) topOptions = lastResults.slice(0, 1);
+      const reranked = topOptions.map((o, i) => ({ ...o, rank: i + 1 }));
+      // Re-render just the options list (keep weather/alerts)
+      const optionsEl = content.querySelector('.options-list');
+      if (optionsEl) optionsEl.outerHTML = `<div class="options-list">${reranked.map(renderOption).join('')}</div>`;
+    }
+
+    function persistBikeToggleSetting() {
+      const bikeToggle = document.getElementById('bikeToggle');
+      if (!bikeToggle) return;
+      const settings = loadSettings() || {};
+      settings.showBikeOptions = bikeToggle.checked;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+
+    function onBikeToggleChanged() {
+      persistBikeToggleSetting();
+      applyBikeFilter();
+    }
+
+    // --- Main search ---
+    async function performSearch() {
+      const content = document.getElementById('content');
+      const btn = document.getElementById('searchBtn');
+
+      if (!fromCoord || !toCoord) {
+        content.innerHTML = '<div class="error">Please geocode both From and To addresses first.</div>';
+        return;
+      }
+
+      const settings = loadSettings();
+      if (!settings?.googleKey) {
+        content.innerHTML = `
+          <div class="no-options">
+            <p>A Google API key is required to search routes.</p>
+            <p><a href="settings.html">Open Settings</a> to add your API key.</p>
+            <p>Or try <a href="arrivals.html">Live Trains</a> — works without a key!</p>
+          </div>`;
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Searching...';
+      content.innerHTML = '<div class="loading">Finding routes...</div>';
+      lastResults = null;
+
+      try {
+        if (STATIONS.length === 0) await loadStations();
+
+        const autoSelected = autoSelectStations(fromCoord.lat, fromCoord.lng, toCoord.lat, toCoord.lng, STATIONS);
+        const destStation = findNearestStation(toCoord.lat, toCoord.lng);
+
+        if (!destStation || autoSelected.length === 0) {
+          content.innerHTML = '<div class="error">No stations found near these locations. Try addresses within NYC.</div>';
+          return;
+        }
+
+        const [weather, alerts] = await Promise.all([
+          fetchWeather(fromCoord.lat, fromCoord.lng, settings.googleKey),
+          fetchAlertsForStations(autoSelected)
+        ]);
+
+        const options = [];
+
+        // Walk-only option for short distances
+        const directDist = calculateDistance(fromCoord.lat, fromCoord.lng, toCoord.lat, toCoord.lng);
+        if (directDist < 2) {
+          const walkTime = estimateWalkTime(fromCoord.lat, fromCoord.lng, toCoord.lat, toCoord.lng);
+          options.push({
+            type: 'walk_only',
+            summary: 'Walk',
+            duration: walkTime,
+            nextTrain: 'N/A',
+            arrivalTime: new Date(Date.now() + walkTime * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            legs: [{ mode: 'walk', duration: walkTime, from: 'Origin', to: 'Destination' }]
+          });
+        }
+
+        // Bike + transit options
+        for (const stationId of autoSelected) {
+          const station = getStation(stationId);
+          if (!station) continue;
+          const bikeTime = estimateBikeTime(fromCoord.lat, fromCoord.lng, station.lat, station.lng);
+          const [arrival, transitRoute] = await Promise.all([
+            fetchNextArrival(station.mtaId || stationId, station.lines),
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, WORKER_URL, settings.googleKey)
+          ]);
+          if (transitRoute.error) continue;
+          const route = arrival.routeId || station.lines[0];
+          const waitTime = arrival.minutesAway || 5;
+          const totalTime = bikeTime + waitTime + transitRoute.duration;
+          const arriveAt = new Date(Date.now() + totalTime * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const legs = [{ mode: 'bike', duration: bikeTime, to: station.name, from: 'Origin' }];
+          if (transitRoute.transitSteps?.length > 0) {
+            for (const step of transitRoute.transitSteps) {
+              legs.push({ mode: 'subway', duration: step.duration || Math.round(transitRoute.duration / transitRoute.transitSteps.length), from: step.departureStop, to: step.arrivalStop || 'Destination', route: step.line, numStops: step.numStops });
+            }
+          } else {
+            legs.push({ mode: 'subway', duration: transitRoute.duration, from: station.name, to: destStation.name, route });
+          }
+          const linesSummary = transitRoute.transitSteps?.length > 0 ? transitRoute.transitSteps.map(s => cleanLineName(s.line)).join(' → ') : route;
+          const finalStop = transitRoute.transitSteps?.length > 0 ? transitRoute.transitSteps[transitRoute.transitSteps.length - 1].arrivalStop : destStation.name;
+          options.push({ type: 'bike_to_transit', summary: `Bike → ${linesSummary} → ${finalStop}`, duration: totalTime, nextTrain: arrival.nextTrain, arrivalTime: arriveAt, legs });
+        }
+
+        // Walk + transit options (top 3 closest stations)
+        const walkableStations = autoSelected
+          .map(id => ({ id, station: getStation(id) }))
+          .filter(s => s.station)
+          .map(s => ({ ...s, walkTime: estimateWalkTime(fromCoord.lat, fromCoord.lng, s.station.lat, s.station.lng) }))
+          .sort((a, b) => a.walkTime - b.walkTime)
+          .slice(0, 3);
+
+        for (const { id: stationId, station, walkTime } of walkableStations) {
+          const [arrival, transitRoute] = await Promise.all([
+            fetchNextArrival(station.mtaId || stationId, station.lines),
+            fetchTransitRoute(station.lat, station.lng, destStation.lat, destStation.lng, WORKER_URL, settings.googleKey)
+          ]);
+          if (transitRoute.error) continue;
+          const route = arrival.routeId || station.lines[0];
+          const waitTime = arrival.minutesAway || 5;
+          const totalTime = walkTime + waitTime + transitRoute.duration;
+          const arriveAt = new Date(Date.now() + totalTime * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const legs = [{ mode: 'walk', duration: walkTime, to: station.name, from: 'Origin' }];
+          if (transitRoute.transitSteps?.length > 0) {
+            for (const step of transitRoute.transitSteps) {
+              legs.push({ mode: 'subway', duration: step.duration || Math.round(transitRoute.duration / transitRoute.transitSteps.length), from: step.departureStop, to: step.arrivalStop || 'Destination', route: step.line, numStops: step.numStops });
+            }
+          } else {
+            legs.push({ mode: 'subway', duration: transitRoute.duration, from: station.name, to: destStation.name, route });
+          }
+          const linesSummary = transitRoute.transitSteps?.length > 0 ? transitRoute.transitSteps.map(s => cleanLineName(s.line)).join(' → ') : route;
+          const finalStop = transitRoute.transitSteps?.length > 0 ? transitRoute.transitSteps[transitRoute.transitSteps.length - 1].arrivalStop : destStation.name;
+          options.push({ type: 'transit_only', summary: `Walk → ${linesSummary} → ${finalStop}`, duration: totalTime, nextTrain: arrival.nextTrain, arrivalTime: arriveAt, legs });
+        }
+
+        if (options.length === 0) {
+          content.innerHTML = `${renderWeather(weather)}${renderAlerts(alerts)}<div class="no-options">No routes found. Make sure your Google API Key is valid in <a href="settings.html">Settings</a>.</div>`;
+          return;
+        }
+
+        const ranked = rankOptions(options, weather);
+        lastResults = ranked;
+
+        const showBike = document.getElementById('bikeToggle').checked;
+        let filtered = showBike ? ranked : ranked.filter(o => o.type !== 'bike_to_transit');
+        if (filtered.length === 0) filtered = ranked.slice(0, 1);
+        const topOptions = filtered.slice(0, 5).map((o, i) => ({ ...o, rank: i + 1 }));
+
+        content.innerHTML = `
+          ${renderWeather(weather)}
+          ${renderAlerts(alerts)}
+          <div class="options-list">${topOptions.map(renderOption).join('')}</div>
+        `;
+
+        saveRecentSearch(fromCoord, toCoord);
+      } catch (error) {
+        content.innerHTML = `<div class="error">Search failed: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Search Routes';
+      }
+    }
+
+    (function init() {
+      const settings = loadSettings();
+      const bikeToggle = document.getElementById('bikeToggle');
+      if (bikeToggle && settings && settings.showBikeOptions !== undefined) {
+        bikeToggle.checked = settings.showBikeOptions;
+      }
+      if (!settings?.googleKey) {
+        document.querySelector('.search-form').innerHTML = `
+          <div class="no-options">
+            <p>A Google API key is required to search routes.</p>
+            <p><a href="settings.html">Open Settings</a> to add your API key.</p>
+            <p>Or try <a href="arrivals.html">Live Trains</a> — works without a key!</p>
+          </div>`;
+        return;
+      }
+      if (settings.homeAddress) {
+        document.getElementById('fromAddress').value = settings.homeAddress;
+        if (settings.homeLat && settings.homeLng) {
+          fromCoord = { lat: settings.homeLat, lng: settings.homeLng, formatted: settings.homeAddress };
+          document.getElementById('fromStatus').className = 'geocode-status success';
+          document.getElementById('fromStatus').textContent = '✓ ' + settings.homeAddress;
+        }
+      }
+      if (settings.workAddress) {
+        document.getElementById('toAddress').value = settings.workAddress;
+        if (settings.workLat && settings.workLng) {
+          toCoord = { lat: settings.workLat, lng: settings.workLng, formatted: settings.workAddress };
+          document.getElementById('toStatus').className = 'geocode-status success';
+          document.getElementById('toStatus').textContent = '✓ ' + settings.workAddress;
+        }
+      }
+    })();
+    renderRecentSearches();
+  </script>
+</body>
+</html>
