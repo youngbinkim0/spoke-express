@@ -29,74 +29,8 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#1a1a2e">
+  <link rel="stylesheet" href="shared.css">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e;
-      color: #eee;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 16px;
-    }
-
-    .nav-links a {
-      color: #888;
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-
-    .nav-links a:hover {
-      color: #fff;
-    }
-
-    .refresh-btn {
-      background: none;
-      border: 1px solid #444;
-      color: #888;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s;
-    }
-
-    .refresh-btn:hover {
-      border-color: #4ecca3;
-      color: #4ecca3;
-    }
-
-    .refresh-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
     .stations-list {
       display: flex;
       flex-direction: column;
@@ -199,36 +133,15 @@
     }
 
     .line-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       width: 28px;
       height: 28px;
-      border-radius: 50%;
       font-size: 0.9rem;
-      font-weight: 700;
-      color: #fff;
     }
 
     .line-badge.small {
       width: 22px;
       height: 22px;
       font-size: 0.75rem;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #888;
-    }
-
-    .error {
-      background: #ff6b6b22;
-      border: 1px solid #ff6b6b;
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      color: #ff6b6b;
     }
 
     .no-stations {
@@ -248,13 +161,6 @@
       text-decoration: none;
     }
 
-    .refresh-info {
-      text-align: center;
-      margin-top: 20px;
-      color: #555;
-      font-size: 0.8rem;
-    }
-
     .last-updated {
       text-align: center;
       margin-top: 8px;
@@ -262,17 +168,8 @@
       font-size: 0.75rem;
     }
 
-    /* MTA line colors */
-    .line-1, .line-2, .line-3 { background: #EE352E; }
-    .line-4, .line-5, .line-6 { background: #00933C; }
-    .line-7 { background: #B933AD; }
-    .line-A, .line-C, .line-E { background: #0039A6; }
-    .line-B, .line-D, .line-F, .line-M { background: #FF6319; }
-    .line-G { background: #6CBE45; }
-    .line-J, .line-Z { background: #996633; }
-    .line-L { background: #A7A9AC; }
-    .line-N, .line-Q, .line-R, .line-W { background: #FCCC0A; color: #000; }
-    .line-S, .line-FS, .line-FX { background: #808183; }
+    /* MTA line colors — arrivals-specific extras */
+    .line-FS, .line-FX { background: #808183; }
   </style>
 </head>
 <body>
@@ -281,7 +178,8 @@
       <h1>Live Train Times</h1>
       <div class="nav-links">
         <button class="refresh-btn" onclick="refreshNow()">↻ Refresh</button>
-        <a href="index.html">Commute</a>
+        <a href="search.html">Search</a>
+        <a href="index.html">My Commute</a>
         <a href="settings.html">Settings</a>
       </div>
     </header>
@@ -297,10 +195,8 @@
   </div>
 
   <script src="mta-api.js?v=2"></script>
+  <script src="commute-engine.js"></script>
   <script>
-    const STORAGE_KEY = 'commuteOptimizerSettings';
-    // MTA API is now used via mta-api.js
-
     // Default stations for new users (no config needed)
     const DEFAULT_LIVE_STATIONS = [
       'times-sq-42-st',         // Times Sq-42 St (1,2,3)
@@ -308,40 +204,7 @@
       '34-st-penn-station-1'    // 34 St-Penn Station (A,C,E)
     ];
 
-    let STATIONS = [];
-
-    const lineColors = {
-      '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
-      '4': '#00933C', '5': '#00933C', '6': '#00933C',
-      '7': '#B933AD',
-      'A': '#0039A6', 'C': '#0039A6', 'E': '#0039A6',
-      'B': '#FF6319', 'D': '#FF6319', 'F': '#FF6319', 'M': '#FF6319',
-      'G': '#6CBE45',
-      'J': '#996633', 'Z': '#996633',
-      'L': '#A7A9AC',
-      'N': '#FCCC0A', 'Q': '#FCCC0A', 'R': '#FCCC0A', 'W': '#FCCC0A',
-      'S': '#808183', 'FS': '#808183', 'FX': '#808183',
-    };
-
-    async function loadStations() {
-      try {
-        const response = await fetch('stations.json');
-        const data = await response.json();
-        STATIONS = data.stations || data;  // Handle wrapped or raw array format
-      } catch (e) {
-        STATIONS = [];
-      }
-    }
-
-    function getStation(id) {
-      return STATIONS.find(s => s.id === id);
-    }
-
-    function loadSettings() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    }
-
+    // Local renderLineBadge with small param (different signature from shared)
     function renderLineBadge(line, small = false) {
       const color = lineColors[line] || '#888';
       const textColor = ['N', 'Q', 'R', 'W'].includes(line) ? '#000' : '#fff';

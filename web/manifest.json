@@ -1,7 +1,7 @@
 {
   "name": "Spoke Express — NYC Commute Optimizer",
   "short_name": "Spoke Express",
-  "description": "Find the fastest NYC commute by combining bike + subway",
+  "description": "Search and optimize NYC bike + subway commute routes with live MTA arrivals and weather-aware ranking",
   "start_url": "/spoke-express/",
   "display": "standalone",
   "background_color": "#1a1a2e",

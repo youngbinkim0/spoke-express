@@ -29,23 +29,15 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#1a1a2e">
+  <link rel="stylesheet" href="shared.css">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f5f5f5;
       color: #333;
       line-height: 1.6;
     }
 
     .container {
-      max-width: 600px;
-      margin: 0 auto;
       padding: 20px;
     }
 
@@ -343,7 +335,11 @@
   <div class="container">
     <header>
       <h1>Settings</h1>
-      <a href="index.html">← Back to Results</a>
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <a href="search.html">Search</a>
+        <a href="index.html">My Commute</a>
+        <a href="arrivals.html">Live Trains</a>
+      </div>
     </header>
 
     <div id="loading" class="loading">Loading stations...</div>
@@ -375,7 +371,7 @@
           <label>Address</label>
           <div class="address-row">
             <input type="text" id="homeAddress" class="address-input" placeholder="123 Main St, Brooklyn, NY">
-            <button class="btn-lookup" onclick="geocodeAddress('home')">Lookup</button>
+            <button class="btn-lookup" onclick="lookupAddress('home')">Lookup</button>
           </div>
         </div>
         <div id="homeGeoStatus" class="geocode-status"></div>
@@ -398,7 +394,7 @@
           <label>Address</label>
           <div class="address-row">
             <input type="text" id="workAddress" class="address-input" placeholder="456 Office Ave, Manhattan, NY">
-            <button class="btn-lookup" onclick="geocodeAddress('work')">Lookup</button>
+            <button class="btn-lookup" onclick="lookupAddress('work')">Lookup</button>
           </div>
         </div>
         <div id="workGeoStatus" class="geocode-status"></div>
@@ -432,11 +428,9 @@
   </div>
 
   <script src="auto-select.js"></script>
+  <script src="commute-engine.js"></script>
   <script>
-    let STATIONS = [];
-    const STORAGE_KEY = 'commuteOptimizerSettings';
-
-    async function loadStations() {
+    async function settingsLoadStations() {
       try {
         const response = await fetch('stations.json');
         const data = await response.json();
@@ -449,44 +443,12 @@
       }
     }
 
-    function loadSettings() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return {};
-
-      try {
-        const parsed = JSON.parse(saved);
-        if (!parsed || typeof parsed !== 'object') return {};
-
-        const { apiKey, ...settings } = parsed;
-        if (apiKey !== undefined) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-        }
-
-        return settings;
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function calculateDistance(lat1, lng1, lat2, lng2) {
-      if (!lat1 || !lng1) return 999;
-      const R = 3959;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-    async function geocodeAddress(type) {
+    async function lookupAddress(type) {
       const addressInput = document.getElementById(`${type}Address`);
       const latInput = document.getElementById(`${type}Lat`);
       const lngInput = document.getElementById(`${type}Lng`);
       const statusEl = document.getElementById(`${type}GeoStatus`);
       const googleKey = document.getElementById('googleKey').value.trim();
-
 
       const address = addressInput.value.trim();
 
@@ -496,38 +458,28 @@
         return;
       }
 
+      if (!googleKey) {
+        statusEl.className = 'geocode-status error';
+        statusEl.textContent = 'Google API key required for address lookup';
+        return;
+      }
+
       statusEl.className = 'geocode-status loading';
       statusEl.textContent = 'Looking up address...';
 
       try {
-        let lat, lng, locationName;
+        const result = await geocodeAddress(address, googleKey);
 
-        // Use Google Geocoding only
-        if (googleKey) {
-          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleKey}`;
-          const response = await fetch(url);
-          const data = await response.json();
-
-          if (data.status !== 'OK' || !data.results?.length) {
-            statusEl.className = 'geocode-status error';
-            statusEl.textContent = data.error_message || 'Address not found.';
-            return;
-          }
-
-          const result = data.results[0];
-          lat = result.geometry.location.lat;
-          lng = result.geometry.location.lng;
-          locationName = result.formatted_address;
-        } else {
+        if (!result) {
           statusEl.className = 'geocode-status error';
-          statusEl.textContent = 'Google API key required for address lookup';
+          statusEl.textContent = 'Address not found.';
           return;
         }
 
-        latInput.value = lat.toFixed(6);
-        lngInput.value = lng.toFixed(6);
+        latInput.value = result.lat.toFixed(6);
+        lngInput.value = result.lng.toFixed(6);
         statusEl.className = 'geocode-status success';
-        statusEl.textContent = `Found: ${locationName}`;
+        statusEl.textContent = `Found: ${result.formatted}`;
 
         if (type === 'home') {
           renderStations(loadSettings());
@@ -539,7 +491,7 @@
     }
 
     function init() {
-      const settings = loadSettings();
+      const settings = loadSettings() || {};
 
       document.getElementById('googleKey').value = settings.googleKey || '';
       document.getElementById('showBikeOptions').checked = settings.showBikeOptions ?? true;
@@ -559,8 +511,8 @@
     }
 
     function getStationsWithDistance(settings) {
-      const homeLat = parseFloat(document.getElementById('homeLat').value) || settings.homeLat || 0;
-      const homeLng = parseFloat(document.getElementById('homeLng').value) || settings.homeLng || 0;
+      const homeLat = parseFloat(document.getElementById('homeLat').value) || (settings && settings.homeLat) || 0;
+      const homeLng = parseFloat(document.getElementById('homeLng').value) || (settings && settings.homeLng) || 0;
 
       return STATIONS.map(s => ({
         ...s,
@@ -569,6 +521,7 @@
     }
 
     function renderStations(settings, bikeFilter = '', liveFilter = '') {
+      settings = settings || {};
       const stationsWithDist = getStationsWithDistance(settings);
       const liveStations = settings.liveStations || [];
 
@@ -603,7 +556,7 @@
 
     function filterStations(type) {
       const filter = document.getElementById('liveSearch').value;
-      const settings = loadSettings();
+      const settings = loadSettings() || {};
       renderStations(settings, '', filter);
     }
 
@@ -650,10 +603,10 @@
       status.className = 'status success';
       status.textContent = 'Settings saved! Redirecting...';
 
-      setTimeout(() => { window.location.href = 'index.html'; }, 800);
+      setTimeout(() => { window.location.href = 'search.html'; }, 800);
     }
 
-    loadStations();
+    settingsLoadStations();
   </script>
 </body>
 </html>
