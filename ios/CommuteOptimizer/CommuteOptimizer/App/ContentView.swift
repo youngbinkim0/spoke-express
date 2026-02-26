@@ -10,6 +10,11 @@ struct ContentView: View {
                     Label("Commute", systemImage: "tram.fill")
                 }
 
+            SearchView()
+                .tabItem {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+
             LiveTrainsView()
                 .tabItem {
                     Label("Live Trains", systemImage: "clock.fill")

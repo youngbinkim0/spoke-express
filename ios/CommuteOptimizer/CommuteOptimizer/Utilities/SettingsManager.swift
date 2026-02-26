@@ -18,6 +18,17 @@ class SettingsManager: ObservableObject {
         static let liveStations = "live_stations"
         static let destinationStation = "destination_station"
         static let showBikeOptions = "show_bike_options"
+        static let recentSearches = "commuteOptimizerSearchHistory"
+    }
+
+    struct RecentSearch: Codable {
+        let fromAddress: String
+        let fromLat: Double
+        let fromLng: Double
+        let toAddress: String
+        let toLat: Double
+        let toLng: Double
+        let timestamp: Date
     }
 
     init() {
@@ -283,5 +294,24 @@ class SettingsManager: ObservableObject {
     /// Force synchronize UserDefaults to ensure data is written
     func synchronize() {
         defaults.synchronize()
+    }
+
+    // MARK: - Recent Searches
+
+    private let maxRecentSearches = 3
+
+    func getRecentSearches() -> [RecentSearch] {
+        guard let data = defaults.data(forKey: Keys.recentSearches) else { return [] }
+        return (try? JSONDecoder().decode([RecentSearch].self, from: data)) ?? []
+    }
+
+    func addRecentSearch(_ search: RecentSearch) {
+        var recent = getRecentSearches()
+        recent.removeAll { $0.fromAddress == search.fromAddress && $0.toAddress == search.toAddress }
+        recent.insert(search, at: 0)
+        recent = Array(recent.prefix(maxRecentSearches))
+        if let data = try? JSONEncoder().encode(recent) {
+            defaults.set(data, forKey: Keys.recentSearches)
+        }
     }
 }
