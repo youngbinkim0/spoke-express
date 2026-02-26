@@ -1,0 +1,361 @@
+/* shared.css — Common styles for Spoke Express pages */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav-links a {
+  color: #888;
+  text-decoration: none;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  color: #fff;
+}
+
+.nav-links a.active {
+  color: #fff;
+}
+
+.refresh-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  border-color: #4ecca3;
+  color: #4ecca3;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Weather */
+.weather-bar {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.weather-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.weather-temp {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.weather-conditions {
+  color: #888;
+}
+
+.weather-warning {
+  background: #ff6b6b;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Alerts */
+.alerts-section {
+  margin-bottom: 20px;
+}
+
+.alert-card {
+  background: #ff6b6b22;
+  border: 1px solid #ff6b6b;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #ff6b6b;
+}
+
+.alert-card.elevator {
+  background: #ffc10722;
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+/* Option cards */
+.option-card {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 4px solid #4ecca3;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.option-card:hover {
+  background: #1a3050;
+}
+
+.option-card.rank-1 {
+  background: #1a3a5c;
+}
+
+.option-card.rank-1:hover {
+  background: #1f4268;
+}
+
+.option-card .expand-icon {
+  color: #666;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.option-card.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.option-details-expanded {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #2a3f5f;
+}
+
+.option-card.expanded .option-details-expanded {
+  display: block;
+}
+
+.transfer-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1a2a4a;
+}
+
+.transfer-step:last-child {
+  border-bottom: none;
+}
+
+.transfer-step-icon {
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.transfer-step-info {
+  flex: 1;
+}
+
+.transfer-step-line {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.transfer-step-stops {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.transfer-step-time {
+  font-size: 0.85rem;
+  color: #4ecca3;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.option-rank {
+  background: #4ecca3;
+  color: #1a1a2e;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.option-summary {
+  font-size: 1.1rem;
+  font-weight: 500;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.option-duration {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4ecca3;
+}
+
+.option-details {
+  display: flex;
+  gap: 20px;
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.option-legs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #0f3460;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.leg-icon {
+  font-size: 1rem;
+}
+
+.leg-arrow {
+  color: #555;
+}
+
+/* Line badges */
+.line-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Filter toggle */
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-toggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.filter-toggle:hover {
+  color: #fff;
+}
+
+/* Status messages */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.error {
+  background: #ff6b6b22;
+  border: 1px solid #ff6b6b;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #ff6b6b;
+}
+
+.no-options {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.no-options a {
+  color: #4ecca3;
+}
+
+.refresh-info {
+  text-align: center;
+  margin-top: 20px;
+  color: #555;
+  font-size: 0.8rem;
+}
+
+/* MTA line colors */
+.line-1, .line-2, .line-3 { background: #EE352E; }
+.line-4, .line-5, .line-6 { background: #00933C; }
+.line-7 { background: #B933AD; }
+.line-A, .line-C, .line-E { background: #0039A6; }
+.line-B, .line-D, .line-F, .line-M { background: #FF6319; }
+.line-G { background: #6CBE45; }
+.line-J, .line-Z { background: #996633; }
+.line-L { background: #A7A9AC; }
+.line-N, .line-Q, .line-R, .line-W { background: #FCCC0A; color: #000; }
+.line-S { background: #808183; }
