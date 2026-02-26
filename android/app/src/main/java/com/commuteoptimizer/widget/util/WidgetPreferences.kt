@@ -7,6 +7,16 @@ import com.google.gson.reflect.TypeToken
 
 class WidgetPreferences(context: Context) {
 
+
+    data class RecentSearch(
+        val fromAddress: String,
+        val fromLat: Double,
+        val fromLng: Double,
+        val toAddress: String,
+        val toLat: Double,
+        val toLng: Double,
+        val timestamp: Long
+    )
     private val prefs: SharedPreferences = context.getSharedPreferences(
         PREFS_NAME,
         Context.MODE_PRIVATE
@@ -34,6 +44,9 @@ class WidgetPreferences(context: Context) {
         private const val KEY_GOOGLE_API_KEY = "google_api_key"
         private const val KEY_WORKER_URL = "worker_url"
 
+        private const val KEY_RECENT_SEARCHES = "commuteOptimizerSearchHistory"
+        private const val LEGACY_KEY_RECENT_SEARCHES = "recent_searches"
+        private const val MAX_RECENT_SEARCHES = 3
         const val DEFAULT_API_URL = "http://192.168.1.100:8888"
     }
 
@@ -263,5 +276,25 @@ class WidgetPreferences(context: Context) {
         return !getGoogleApiKey().isNullOrBlank() &&
                getHomeLat() != 0.0 &&
                getWorkLat() != 0.0
+    }
+
+    // ========== Recent Searches ==========
+
+    fun getRecentSearches(): List<RecentSearch> {
+        val json = prefs.getString(KEY_RECENT_SEARCHES, null)
+            ?: prefs.getString(LEGACY_KEY_RECENT_SEARCHES, null)
+            ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<RecentSearch>>() {}.type
+            gson.fromJson(json, type)
+        } catch (e: Exception) { emptyList() }
+    }
+
+    fun addRecentSearch(search: RecentSearch) {
+        val recent = getRecentSearches().toMutableList()
+        recent.removeAll { it.fromAddress == search.fromAddress && it.toAddress == search.toAddress }
+        recent.add(0, search)
+        val capped = recent.take(MAX_RECENT_SEARCHES)
+        prefs.edit().putString(KEY_RECENT_SEARCHES, gson.toJson(capped)).apply()
     }
 }

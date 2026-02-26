@@ -127,6 +127,108 @@ class CommuteCalculator(private val context: Context) {
         }
     }
 
+    /**
+     * Overload that accepts raw coordinates directly (for ad-hoc search).
+     * Uses global settings for apiKey and showBikeOptions.
+     */
+    suspend fun calculateCommute(
+        originLat: Double,
+        originLng: Double,
+        destLat: Double,
+        destLng: Double
+    ): Result<CommuteResponse> {
+        try {
+            val apiKey = prefs.getGoogleApiKey()
+            val googleApiKey = apiKey
+            val showBikeOptions = prefs.getShowBikeOptions()
+
+            val homeLat = originLat
+            val homeLng = originLng
+            val workLat = destLat
+            val workLng = destLng
+
+            val autoSelected = localDataSource.autoSelectStations(homeLat, homeLng, workLat, workLng)
+            if (autoSelected.isEmpty()) {
+                return Result.Error("No stations found within 4 miles of origin")
+            }
+
+            val weather = fetchWeather(homeLat, homeLng, apiKey)
+            val stations = localDataSource.getStations()
+            val stationMap = stations.associateBy { it.id }
+
+            val destStation = findClosestStation(workLat, workLng, stations)
+                ?: return Result.Error("No station found near destination")
+
+            val options = mutableListOf<CommuteOption>()
+
+            val homeToWorkDist = DistanceCalculator.haversineDistance(homeLat, homeLng, workLat, workLng)
+            if (homeToWorkDist < 2.0) {
+                options.add(buildWalkOnlyOption(homeLat, homeLng, workLat, workLng))
+            }
+
+            for ((index, stationId) in autoSelected.withIndex()) {
+                val station = stationMap[stationId] ?: continue
+                try {
+                    if (showBikeOptions) {
+                        buildBikeToTransitOption(
+                            station, homeLat, homeLng, destStation, workLat, workLng,
+                            googleApiKey, index
+                        )?.let { options.add(it) }
+                    }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
+            val walkableStations = autoSelected
+                .mapNotNull { stationId -> stationMap[stationId]?.let { stationId to it } }
+                .map { (stationId, station) ->
+                    val walkTime = DistanceCalculator.estimateWalkTime(homeLat, homeLng, station.lat, station.lng)
+                    Triple(stationId, station, walkTime)
+                }
+                .sortedBy { it.third }
+                .take(3)
+
+            for ((index, triple) in walkableStations.withIndex()) {
+                val (stationId, station, walkTime) = triple
+                try {
+                    buildTransitOnlyOption(
+                        station, homeLat, homeLng, destStation, workLat, workLng,
+                        googleApiKey, walkTime, index + 100
+                    )?.let { options.add(it) }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
+            if (options.isEmpty()) {
+                return Result.Error("No commute options available")
+            }
+
+            val deduplicated = deduplicateByRoute(options)
+            val ranked = RankingService.rankOptions(deduplicated, weather)
+
+            val routeIds = autoSelected.flatMap { id ->
+                stationMap[id]?.lines ?: emptyList()
+            }.distinct()
+            val alerts = fetchAlerts(routeIds)
+
+            val response = CommuteResponse(
+                options = ranked.take(3),
+                weather = weather,
+                alerts = alerts,
+                generatedAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                    .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                    .format(Date())
+            )
+
+            return Result.Success(response)
+
+        } catch (e: Exception) {
+            return Result.Error("Failed to calculate commute: ${e.message}", e)
+        }
+    }
+
     private fun findClosestStation(lat: Double, lng: Double, stations: List<LocalStation>): LocalStation? {
         return stations.minByOrNull { station ->
             DistanceCalculator.haversineDistance(lat, lng, station.lat, station.lng)
