@@ -5,6 +5,10 @@
         android:icon="@drawable/ic_subway"
         android:title="Commute" />
     <item
+        android:id="@+id/nav_search"
+        android:icon="@drawable/ic_search"
+        android:title="Search" />
+    <item
         android:id="@+id/nav_live_trains"
         android:icon="@drawable/ic_train"
         android:title="Live Trains" />
